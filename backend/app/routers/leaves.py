@@ -1,0 +1,198 @@
+from fastapi import APIRouter, Depends, HTTPException, status
+from sqlalchemy.orm import Session
+from typing import List
+from ..deps import get_db, get_current_user
+from ..schemas import LeaveCreate, LeaveOut, LeaveStatus
+from ..crud import (
+    create_leave,
+    get_leave_by_id,
+    list_leaves_by_employee,
+    list_leaves_by_tenant,
+    update_leave_status,
+    delete_leave
+)
+from ..models.user import User
+
+router = APIRouter(prefix="/leaves", tags=["Leaves"])
+
+@router.get("/", response_model=List[LeaveOut])
+def get_leaves(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all leave requests for the current user's company
+    """
+    # For SuperAdmin, get all leaves; for others, get leaves for their company
+    if current_user.role == "SuperAdmin":
+        leaves = list_leaves_by_tenant(db, str(current_user.company_id or "default"))
+    else:
+        leaves = list_leaves_by_tenant(db, str(current_user.company_id))
+    return leaves
+
+@router.post("/", response_model=LeaveOut, status_code=status.HTTP_201_CREATED)
+def create_leave_request(
+    payload: LeaveCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create a new leave request
+    """
+    # Role-based access control - employees can create their own leave requests
+    # Managers and admins can create leave requests for others
+    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager", "Employee"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to create leave requests"
+        )
+
+    # Ensure the leave is created for the user's company
+    if current_user.role != "SuperAdmin" and payload.tenant_id != str(current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create leave request for another company"
+        )
+
+    # Employees can only create leave requests for themselves
+    if current_user.role == "Employee" and payload.employee_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Employees can only create leave requests for themselves"
+        )
+
+    leave = create_leave(
+        db=db,
+        tenant_id=payload.tenant_id,
+        employee_id=payload.employee_id,
+        type=payload.type,
+        start_at=payload.start_at,
+        end_at=payload.end_at,
+        status=payload.status
+    )
+    return leave
+
+@router.get("/{leave_id}", response_model=LeaveOut)
+def get_leave(
+    leave_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get a specific leave request by ID
+    """
+    leave = get_leave_by_id(db, leave_id)
+    if not leave:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Leave request not found"
+        )
+
+    # Ensure user can only access leaves from their company
+    if current_user.role != "SuperAdmin" and leave.tenant_id != str(current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot access leave request from another company"
+        )
+
+    # Employees can only view their own leave requests
+    if current_user.role == "Employee" and leave.employee_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Employees can only view their own leave requests"
+        )
+
+    return leave
+
+from pydantic import BaseModel
+
+class LeaveStatusUpdate(BaseModel):
+    status: LeaveStatus
+
+@router.put("/{leave_id}/status", response_model=LeaveOut)
+def update_leave_status_endpoint(
+    leave_id: int,
+    status_update: LeaveStatusUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Update the status of a leave request (approve/reject)
+    """
+    # Role-based access control - only managers and admins can approve/reject
+    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to update leave status"
+        )
+
+    leave = get_leave_by_id(db, leave_id)
+    if not leave:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Leave request not found"
+        )
+
+    # Ensure user can only update leaves from their company
+    if current_user.role != "SuperAdmin" and leave.tenant_id != str(current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot update leave request from another company"
+        )
+
+    updated_leave = update_leave_status(db, leave_id, status_update.status.value)
+    if not updated_leave:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Leave request not found"
+        )
+    return updated_leave
+
+@router.delete("/{leave_id}")
+def delete_leave_request(
+    leave_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Delete a leave request
+    """
+    # Role-based access control - only managers and admins can delete
+    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to delete leave requests"
+        )
+
+    leave = get_leave_by_id(db, leave_id)
+    if not leave:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Leave request not found"
+        )
+
+    # Ensure user can only delete leaves from their company
+    if current_user.role != "SuperAdmin" and leave.tenant_id != str(current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot delete leave request from another company"
+        )
+
+    success = delete_leave(db, leave_id)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Leave request not found"
+        )
+    return {"message": "Leave request deleted successfully"}
+
+@router.get("/my-leaves/", response_model=List[LeaveOut])
+def get_my_leaves(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get leave requests for the current user
+    """
+    leaves = list_leaves_by_employee(db, current_user.id)
+    return leaves

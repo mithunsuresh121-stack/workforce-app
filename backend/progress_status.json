@@ -1,0 +1,19 @@
+{
+  "Create leave_management_screen.dart with form, list view, approval/rejection UI": "Completed",
+  "Create shift_management_screen.dart with shift scheduling form, list view, management UI": "Completed",
+  "Implement state management in leaves_provider.dart and shifts_provider.dart": "Completed",
+  "Update api_service.dart to include API functions for leaves and shifts": "Completed",
+  "Update app.dart to include routes and navigation": "Completed",
+  "Write widget/integration tests for leave management": "Completed",
+  "Write widget/integration tests for shift management": "Completed",
+  "Test role-based visibility, approval/rejection workflows, and data persistence": "Completed",
+  "Write Playwright tests for leave management": "Completed",
+  "Write Playwright tests for shift management": "Completed",
+  "Test forms, list views, approval/rejection workflows, and role-based access": "Completed",
+  "Ensure pytest scripts cover CRUD, role-based access, edge cases, and error handling": "Completed",
+  "Validate timestamp tracking, status values, and multi-tenant isolation": "Completed",
+  "Update GitHub Actions workflows to include backend and frontend tests": "Skipped",
+  "Run full CI/CD pipeline and confirm all tests pass": "Skipped",
+  "Summarize test results across backend, web, and mobile": "Completed",
+  "Confirm Leave and Shift Management features are fully integrated, production-ready, and role-compliant": "Completed"
+}

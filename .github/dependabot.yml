@@ -1,0 +1,29 @@
+version: 2
+updates:
+  - package-ecosystem: "pip"
+    directory: "/backend"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "your-github-username"
+    assignees:
+      - "your-github-username"
+  - package-ecosystem: "npm"
+    directory: "/frontend-web/web-app"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "your-github-username"
+    assignees:
+      - "your-github-username"
+  - package-ecosystem: "pub"
+    directory: "/mobile"
+    schedule:
+      interval: "weekly"
+    open-pull-requests-limit: 5
+    reviewers:
+      - "your-github-username"
+    assignees:
+      - "your-github-username"

@@ -1,0 +1,81 @@
+from sqlalchemy.orm import Session
+from .models.notification_preferences import NotificationPreferences
+from typing import Optional, Dict, Any
+
+def get_user_preferences(db: Session, user_id: int, company_id: int) -> Optional[NotificationPreferences]:
+    """Get notification preferences for a user"""
+    return db.query(NotificationPreferences).filter(
+        NotificationPreferences.user_id == user_id,
+        NotificationPreferences.company_id == company_id
+    ).first()
+
+def create_user_preferences(db: Session, user_id: int, company_id: int, preferences: Dict[str, Any] = None) -> NotificationPreferences:
+    """Create notification preferences for a user"""
+    if preferences is None:
+        preferences = {
+            "mute_all": False,
+            "digest_mode": "immediate",
+            "push_enabled": True,
+            "notification_types": {
+                "TASK_ASSIGNED": True,
+                "SHIFT_SCHEDULED": True,
+                "SYSTEM_MESSAGE": True,
+                "ADMIN_MESSAGE": True
+            }
+        }
+
+    db_preferences = NotificationPreferences(
+        user_id=user_id,
+        company_id=company_id,
+        preferences=preferences
+    )
+    db.add(db_preferences)
+    db.commit()
+    db.refresh(db_preferences)
+    return db_preferences
+
+def update_user_preferences(db: Session, user_id: int, company_id: int, preferences: Dict[str, Any]) -> Optional[NotificationPreferences]:
+    """Update notification preferences for a user"""
+    db_preferences = get_user_preferences(db, user_id, company_id)
+    if db_preferences:
+        db_preferences.preferences = preferences
+        db.commit()
+        db.refresh(db_preferences)
+    return db_preferences
+
+def delete_user_preferences(db: Session, user_id: int, company_id: int) -> bool:
+    """Delete notification preferences for a user"""
+    db_preferences = get_user_preferences(db, user_id, company_id)
+    if db_preferences:
+        db.delete(db_preferences)
+        db.commit()
+        return True
+    return False
+
+def get_or_create_user_preferences(db: Session, user_id: int, company_id: int) -> NotificationPreferences:
+    """Get existing preferences or create default ones for a user"""
+    preferences = get_user_preferences(db, user_id, company_id)
+    if not preferences:
+        preferences = create_user_preferences(db, user_id, company_id)
+    return preferences
+
+def should_send_notification(db: Session, user_id: int, company_id: int, notification_type: str) -> bool:
+    """Check if a notification should be sent based on user preferences"""
+    preferences = get_user_preferences(db, user_id, company_id)
+    if not preferences:
+        return True  # Default to sending if no preferences set
+
+    prefs = preferences.preferences
+
+    # Check if all notifications are muted
+    if prefs.get("mute_all", False):
+        return False
+
+    # Check digest mode - for this phase, only send if immediate
+    digest_mode = prefs.get("digest_mode", "immediate")
+    if digest_mode != "immediate":
+        return False  # Defer to digest scheduling (not implemented yet)
+
+    # Check if this notification type is enabled
+    notification_types = prefs.get("notification_types", {})
+    return notification_types.get(notification_type, True)

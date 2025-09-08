@@ -1,0 +1,53 @@
+from fastapi import FastAPI, Response
+from fastapi.middleware.cors import CORSMiddleware
+from .config import settings, engine, Base
+from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications, notification_preferences
+from .custom_json_response import CustomJSONResponse
+
+# Only create tables when running the app directly, not when imported for testing
+if __name__ == "__main__":
+    Base.metadata.create_all(bind=engine)
+
+app = FastAPI(title="Workforce App", version="1.0", default_response_class=CustomJSONResponse)
+
+# Add CORS middleware
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # In production, replace with specific origins
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers
+app.include_router(auth.router, prefix="/auth")
+app.include_router(tasks.router)
+app.include_router(companies.router)
+app.include_router(employees.router)
+app.include_router(leaves.router)
+app.include_router(shifts.router)
+app.include_router(payroll.router)
+app.include_router(attendance.router)
+app.include_router(notifications.router)
+app.include_router(notification_preferences.router)
+
+from .seed_demo_user import seed_demo_user
+from .deps import get_db
+
+@app.on_event("startup")
+async def startup_event():
+    db = next(get_db())
+    seed_demo_user(db)
+
+app.include_router(dashboard.router)
+@app.get("/")
+def root():
+    return {"message": f"Welcome to the Workforce App! Environment: {settings.APP_ENV}"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "version": "1.0.0"}
+
+@app.get("/test")
+def test_endpoint():
+    return {"test": "value", "number": 123, "boolean": True}

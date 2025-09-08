@@ -1,0 +1,48 @@
+name: Backend Tests
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install dependencies
+        run: |
+          cd backend
+          pip install -r requirements.txt
+      - name: Run database migrations
+        run: |
+          cd backend
+          alembic upgrade head
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+      - name: Run linter
+        run: |
+          cd backend
+          ruff check .
+      - name: Run tests with coverage
+        run: |
+          cd backend
+          pytest --cov=. --cov-report=xml
+        env:
+          DATABASE_URL: postgresql://postgres:postgres@localhost:5432/testdb
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./backend/coverage.xml

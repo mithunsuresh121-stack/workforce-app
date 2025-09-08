@@ -1,0 +1,136 @@
+RULES: Always keep both backend and frontend environments clean, isolated, and free of unnecessary dependencies, with verification before executing any command. Additionally, handle stuck issues and deferred problems in a controlled manner.
+
+
+# -----------------------------
+# Blackbox Execution Mode Rules
+# -----------------------------
+
+# Disable chat mode for this session
+mode: execution-only
+
+# Rules for execution-only mode
+# - Commands can be executed without interactive chat responses
+# - Environment isolation must still be enforced
+# - Follow all existing backend/frontend venv/nvm/fvm rules
+# - Log all outputs and errors for review
+# - Report any blockers, but do not request user input unless explicitly asked
+
+# Optional: Reactivate chat mode later
+# To re-enable interactive chat mode, set:
+# mode: chat
+
+
+1. BACKEND (Python)
+- Always use the virtual environment located at ./venv.
+- Verify the venv is active before running any command:
+    if [ -z "$VIRTUAL_ENV" ]; then echo "Activate venv first" && exit 1; fi
+- Do NOT install any packages globally.
+- Install dependencies only via:
+    pip install -r requirements.txt
+- When adding a new package, update requirements.txt:
+    pip install <package> && pip freeze > requirements.txt
+- Remove unused or broken packages:
+    pip uninstall <package> && pip check
+- Do not modify or install packages on system Python.
+
+2. FRONTEND (Node.js / React Native / Flutter)
+- Use project-specific Node.js version via nvm:
+    nvm install && nvm use
+- For Flutter, use FVM to pin the version.
+- Verify Node/Flutter environment is active before running commands; abort if not.
+- Do NOT install npm/yarn packages globally.
+- Install dependencies locally in the project folder:
+    npm install   # or yarn install
+- When adding new packages, update package.json and install:
+    npm install <package> --save   # or yarn add <package>
+- Remove unused packages:
+    npm uninstall <package>   # or yarn remove <package>
+- For Flutter, remove any unused plugins.
+
+3. CLEANUP & SAFETY
+- Always check and remove global dependencies that are not needed.
+- Ensure all project dependencies are necessary and functional.
+- Update documentation so setup can be reproduced safely on any machine.
+- Abort any action if the correct environment is not active.
+
+4. ONE-LINE ENFORCEMENT
+Always use ./venv for Python, nvm/fvm for Node/Flutter; activate environment before running anything; install dependencies locally only; remove unused or broken packages; never touch global system files; update requirements.txt/package.json after adding packages.
+
+5. ISSUE HANDLING & LOOP PREVENTION
+- If an issue causes repeated failures or loops (e.g., type casting on TasksScreen), do not retry automatically.
+- Log the exact problem (file, line number, error message) and mark it as pending.
+- Continue fixing all other errors and warnings reported by `flutter analyze` or other tools that can be addressed automatically.
+- After each batch of fixes, provide a summary report including:
+    - Fixed issues
+    - Pending issues (with details)
+    - Any manual intervention required
+- Only attempt the deferred problem again after guidance or confirmation from the user.
+- Once guidance is provided, resume the deferred fix, confirm success, and report any remaining errors.
+
+6. BROWSER CONFIGURATION & FALLBACK
+- If Flutter web requires Chrome and it is not available, first attempt to use Brave Browser:
+    - Path: /Applications/Brave Browser.app/Contents/MacOS/Brave Browser
+    - If found, set CHROME_EXECUTABLE to Brave and proceed.
+- If Brave is not available, fallback to Safari:
+    - Path: /Applications/Safari.app/Contents/MacOS/Safari
+    - Set CHROME_EXECUTABLE to Safari and proceed.
+- Always confirm which browser was configured in the logs.
+- If neither Brave nor Safari is found, log the issue as "Browser not available" and mark as pending.
+- Do not get stuck in a loop retrying. Wait for user guidance on how to proceed.
+
+
+
+
+
+
+
+
+
+
+
+
+
+ ========================================
+# Blackbox AI Rules for Workforce App
+# ========================================
+
+# Default command timeout
+timeout: 10s          # Abort any command that takes longer than 10 seconds
+on_timeout: skip_and_resume  # Move to the next step automatically
+
+# Retry behavior
+max_retries: 2        # Retry a failed command up to 2 times before skipping
+retry_delay: 2s       # Wait 2 seconds between retries
+
+# Resume prompt
+resume_prompt: >
+  Resume task: pick up exactly where you left off in the Workforce App,
+  skipping any command that is stuck or failed, and continue testing,
+  integrating frontend-backend features, and verifying API endpoints.
+
+# Logging
+log_stuck_commands: true  # Record any command that hits the timeout
+
+# Network requests
+network_timeout: 10s      # Specifically timeout any network requests after 10 seconds
+on_network_timeout: skip_and_resume
+
+# Test commands
+test_command_timeout: 10s # Any test execution (flutter test, curl, etc.) gets 10s timeout
+
+# Optional: skip unnecessary third-party files
+skip_paths:
+  - frontend/lib/src极速赛车开奖直播历史记录+开奖结果
+  - frontend/lib/src极速飞艇开奖结果查询
+  - 极ntend/
+
+# Error handling
+on_command_error: skip_and_resume   # Skip any command that produces an error and continue workflow
+
+# Environment enforcement
+require_virtualenv: true             # Ensure backend Python commands run inside virtual environment
+check_dependencies: true             # Validate Flutter/Dart, Python packages, and Docker if used
+
+# Safe deploy / run rules
+max_concurrent_commands: 1           # Execute commands sequentially to avoid race conditions
+allow_partial_results: true          # If some tests fail, continue to next task

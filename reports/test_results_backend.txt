@@ -1,0 +1,72 @@
+============================= test session starts ==============================
+platform darwin -- Python 3.11.1, pytest-8.3.2, pluggy-1.6.0
+rootdir: /Users/mithunsuresh/Documents/workforce-app/backend
+plugins: anyio-4.10.0
+collected 14 items
+
+test_all_endpoints.py ....                                               [ 28%]
+test_jwt_validation.py ...                                               [ 50%]
+test_leaves_shifts_comprehensive.py E                                    [ 57%]
+test_leaves_shifts_comprehensive_fixed.py E                              [ 64%]
+test_super_admin_login.py .                                              [ 71%]
+test_timestamp_multitenant_validation.py ....                            [100%]
+
+==================================== ERRORS ====================================
+_______________________ ERROR at setup of test_endpoint ________________________
+file /Users/mithunsuresh/Documents/workforce-app/backend/test_leaves_shifts_comprehensive.py, line 21
+  def test_endpoint(url, method="GET", data=None, expected_status=200, description=""):
+E       fixture 'url' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/Users/mithunsuresh/Documents/workforce-app/backend/test_leaves_shifts_comprehensive.py:21
+_______________________ ERROR at setup of test_endpoint ________________________
+file /Users/mithunsuresh/Documents/workforce-app/backend/test_leaves_shifts_comprehensive_fixed.py, line 41
+  def test_endpoint(url, method="GET", data=None, expected_status=200, description=""):
+E       fixture 'url' not found
+>       available fixtures: anyio_backend, anyio_backend_name, anyio_backend_options, cache, capfd, capfdbinary, caplog, capsys, capsysbinary, doctest_namespace, free_tcp_port, free_tcp_port_factory, free_udp_port, free_udp_port_factory, monkeypatch, pytestconfig, record_property, record_testsuite_property, record_xml_attribute, recwarn, tmp_path, tmp_path_factory, tmpdir, tmpdir_factory
+>       use 'pytest --fixtures [testpath]' for help on them.
+
+/Users/mithunsuresh/Documents/workforce-app/backend/test_leaves_shifts_comprehensive_fixed.py:41
+=============================== warnings summary ===============================
+test_all_endpoints.py::test_login
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_all_endpoints.py::test_login returned 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJhZG1pbkB0ZWNoY29ycC5jb20iLCJjb21wYW55X2lkIjoxLCJyb2xlIjoiU3VwZXJBZG1pbiIsImV4cCI6MTc1NzA4Mzg2NX0.04KkAzrKGXewlrE1Fxob1jff7QkJmOCD6mwBRAmjbYE', which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_all_endpoints.py::test_tasks
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_all_endpoints.py::test_tasks returned 9, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_jwt_validation.py::test_jwt_structure_and_claims
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_jwt_validation.py::test_jwt_structure_and_claims returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_jwt_validation.py::test_expired_token
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_jwt_validation.py::test_expired_token returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_jwt_validation.py::test_invalid_token
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_jwt_validation.py::test_invalid_token returned True, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_timestamp_multitenant_validation.py::test_timestamp_tracking
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_timestamp_multitenant_validation.py::test_timestamp_tracking returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_timestamp_multitenant_validation.py::test_status_values
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_timestamp_multitenant_validation.py::test_status_values returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_timestamp_multitenant_validation.py::test_multi_tenant_isolation
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_timestamp_multitenant_validation.py::test_multi_tenant_isolation returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+test_timestamp_multitenant_validation.py::test_shift_timestamp_tracking
+  /Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/_pytest/python.py:163: PytestReturnNotNoneWarning: Expected None, but test_timestamp_multitenant_validation.py::test_shift_timestamp_tracking returned False, which will be an error in a future version of pytest.  Did you mean to use `assert` instead of `return`?
+    warnings.warn(
+
+-- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+=========================== short test summary info ============================
+ERROR test_leaves_shifts_comprehensive.py::test_endpoint
+ERROR test_leaves_shifts_comprehensive_fixed.py::test_endpoint
+=================== 12 passed, 9 warnings, 2 errors in 2.18s ===================

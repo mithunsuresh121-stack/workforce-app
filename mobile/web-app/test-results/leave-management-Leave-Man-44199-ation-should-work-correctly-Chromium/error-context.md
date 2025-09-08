@@ -1,0 +1,46 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e4]:
+  - generic [ref=e6]:
+    - generic [ref=e7]:
+      - img [ref=e10]
+      - heading "Welcome back" [level=2] [ref=e13]
+      - paragraph [ref=e14]: Sign in to your Workforce account
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Email Address
+          - generic [ref=e19]:
+            - img [ref=e20]
+            - textbox "Email Address" [active] [ref=e24]
+        - generic [ref=e25]:
+          - generic [ref=e26]: Password
+          - generic [ref=e27]:
+            - img [ref=e28]
+            - textbox "Password" [ref=e32]
+            - button [ref=e33] [cursor=pointer]:
+              - img [ref=e34] [cursor=pointer]
+        - generic [ref=e37]:
+          - generic [ref=e38]: Company ID (Optional)
+          - spinbutton "Company ID (Optional)" [ref=e40]
+          - paragraph [ref=e41]: Leave blank for Super Admin access
+      - generic [ref=e42]:
+        - generic [ref=e43]:
+          - checkbox "Remember me" [ref=e44]
+          - generic [ref=e45]: Remember me
+        - link "Forgot password?" [ref=e47] [cursor=pointer]:
+          - /url: "#"
+      - button "Sign in" [ref=e49] [cursor=pointer]:
+        - generic [ref=e50] [cursor=pointer]:
+          - text: Sign in
+          - img [ref=e51] [cursor=pointer]
+      - paragraph [ref=e54]:
+        - text: Don't have an account?
+        - link "Sign up here" [ref=e55] [cursor=pointer]:
+          - /url: /signup
+  - generic [ref=e59]:
+    - img [ref=e60]
+    - heading "Workforce Management" [level=3] [ref=e63]
+    - paragraph [ref=e64]: Streamline your workforce operations with our comprehensive management platform
+```

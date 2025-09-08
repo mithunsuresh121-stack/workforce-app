@@ -1,0 +1,44 @@
+[
+  {
+    "user": {
+      "id": 4,
+      "email": "superadmin@example.com",
+      "role": "SuperAdmin",
+      "company_id": 1
+    },
+    "result": {
+      "success": false,
+      "error_type": "NameError",
+      "error": "name 'TaskPriority' is not defined",
+      "trace": "Traceback (most recent call last):\n  File \"<stdin>\", line 50, in create_task_for_user\n  File \"/Users/mithunsuresh/Documents/workforce-app/backend/app/crud.py\", line 190, in create_task\n    priority=TaskPriority(normalized_priority),\n             ^^^^^^^^^^^^\nNameError: name 'TaskPriority' is not defined\n"
+    }
+  },
+  {
+    "user": {
+      "id": 31,
+      "email": "manager@techcorp.com",
+      "role": "Manager",
+      "company_id": 1
+    },
+    "result": {
+      "success": false,
+      "error_type": "NameError",
+      "error": "name 'TaskPriority' is not defined",
+      "trace": "Traceback (most recent call last):\n  File \"<stdin>\", line 50, in create_task_for_user\n  File \"/Users/mithunsuresh/Documents/workforce-app/backend/app/crud.py\", line 190, in create_task\n    priority=TaskPriority(normalized_priority),\n             ^^^^^^^^^^^^\nNameError: name 'TaskPriority' is not defined\n"
+    }
+  },
+  {
+    "user": {
+      "id": 2,
+      "email": "user@globalservices.com",
+      "role": "Employee",
+      "company_id": 2
+    },
+    "result": {
+      "success": false,
+      "error_type": "NameError",
+      "error": "name 'TaskPriority' is not defined",
+      "trace": "Traceback (most recent call last):\n  File \"<stdin>\", line 50, in create_task_for_user\n  File \"/Users/mithunsuresh/Documents/workforce-app/backend/app/crud.py\", line 190, in create_task\n    priority=TaskPriority(normalized_priority),\n             ^^^^^^^^^^^^\nNameError: name 'TaskPriority' is not defined\n"
+    }
+  }
+]

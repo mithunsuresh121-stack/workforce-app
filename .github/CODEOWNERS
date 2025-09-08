@@ -1,0 +1,17 @@
+# Require PR reviews for all changes
+* @your-github-username
+
+# Backend code
+backend/ @your-github-username
+
+# Frontend web
+frontend-web/ @your-github-username
+
+# Mobile app
+mobile/ @your-github-username
+
+# CI/CD
+.github/ @your-github-username
+
+# Documentation
+docs/ @your-github-username
