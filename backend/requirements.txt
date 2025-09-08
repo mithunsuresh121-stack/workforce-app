@@ -13,7 +13,7 @@ ruff==0.6.9
 pytest==8.3.2
 # Phase 10: Advanced Notification Features
 APScheduler==3.10.4
-redis==5.0.8
+redis==6.4.0
 jinja2==3.1.4
 python-dateutil==2.9.0
 pytz==2024.1
