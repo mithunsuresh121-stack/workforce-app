@@ -4,6 +4,7 @@ Comprehensive test script for leaves and shifts endpoints
 Tests all CRUD operations, role-based access control, and edge cases
 """
 
+import pytest
 import requests
 import json
 import time
@@ -18,7 +19,7 @@ HEADERS = {
     "Content-Type": "application/json"
 }
 
-def test_endpoint(url, method="GET", data=None, expected_status=200, description=""):
+def endpoint_test(url, method="GET", data=None, expected_status=200, description=""):
     """Helper function to test endpoints"""
     print(f"\n--- Testing: {description} ---")
     print(f"URL: {url}")
@@ -82,14 +83,14 @@ def main():
     print("="*60)
 
     # 1. GET /leaves/ - List all leaves
-    leaves_response = test_endpoint(
+    leaves_response = endpoint_test(
         f"{BASE_URL}/leaves/",
         method="GET",
         description="GET /leaves/ - List all leaves"
     )
 
     # 2. POST /leaves/ - Create new leave
-    created_leave = test_endpoint(
+    created_leave = endpoint_test(
         f"{BASE_URL}/leaves/",
         method="POST",
         data=test_leave_data,
@@ -102,7 +103,7 @@ def main():
         print(f"Created leave ID: {leave_id}")
 
         # 3. GET /leaves/{id} - Get specific leave
-        test_endpoint(
+        endpoint_test(
             f"{BASE_URL}/leaves/{leave_id}",
             method="GET",
             description=f"GET /leaves/{leave_id} - Get specific leave"
@@ -110,7 +111,7 @@ def main():
 
         # 4. PUT /leaves/{id}/status - Update leave status
         status_update = {"status": "approved"}
-        test_endpoint(
+        endpoint_test(
             f"{BASE_URL}/leaves/{leave_id}/status",
             method="PUT",
             data=status_update,
@@ -118,7 +119,7 @@ def main():
         )
 
         # 5. DELETE /leaves/{id} - Delete leave
-        test_endpoint(
+        endpoint_test(
             f"{BASE_URL}/leaves/{leave_id}",
             method="DELETE",
             expected_status=200,
@@ -126,7 +127,7 @@ def main():
         )
 
     # 6. GET /leaves/my-leaves/ - Get user's leaves
-    test_endpoint(
+    endpoint_test(
         f"{BASE_URL}/leaves/my-leaves/",
         method="GET",
         description="GET /leaves/my-leaves/ - Get user's leaves"
@@ -138,14 +139,14 @@ def main():
     print("="*60)
 
     # 1. GET /shifts/ - List all shifts
-    shifts_response = test_endpoint(
+    shifts_response = endpoint_test(
         f"{BASE_URL}/shifts/",
         method="GET",
         description="GET /shifts/ - List all shifts"
     )
 
     # 2. POST /shifts/ - Create new shift
-    created_shift = test_endpoint(
+    created_shift = endpoint_test(
         f"{BASE_URL}/shifts/",
         method="POST",
         data=test_shift_data,
@@ -158,7 +159,7 @@ def main():
         print(f"Created shift ID: {shift_id}")
 
         # 3. GET /shifts/{id} - Get specific shift
-        test_endpoint(
+        endpoint_test(
             f"{BASE_URL}/shifts/{shift_id}",
             method="GET",
             description=f"GET /shifts/{shift_id} - Get specific shift"
@@ -167,7 +168,7 @@ def main():
         # 4. PUT /shifts/{id} - Update shift
         updated_shift_data = test_shift_data.copy()
         updated_shift_data["location"] = "Remote"
-        test_endpoint(
+        endpoint_test(
             f"{BASE_URL}/shifts/{shift_id}",
             method="PUT",
             data=updated_shift_data,
@@ -175,7 +176,7 @@ def main():
         )
 
         # 5. DELETE /shifts/{id} - Delete shift
-        test_endpoint(
+        endpoint_test(
             f"{BASE_URL}/shifts/{shift_id}",
             method="DELETE",
             expected_status=200,
@@ -183,7 +184,7 @@ def main():
         )
 
     # 6. GET /shifts/my-shifts/ - Get user's shifts
-    test_endpoint(
+    endpoint_test(
         f"{BASE_URL}/shifts/my-shifts/",
         method="GET",
         description="GET /shifts/my-shifts/ - Get user's shifts"
@@ -195,7 +196,7 @@ def main():
     print("="*60)
 
     # Test invalid leave ID
-    test_endpoint(
+    endpoint_test(
         f"{BASE_URL}/leaves/99999",
         method="GET",
         expected_status=404,
@@ -203,7 +204,7 @@ def main():
     )
 
     # Test invalid shift ID
-    test_endpoint(
+    endpoint_test(
         f"{BASE_URL}/shifts/99999",
         method="GET",
         expected_status=404,
@@ -219,7 +220,7 @@ def main():
         "end_at": "invalid_date",
         "status": "invalid_status"
     }
-    test_endpoint(
+    endpoint_test(
         f"{BASE_URL}/shifts/",
         method="POST",
         data=invalid_leave_data,
@@ -230,6 +231,45 @@ def main():
     print("\n" + "="*60)
     print("✅ COMPREHENSIVE TESTING COMPLETED")
     print("="*60)
+
+def test_leaves_endpoints(url):
+    """Test leaves endpoints"""
+    # Test data
+    test_leave_data = {
+        "tenant_id": "4",
+        "employee_id": 1,
+        "type": "vacation",
+        "start_at": (datetime.now() + timedelta(days=1)).isoformat(),
+        "end_at": (datetime.now() + timedelta(days=5)).isoformat(),
+        "status": "pending"
+    }
+
+    # Test GET /leaves/
+    response = endpoint_test(
+        f"{url}/leaves/",
+        method="GET",
+        description="GET /leaves/ - List all leaves"
+    )
+    assert response is not None
+
+def test_shifts_endpoints(url):
+    """Test shifts endpoints"""
+    # Test data
+    test_shift_data = {
+        "tenant_id": "4",
+        "employee_id": 1,
+        "start_at": (datetime.now() + timedelta(hours=9)).isoformat(),
+        "end_at": (datetime.now() + timedelta(hours=17)).isoformat(),
+        "location": "Office"
+    }
+
+    # Test GET /shifts/
+    response = endpoint_test(
+        f"{url}/shifts/",
+        method="GET",
+        description="GET /shifts/ - List all shifts"
+    )
+    assert response is not None
 
 if __name__ == "__main__":
     main()
