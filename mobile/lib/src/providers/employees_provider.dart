@@ -85,6 +85,43 @@ class EmployeesNotifier extends StateNotifier<EmployeesState> {
     }
   }
 
+  Future<void> fetchEmployee(int userId) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _apiService.getEmployee(userId);
+      if (response.statusCode == 200) {
+        final data = json.decode(response.body);
+        final employee = EmployeeProfile.fromJson(data);
+        final updatedEmployees = List<EmployeeProfile>.from(state.employees);
+        final index = updatedEmployees.indexWhere((e) => e.id == employee.id);
+        if (index >= 0) {
+          updatedEmployees[index] = employee;
+        } else {
+          updatedEmployees.add(employee);
+        }
+        state = state.copyWith(employees: updatedEmployees, isLoading: false);
+      } else {
+        state = state.copyWith(isLoading: false, error: 'Failed to load employee');
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
+  Future<void> updateEmployee(int userId, Map<String, dynamic> updateData) async {
+    state = state.copyWith(isLoading: true, error: null);
+    try {
+      final response = await _apiService.updateEmployee(userId, updateData);
+      if (response.statusCode == 200) {
+        await fetchEmployee(userId);
+      } else {
+        state = state.copyWith(isLoading: false, error: 'Failed to update employee');
+      }
+    } catch (e) {
+      state = state.copyWith(isLoading: false, error: e.toString());
+    }
+  }
+
   // Additional methods for create, update, delete can be added here
 
   Future<void> createEmployee({

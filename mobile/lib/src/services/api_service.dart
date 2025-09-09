@@ -105,6 +105,25 @@ class ApiService {
     return await get('/companies/$companyId');
   }
 
+  Future<http.Response> getCompanyUsers(int companyId, {String? department, String? position, String? sortBy, String? sortOrder}) async {
+    String url = '/companies/$companyId/users?';
+    List<String> params = [];
+    if (department != null) params.add('department=$department');
+    if (position != null) params.add('position=$position');
+    if (sortBy != null) params.add('sort_by=$sortBy');
+    if (sortOrder != null) params.add('sort_order=$sortOrder');
+    url += params.join('&');
+    return await get(url);
+  }
+
+  Future<http.Response> getCompanyDepartments(int companyId) async {
+    return await get('/companies/$companyId/departments');
+  }
+
+  Future<http.Response> getCompanyPositions(int companyId) async {
+    return await get('/companies/$companyId/positions');
+  }
+
   // Employee specific methods
   Future<http.Response> getEmployees() async {
     return await get('/employees/');
@@ -179,6 +198,14 @@ class ApiService {
   // User profile methods
   Future<http.Response> getCurrentUserProfile() async {
     return await get('/auth/me');
+  }
+
+  Future<http.Response> getCurrentUserFullProfile() async {
+    return await get('/auth/me/profile');
+  }
+
+  Future<http.Response> updateCurrentUserProfile(Map<String, dynamic> profileData) async {
+    return await put('/auth/me/profile', profileData);
   }
 
   // Notification preferences methods

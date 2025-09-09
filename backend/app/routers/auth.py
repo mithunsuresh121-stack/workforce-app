@@ -73,6 +73,24 @@ def get_current_user_profile(response: Response, current_user: UserOut = Depends
         current_user.role = "Employee"
     return current_user
 
+@router.get("/me/profile")
+def get_current_user_full_profile(db: Session = Depends(get_db), current_user: UserOut = Depends(get_current_user)):
+    """Get current authenticated user's full profile including employee details"""
+    from ..crud import get_employee_profile_by_user_id
+
+    user_profile = {
+        "user": current_user,
+        "employee_profile": None
+    }
+
+    # Get employee profile if it exists
+    if current_user.company_id:
+        employee_profile = get_employee_profile_by_user_id(db, current_user.id, current_user.company_id)
+        if employee_profile:
+            user_profile["employee_profile"] = employee_profile
+
+    return user_profile
+
 @router.get("/notifications", response_model=List[Notification])
 def get_notifications(current_user: UserOut = Depends(get_current_user)):
     """Get user notifications"""
@@ -126,6 +144,68 @@ def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
         payload.company_id
     )
     return updated_user
+
+@router.put("/me/profile")
+def update_current_user_profile(payload: dict, db: Session = Depends(get_db), current_user: UserOut = Depends(get_current_user)):
+    """Update current user's profile including employee details"""
+    from ..crud import get_employee_profile_by_user_id, update_employee_profile, update_user
+    from ..schemas import EmployeeProfileUpdate
+    import re
+    from datetime import datetime
+
+    # Update basic user info if provided
+    user_update_data = payload.get("user", {})
+    if user_update_data:
+        update_user(
+            db,
+            current_user.id,
+            user_update_data.get("email"),
+            user_update_data.get("password"),
+            user_update_data.get("full_name"),
+            user_update_data.get("role"),
+            user_update_data.get("company_id")
+        )
+
+    # Update employee profile if provided
+    employee_update_data = payload.get("employee_profile", {})
+    if employee_update_data and current_user.company_id:
+        # Additional validation for phone number
+        phone = employee_update_data.get("phone")
+        if phone:
+            phone_pattern = re.compile(r'^\+?1?[-.\s]?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$')
+            if not phone_pattern.match(phone):
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Invalid phone number format. Please use format: +1 (555) 123-4567 or similar"
+                )
+
+        # Validate hire date is not in the future
+        hire_date = employee_update_data.get("hire_date")
+        if hire_date:
+            if isinstance(hire_date, str):
+                hire_date = datetime.fromisoformat(hire_date.replace('Z', '+00:00')).date()
+            if hire_date > datetime.now().date():
+                raise HTTPException(
+                    status_code=status.HTTP_400_BAD_REQUEST,
+                    detail="Hire date cannot be in the future"
+                )
+
+        # Convert dict to EmployeeProfileUpdate
+        employee_update = EmployeeProfileUpdate(**employee_update_data)
+        update_employee_profile(
+            db=db,
+            user_id=current_user.id,
+            company_id=current_user.company_id,
+            department=employee_update.department,
+            position=employee_update.position,
+            phone=employee_update.phone,
+            hire_date=employee_update.hire_date,
+            manager_id=employee_update.manager_id,
+            is_active=employee_update.is_active
+        )
+
+    # Return updated profile
+    return get_current_user_full_profile(db, current_user)
 
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db), current_user: UserOut = Depends(get_current_user)):

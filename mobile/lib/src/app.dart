@@ -15,6 +15,8 @@ import 'screens/leave_management_screen.dart';
 import 'screens/shift_management_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/notification_preferences_screen.dart';
+import 'screens/user_profile_screen.dart';
+import 'screens/company_directory_screen.dart';
 
 class WorkforceApp extends ConsumerStatefulWidget {
   const WorkforceApp({super.key});
@@ -71,6 +73,8 @@ class _AppShellState extends ConsumerState<AppShell> {
     EmployeesScreen(),
     ReportsScreen(),
     NotificationsScreen(),
+    UserProfileScreen(),
+    // CompanyDirectoryScreen will be navigated to with companyId parameter, so not in main tabs
   ];
 
   @override
@@ -222,6 +226,29 @@ class _AppShellState extends ConsumerState<AppShell> {
                   context,
                   MaterialPageRoute(builder: (context) => const NotificationPreferencesScreen()),
                 );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.person),
+              title: const Text('My Profile'),
+              onTap: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (context) => const UserProfileScreen()),
+                );
+              },
+            ),
+            ListTile(
+              leading: const Icon(Icons.business),
+              title: const Text('Company Directory'),
+              onTap: () {
+                final companyId = ref.read(authProvider).companyId;
+                if (companyId != null) {
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(builder: (context) => CompanyDirectoryScreen(companyId: companyId)),
+                  );
+                }
               },
             ),
             const Divider(),

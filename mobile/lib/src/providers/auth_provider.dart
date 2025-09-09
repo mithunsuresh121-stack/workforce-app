@@ -49,20 +49,29 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   Future<void> login(String email, String password, int companyId) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
       final response = await _apiService.login(email, password, companyId);
-      
+
       if (response.statusCode == 200) {
         final data = json.decode(response.body);
         final token = data['access_token'];
-        
+
         await _apiService.saveToken(token);
-        
+
+        // Fetch user profile to get role
+        final profileResponse = await _apiService.getCurrentUserProfile();
+        String? role;
+        if (profileResponse.statusCode == 200) {
+          final profileData = json.decode(profileResponse.body);
+          role = profileData['role'];
+        }
+
         state = state.copyWith(
           isAuthenticated: true,
           token: token,
           email: email,
+          role: role,
           companyId: companyId,
           isLoading: false,
           error: null,

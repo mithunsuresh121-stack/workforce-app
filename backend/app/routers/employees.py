@@ -119,10 +119,31 @@ def update_employee_profile_endpoint(
     """
     # Role-based access control
     if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions to update employee profiles"
-        )
+        # Users can update their own profile
+        if current_user.id != user_id:
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Insufficient permissions to update employee profiles"
+            )
+
+    # Additional validation for phone number
+    if payload.phone:
+        import re
+        phone_pattern = re.compile(r'^\+?1?[-.\s]?\(?([0-9]{3})\)?[-.\s]?([0-9]{3})[-.\s]?([0-9]{4})$')
+        if not phone_pattern.match(payload.phone):
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Invalid phone number format. Please use format: +1 (555) 123-4567 or similar"
+            )
+
+    # Validate hire date is not in the future
+    if payload.hire_date:
+        from datetime import datetime
+        if payload.hire_date > datetime.now().date():
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Hire date cannot be in the future"
+            )
 
     profile = update_employee_profile(
         db=db,
