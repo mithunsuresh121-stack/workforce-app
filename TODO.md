@@ -1,38 +1,32 @@
-# TODO for User Profile Details and Company Directory Features
+# TODO: Comprehensive Testing and Fixes for Workforce App
 
-## Backend
-- [x] Ensure EmployeeProfile model supports editable user profile details.
-- [x] Verify CRUD operations for EmployeeProfile in backend/app/crud.py.
-- [x] Verify and if needed, add API endpoints for:
-  - Getting current user's profile details.
-  - Updating user profile details.
-  - Listing users by company.
-- [x] Add validation for profile updates.
-- [x] Add tests for profile details display and editing.
-- [x] Add tests for company directory listing and filtering.
+## Backend API Testing
+- [ ] Run and verify backend API tests in `backend/test_all_endpoints.py`
+- [ ] Add tests for:
+  - Task update and delete functionality
+  - Calendar, leaves, and shifts endpoints
+  - Reports generation endpoints
+  - Chat assistant endpoints
+  - Employee management beyond basic user operations
+- [ ] Investigate and fix any 403 Forbidden and 404 Not Found errors from backend logs
 
-## Frontend - Mobile (Flutter)
-- [x] Implement user profile details screen after login.
-- [x] Make profile details editable with validation.
-- [x] Save updates to backend via API.
-- [x] Implement company directory screen listing users by company.
-- [x] Add sorting/filtering options by company.
-- [x] Add UI for viewing other employees' profile details.
-- [x] Add automated widget tests for profile and directory features.
-- [x] Add navigation to profile and directory screens from app drawer.
-- [x] Implement role-based UI controls (hide admin features for regular users).
-- [x] Add error handling for network failures and API errors.
+## Frontend UI Testing
+- [ ] Run Playwright tests in `frontend-web/web-app/tests/`
+- [ ] Verify UI pages:
+  - Login
+  - Directory (see `directory-screen.spec.ts`)
+  - Profile (see `profile-screen.spec.ts` and `ProfileScreen.tsx`)
+  - Dashboard
+  - Other screens as applicable
+- [ ] Fix any UI test failures and console errors
+- [ ] Confirm data-testid attributes are present for reliable testing
 
-## Frontend - Web (if applicable)
-- [ ] Verify or implement company directory UI.
-- [ ] Verify or implement user profile details UI.
+## Environment and Configuration
+- [x] Fix webpack dev server port to 3000 in `webpack.config.cjs`
+- [x] Fix Playwright baseURL to http://localhost:3000 in `playwright.config.ts`
 
-## Testing & Verification
-- [x] Run backend API tests for profile and company directory.
-- [ ] Run frontend tests for UI and API integration (Flutter SDK not available).
-- [ ] Manual testing of profile editing and company directory navigation (Flutter SDK not available).
-
-## Repository
-- [ ] Commit all changes with descriptive messages.
-- [ ] Push changes to GitHub repository.
-- [ ] Update README or documentation if needed for new features.
+## Next Steps
+- [ ] Execute backend API tests and analyze results
+- [ ] Execute frontend Playwright tests and analyze results
+- [ ] Address any bugs, performance issues, or UX problems found
+- [ ] Confirm full end-to-end functionality on localhost

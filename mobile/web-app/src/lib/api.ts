@@ -418,6 +418,64 @@ export const getCurrentUserProfile = async () => {
   }
 };
 
+export const getCurrentUserFullProfile = async () => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      window.location.href = '/login';
+      return null;
+    }
+    const response = await fetch(API_BASE_URL + '/auth/me/profile', {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (response.status === 401) {
+      clearAuthToken();
+      window.location.href = '/login';
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error('Failed to fetch user full profile');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error fetching user full profile:', error);
+    throw error;
+  }
+};
+
+export const updateCurrentUserProfile = async (profileData: any) => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      window.location.href = '/login';
+      return null;
+    }
+    const response = await fetch(API_BASE_URL + '/auth/me/profile', {
+      method: 'PUT',
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(profileData),
+    });
+    if (response.status === 401) {
+      clearAuthToken();
+      window.location.href = '/login';
+      return null;
+    }
+    if (!response.ok) {
+      throw new Error('Failed to update user profile');
+    }
+    return await response.json();
+  } catch (error) {
+    console.error('Error updating user profile:', error);
+    throw error;
+  }
+};
+
 export const getNotifications = async () => {
   try {
     const token = getAuthToken();
@@ -1675,6 +1733,102 @@ export const deletePayrollEntry = async (payrollEntryId: number) => {
     return true;
   } catch (error) {
     console.error('Error deleting payroll entry:', error);
+    throw error;
+  }
+};
+
+// Company Directory API functions
+export const getCompanyUsers = async (companyId: number, filters?: { department?: string; position?: string; sort_by?: string; sort_order?: string }) => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      window.location.href = '/login';
+      return [];
+    }
+    let url = `${API_BASE_URL}/companies/${companyId}/users?`;
+    const params = [];
+    if (filters?.department) params.push(`department=${encodeURIComponent(filters.department)}`);
+    if (filters?.position) params.push(`position=${encodeURIComponent(filters.position)}`);
+    if (filters?.sort_by) params.push(`sort_by=${filters.sort_by}`);
+    if (filters?.sort_order) params.push(`sort_order=${filters.sort_order}`);
+    url += params.join('&');
+
+    const response = await fetch(url, {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (response.status === 401) {
+      clearAuthToken();
+      window.location.href = '/login';
+      return [];
+    }
+    if (!response.ok) {
+      throw new Error('Failed to fetch company users');
+    }
+    const data = await response.json();
+    return data.users || [];
+  } catch (error) {
+    console.error('Error fetching company users:', error);
+    throw error;
+  }
+};
+
+export const getCompanyDepartments = async (companyId: number) => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      window.location.href = '/login';
+      return [];
+    }
+    const response = await fetch(`${API_BASE_URL}/companies/${companyId}/departments`, {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (response.status === 401) {
+      clearAuthToken();
+      window.location.href = '/login';
+      return [];
+    }
+    if (!response.ok) {
+      throw new Error('Failed to fetch company departments');
+    }
+    const data = await response.json();
+    return data.departments || [];
+  } catch (error) {
+    console.error('Error fetching company departments:', error);
+    throw error;
+  }
+};
+
+export const getCompanyPositions = async (companyId: number) => {
+  try {
+    const token = getAuthToken();
+    if (!token) {
+      window.location.href = '/login';
+      return [];
+    }
+    const response = await fetch(`${API_BASE_URL}/companies/${companyId}/positions`, {
+      headers: {
+        'Authorization': 'Bearer ' + token,
+        'Content-Type': 'application/json',
+      },
+    });
+    if (response.status === 401) {
+      clearAuthToken();
+      window.location.href = '/login';
+      return [];
+    }
+    if (!response.ok) {
+      throw new Error('Failed to fetch company positions');
+    }
+    const data = await response.json();
+    return data.positions || [];
+  } catch (error) {
+    console.error('Error fetching company positions:', error);
     throw error;
   }
 };

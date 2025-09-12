@@ -27,7 +27,7 @@ def get_shifts(
     """
     # For SuperAdmin, get all shifts; for others, get shifts for their company
     if current_user.role == "SuperAdmin":
-        shifts = list_shifts_by_tenant(db, current_user.company_id or "default")
+        shifts = list_shifts_by_tenant(db, str(current_user.company_id or "default"))
     else:
         shifts = list_shifts_by_tenant(db, str(current_user.company_id))
     return shifts

@@ -7,7 +7,7 @@ def seed():
     db: Session = SessionLocal()
 
     # Ensure test admin user exists
-    user = crud.get_user_by_email(db, email="admin@example.com")
+    user = crud.get_user_by_email_only(db, email="admin@example.com")
     if not user:
         user = models.User(
             email="admin@example.com",
