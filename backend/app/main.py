@@ -20,16 +20,16 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth.router, prefix="/auth")
-app.include_router(tasks.router)
-app.include_router(companies.router)
-app.include_router(employees.router)
-app.include_router(leaves.router)
-app.include_router(shifts.router)
-app.include_router(payroll.router)
-app.include_router(attendance.router)
-app.include_router(notifications.router)
-app.include_router(notification_preferences.router)
+app.include_router(auth.router, prefix="/api")
+app.include_router(tasks.router, prefix="/api")
+app.include_router(companies.router, prefix="/api")
+app.include_router(employees.router, prefix="/api")
+app.include_router(leaves.router, prefix="/api")
+app.include_router(shifts.router, prefix="/api")
+app.include_router(payroll.router, prefix="/api")
+app.include_router(attendance.router, prefix="/api")
+app.include_router(notifications.router, prefix="/api")
+app.include_router(notification_preferences.router, prefix="/api")
 
 from .seed_demo_user import seed_demo_user
 from .deps import get_db
@@ -39,7 +39,7 @@ async def startup_event():
     db = next(get_db())
     seed_demo_user(db)
 
-app.include_router(dashboard.router)
+app.include_router(dashboard.router, prefix="/api")
 @app.get("/")
 def root():
     return {"message": f"Welcome to the Workforce App! Environment: {settings.APP_ENV}"}
