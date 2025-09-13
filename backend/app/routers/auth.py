@@ -19,7 +19,7 @@ class Notification(BaseModel):
     class Config:
         from_attributes = True
 
-router = APIRouter(tags=["Auth"])
+router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @router.post("/signup", response_model=UserOut, status_code=201)
 def signup(payload: UserCreate, db: Session = Depends(get_db)):

@@ -1,72 +1,92 @@
-import React, { useState, useContext } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { AuthContext } from '../context/AuthContext';
-import { Card, CardHeader, CardBody, Typography, Input, Button } from '@material-tailwind/react';
+import React, { useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 const Login = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const { login } = useContext(AuthContext);
   const navigate = useNavigate();
+  const { login } = useAuth(); // useAuth hook for authentication
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
 
-  const handleSubmit = async (e) => {
+  // Handle login form submission
+  const handleLogin = (e) => {
     e.preventDefault();
     try {
-      // Mock login for testing - replace with actual API call
-      // const response = await axios.post('/api/login', { email, password });
-      // login(response.data.user);
-
-      // For now, mock user data
-      const mockUser = { id: 1, name: 'John Doe', email, avatar: 'https://via.placeholder.com/40' };
-      login(mockUser);
-      navigate('/dashboard');
-    } catch (error) {
-      alert('Login failed');
+      login(email, password);
+      navigate("/dashboard"); // Redirect to dashboard on successful login
+    } catch (err) {
+      setError("Invalid credentials");
     }
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 py-12 px-4 sm:px-6 lg:px-8">
-      <Card className="w-full max-w-md">
-        <CardHeader floated={false} className="h-28 m-0 grid place-items-center bg-blue-600">
-          <Typography variant="h4" color="white">
-            Sign In to Workforce App
-          </Typography>
-        </CardHeader>
-        <CardBody>
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div>
-              <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                Email
-              </Typography>
-              <Input
-                type="email"
-                size="lg"
-                placeholder="name@mail.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                required
-              />
-            </div>
-            <div>
-              <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                Password
-              </Typography>
-              <Input
-                type="password"
-                size="lg"
-                placeholder="********"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-              />
-            </div>
-            <Button type="submit" className="w-full" size="lg">
-              Sign In
-            </Button>
-          </form>
-        </CardBody>
-      </Card>
+    // Full screen container with gradient background, centers the card
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-r from-blue-50 to-gray-100 p-4">
+      {/* Login card using Tailwind classes */}
+      <div className="w-full max-w-md bg-white rounded-lg shadow-lg overflow-hidden">
+        {/* Card header with logo and app name */}
+        <div className="bg-blue-600 text-center py-6 flex flex-col items-center">
+          {/* Logo image - ensure logo192.png is in public folder */}
+          <img
+            src="/logo192.png"
+            alt="App Logo"
+            className="mb-2 w-20 h-20 object-contain"
+          />
+          {/* App name */}
+          <h1 className="text-2xl font-bold text-white">
+            Workforce App
+          </h1>
+        </div>
+
+        {/* Card body containing the login form inputs and button */}
+        <div className="p-6 flex flex-col gap-4">
+          {/* Display error message if login fails */}
+          {error && (
+            <p className="text-red-600 text-center text-sm">
+              {error}
+            </p>
+          )}
+
+          {/* Email input field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Email
+            </label>
+            <input
+              type="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoComplete="email"
+            />
+          </div>
+
+          {/* Password input field */}
+          <div>
+            <label className="block text-sm font-medium text-gray-700 mb-1">
+              Password
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              required
+              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              autoComplete="current-password"
+            />
+          </div>
+
+          {/* Login button */}
+          <button
+            onClick={handleLogin}
+            className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mt-4"
+          >
+            Login
+          </button>
+        </div>
+      </div>
     </div>
   );
 };
