@@ -1,71 +1,51 @@
-import React, { useContext } from 'react';
-import { useLocation } from 'react-router-dom';
-import { BellIcon, Bars3Icon } from '@heroicons/react/24/outline';
-import { Button, Avatar, Typography, Menu, MenuHandler, MenuList, MenuItem } from '@material-tailwind/react';
-import { AuthContext } from '../context/AuthContext';
+import React from 'react';
+import { BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
+import { useAuth } from '../context/AuthContext';
 
 const Navbar = ({ onMenuClick }) => {
-  const location = useLocation();
-  const { user, logout } = useContext(AuthContext);
+  const { user, logout } = useAuth();
 
-  // Get page title based on current path
-  const getPageTitle = () => {
-    const path = location.pathname;
-    if (path === '/' || path === '/dashboard') return 'Dashboard';
-    if (path === '/profile') return 'Profile';
-    if (path === '/directory') return 'Directory';
-    if (path === '/tasks') return 'Tasks';
-    if (path === '/leave') return 'Leave';
-    return 'Workforce App';
-  };
 
   return (
     <header className="bg-white shadow-sm border-b">
-      <div className="flex items-center justify-between px-4 py-4 md:px-6">
-        <div className="flex items-center">
-          {/* Mobile menu button */}
-          <Button
-            variant="text"
-            size="sm"
-            className="mr-4 md:hidden"
-            onClick={onMenuClick}
+      <div className="flex items-center justify-between px-6 py-4">
+        {/* Hamburger menu for mobile */}
+        <button
+          onClick={onMenuClick}
+          className="lg:hidden p-2 rounded-md text-gray-600 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+          aria-label="Toggle sidebar"
+        >
+          <svg
+            className="w-6 h-6"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth="2"
+            viewBox="0 0 24 24"
+            strokeLinecap="round"
+            strokeLinejoin="round"
           >
-            <Bars3Icon className="w-6 h-6" />
-          </Button>
-          <Typography variant="h4" color="blue-gray" className="font-semibold">
-            {getPageTitle()}
-          </Typography>
-        </div>
+            <line x1="3" y1="12" x2="21" y2="12" />
+            <line x1="3" y1="6" x2="21" y2="6" />
+            <line x1="3" y1="18" x2="21" y2="18" />
+          </svg>
+        </button>
+
+        <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
 
         <div className="flex items-center space-x-4">
-          {/* Notifications */}
-          <Button variant="text" size="sm" className="p-2">
-            <BellIcon className="w-6 h-6 text-gray-600" />
-          </Button>
-
-          {/* User menu */}
-          <Menu>
-            <MenuHandler>
-              <Button variant="text" className="flex items-center space-x-2 p-2">
-                <Avatar
-                  src={user?.avatar || 'https://via.placeholder.com/40'}
-                  alt={user?.name || 'User'}
-                  size="sm"
-                  className="w-8 h-8"
-                />
-                <Typography variant="small" className="font-medium text-gray-700 hidden sm:block">
-                  {user?.name || 'User'}
-                </Typography>
-              </Button>
-            </MenuHandler>
-            <MenuList>
-              <MenuItem onClick={logout}>
-                <Typography variant="small" color="red">
-                  Logout
-                </Typography>
-              </MenuItem>
-            </MenuList>
-          </Menu>
+          <button className="p-2 text-gray-400 hover:text-gray-600">
+            <BellIcon className="w-6 h-6" />
+          </button>
+          <div className="flex items-center space-x-2">
+            <UserCircleIcon className="w-8 h-8 text-gray-400" />
+            <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
+            <button
+              onClick={logout}
+              className="ml-4 px-3 py-1 text-sm text-red-600 border border-red-600 rounded hover:bg-red-600 hover:text-white transition"
+            >
+              Logout
+            </button>
+          </div>
         </div>
       </div>
     </header>

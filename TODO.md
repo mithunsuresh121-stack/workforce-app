@@ -1,31 +1,16 @@
-# TODO for Preparing Workforce App for GitHub
+# TODO: Fix AuthContext with useAuth and Rebuild
 
-## Repo Restructuring
-- [x] Create `mobile/` and move `frontend/` (Flutter mobile) there
-- [x] Create `frontend-web/` and move `frontend/web-app/` (React web) there
-- [x] Move loose test scripts (test_*.py) to `tests/`
-- [x] Move loose utility scripts (check_*.py, add_*.py, etc.) to `scripts/`
-- [x] Create `.github/workflows/` and move/update CI files from `ci-cd/`
+- [x] Overwrite AuthContext.jsx with fixed version including useAuth hook
+- [x] Update Login.jsx to use synchronous login without await
+- [x] Update ProtectedRoute.jsx to use useAuth hook and remove loading logic
+- [x] Clean node_modules and package-lock.json
+- [x] Reinstall dependencies with npm install --legacy-peer-deps
+- [x] Run npm dedupe
+- [x] Rebuild project with npm run build || npm start
 
-## Branching Strategy & Documentation
-- [ ] Create `CONTRIBUTING.md` with Git Flow branching and commit conventions
-- [ ] Update root `README.md` with project overview
-- [ ] Create `docs/SETUP.md` for local setup instructions
-- [ ] Create `docs/CI-CD.md` explaining pipelines, branch strategy, secrets
-- [ ] Create `docs/DEPLOYMENT.md` for staging/prod deployment guide
+# TODO: Fix React Fast Refresh Issue
 
-## GitHub Actions (CI/CD Pipelines)
-- [ ] Update `backend-tests.yml` with PostgreSQL service, migrations, coverage
-- [ ] Create `frontend-tests.yml` for React web app linting and tests
-- [ ] Create `mobile-tests.yml` for Flutter linting, tests, and build validation
-- [ ] Create `.github/dependabot.yml` for dependency updates
-
-## Code Quality & Security
-- [ ] Create `.pre-commit-config.yaml` with black, flake8, isort
-- [ ] Create `.eslintrc.json` and `.prettierrc` for frontend-web
-- [ ] Create `.github/CODEOWNERS` to require PR reviews
-- [ ] Create `.env.example` files for backend, frontend-web, and mobile
-
-## Verification
-- [ ] Verify final repo structure matches requirements
-- [ ] Verify all references and paths updated accordingly
+- [x] Install react-refresh and @pmmmwh/react-refresh-webpack-plugin as dev dependencies
+- [x] Update babel.config.js to conditionally include 'react-refresh/babel' plugin in development mode
+- [x] Clean node_modules and package-lock.json, then reinstall
+- [ ] Run npm start to verify Fast Refresh
