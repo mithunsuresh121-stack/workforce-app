@@ -21,19 +21,19 @@ const Dashboard = () => {
         setLoading(true);
 
         // Fetch KPIs
-        const kpisResponse = await axios.get('/dashboard/kpis');
+        const kpisResponse = await axios.get('/api/dashboard/kpis');
         setKpis(kpisResponse.data);
 
         // Fetch task status chart data
-        const taskStatusResponse = await axios.get('/dashboard/charts/task-status');
+        const taskStatusResponse = await axios.get('/api/dashboard/charts/task-status');
         setTaskStatusData(taskStatusResponse.data);
 
         // Fetch employee distribution chart data
-        const employeeDistResponse = await axios.get('/dashboard/charts/employee-distribution');
+        const employeeDistResponse = await axios.get('/api/dashboard/charts/employee-distribution');
         setEmployeeDistributionData(employeeDistResponse.data);
 
         // Fetch recent activities
-        const activitiesResponse = await axios.get('/dashboard/recent-activities?limit=5');
+        const activitiesResponse = await axios.get('/api/dashboard/recent-activities?limit=5');
         setRecentActivities(activitiesResponse.data);
 
       } catch (error) {
@@ -53,50 +53,58 @@ const Dashboard = () => {
           { name: 'Employee', value: 142 }
         ]);
         setRecentActivities([
-          { type: 'task', title: 'Complete project documentation', status: 'In Progress', timestamp: new Date() },
-          { type: 'leave', title: 'Annual Leave Request', status: 'Pending', timestamp: new Date() }
+          { type: 'task', title: 'Complete project documentation', description: 'Finish writing the API docs', status: 'completed', timestamp: new Date().toISOString() },
+          { type: 'leave', title: 'Annual leave request', description: 'John Doe requested 3 days leave', status: 'pending', timestamp: new Date().toISOString() },
+          { type: 'task', title: 'Review code changes', description: 'PR #123 needs review', status: 'in_progress', timestamp: new Date().toISOString() },
+          { type: 'leave', title: 'Sick leave approval', description: 'Jane Smith approved sick leave', status: 'approved', timestamp: new Date().toISOString() },
+          { type: 'task', title: 'Update database schema', description: 'Add new fields to employee table', status: 'pending', timestamp: new Date().toISOString() }
         ]);
       } finally {
         setLoading(false);
       }
     };
 
-    if (user) {
-      fetchDashboardData();
-    }
-  }, [user]);
+    fetchDashboardData();
+  }, []);
 
+  // Prepare chart data
   const taskStatusChartData = {
     labels: taskStatusData.map(item => item.name),
     datasets: [{
-      label: 'Tasks',
       data: taskStatusData.map(item => item.value),
-      backgroundColor: ['#fbbf24', '#3b82f6', '#10b981', '#ef4444'],
-    }],
+      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40'],
+      hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40']
+    }]
   };
 
   const employeeDistributionChartData = {
     labels: employeeDistributionData.map(item => item.name),
     datasets: [{
-      label: 'Employees',
       data: employeeDistributionData.map(item => item.value),
-      backgroundColor: ['#8b5cf6', '#06b6d4', '#f59e0b', '#10b981'],
-    }],
+      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+      hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+    }]
   };
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
+      <div className="flex items-center justify-center min-h-screen">
         <Spinner className="h-8 w-8" />
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <Typography variant="h3" color="blue-gray" className="mb-6">
-        Dashboard
-      </Typography>
+    <div className="space-y-6">
+      {/* Welcome Message */}
+      <div className="mb-6">
+        <Typography variant="h3" color="blue-gray" className="mb-2">
+          Welcome back, {user?.name || 'User'}!
+        </Typography>
+        <Typography variant="lead" color="gray">
+          Here's what's happening with your workforce today.
+        </Typography>
+      </div>
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">

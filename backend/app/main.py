@@ -20,7 +20,7 @@ app.add_middleware(
 )
 
 # Include routers
-app.include_router(auth.router, prefix="/auth")
+app.include_router(auth.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 app.include_router(companies.router, prefix="/api")
 app.include_router(employees.router, prefix="/api")
@@ -39,7 +39,7 @@ async def startup_event():
     db = next(get_db())
     seed_demo_user(db)
 
-app.include_router(dashboard.router)
+app.include_router(dashboard.router, prefix="/api")
 @app.get("/")
 def root():
     return {"message": f"Welcome to the Workforce App! Environment: {settings.APP_ENV}"}
