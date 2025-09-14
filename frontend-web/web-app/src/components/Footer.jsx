@@ -8,7 +8,7 @@ const Footer = () => {
         <Typography variant="small" color="gray" className="font-normal">
           © 2023 Workforce App. All rights reserved.
         </Typography>
-      </div>
+      </Card>
     </footer>
   );
 };

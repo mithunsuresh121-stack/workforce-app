@@ -1,3 +1,4 @@
+import { Button, Input, Card } from "@material-tailwind/react";
 import React from 'react';
 import { BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../context/AuthContext';
@@ -28,14 +29,14 @@ const Navbar = ({ onMenuClick }) => {
             <line x1="3" y1="6" x2="21" y2="6" />
             <line x1="3" y1="18" x2="21" y2="18" />
           </svg>
-        </button>
+        </Button>
 
         <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
 
         <div className="flex items-center space-x-4">
-          <button className="p-2 text-gray-400 hover:text-gray-600">
+          <Button className="p-2 text-gray-400 hover:text-gray-600">
             <BellIcon className="w-6 h-6" />
-          </button>
+          </Button>
           <div className="flex items-center space-x-2">
             <UserCircleIcon className="w-8 h-8 text-gray-400" />
             <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
@@ -44,10 +45,10 @@ const Navbar = ({ onMenuClick }) => {
               className="ml-4 px-3 py-1 text-sm text-red-600 border border-red-600 rounded hover:bg-red-600 hover:text-white transition"
             >
               Logout
-            </button>
-          </div>
-        </div>
-      </div>
+            </Button>
+          </Card>
+        </Card>
+      </Card>
     </header>
   );
 };

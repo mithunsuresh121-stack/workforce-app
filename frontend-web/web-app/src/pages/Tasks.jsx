@@ -1,3 +1,4 @@
+import PageLayout from "../layouts/PageLayout";
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import {
@@ -92,7 +93,9 @@ const Tasks = () => {
         ]);
       } finally {
         setLoading(false);
-      }
+          </PageLayout>
+  );
+}
     };
 
     fetchTasks();
@@ -115,7 +118,9 @@ const Tasks = () => {
       case 'Pending': return 'orange';
       case 'Overdue': return 'red';
       default: return 'gray';
-    }
+        </PageLayout>
+  );
+}
   };
 
   const getPriorityColor = (priority) => {
@@ -124,7 +129,9 @@ const Tasks = () => {
       case 'Medium': return 'yellow';
       case 'Low': return 'green';
       default: return 'gray';
-    }
+        </PageLayout>
+  );
+}
   };
 
   const handleCreateTask = () => {
@@ -170,12 +177,16 @@ const Tasks = () => {
         // Create new task
         const response = await axios.post('/api/tasks', formData);
         setTasks([...tasks, response.data]);
-      }
+          </PageLayout>
+  );
+}
       setDialogOpen(false);
     } catch (error) {
       console.error('Error saving task:', error);
       setError('Failed to save task. Please try again.');
-    }
+        </PageLayout>
+  );
+}
   };
 
   const TaskCard = ({ task }) => (
@@ -183,51 +194,71 @@ const Tasks = () => {
       <CardBody>
         <div className="flex justify-between items-start mb-3">
           <Typography variant="h6" color="blue-gray" className="flex-1 mr-2">
-            {task.title}
+            {task.title    </PageLayout>
+  );
+}
           </Typography>
           <Chip
-            color={getPriorityColor(task.priority)}
-            value={task.priority}
+            color={getPriorityColor(task.priority)    </PageLayout>
+  );
+}
+            value={task.priority    </PageLayout>
+  );
+}
             size="sm"
             variant="outlined"
           />
-        </div>
+        </Card>
 
         <Typography variant="small" color="gray" className="mb-3 line-clamp-2">
-          {task.description}
+          {task.description    </PageLayout>
+  );
+}
         </Typography>
 
         <div className="flex justify-between items-center mb-3">
           <Chip
-            color={getStatusColor(task.status)}
-            value={task.status}
+            color={getStatusColor(task.status)    </PageLayout>
+  );
+}
+            value={task.status    </PageLayout>
+  );
+}
             size="sm"
           />
           <Typography variant="small" color="gray">
-            Due: {new Date(task.dueDate).toLocaleDateString()}
+            Due: {new Date(task.dueDate).toLocaleDateString()    </PageLayout>
+  );
+}
           </Typography>
-        </div>
+        </Card>
 
         <Typography variant="small" color="gray" className="mb-4">
-          Assigned to: {task.assignee}
+          Assigned to: {task.assignee    </PageLayout>
+  );
+}
         </Typography>
 
         <div className="flex gap-2">
           <IconButton
             size="sm"
             variant="outlined"
-            onClick={() => handleViewTask(task)}
+            onClick={() => handleViewTask(task)    </PageLayout>
+  );
+}
           >
             <EyeIcon className="h-4 w-4" />
           </IconButton>
           <IconButton
             size="sm"
             variant="outlined"
-            onClick={() => handleEditTask(task)}
+            onClick={() => handleEditTask(task)    </PageLayout>
+  );
+}
           >
             <PencilIcon className="h-4 w-4" />
           </IconButton>
-        </div>
+        </Card>
       </CardBody>
     </Card>
   );
@@ -236,9 +267,11 @@ const Tasks = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <Spinner className="h-8 w-8" />
-      </div>
+      </Card>
     );
-  }
+      </PageLayout>
+  );
+}
 
   return (
     <div className="p-4">
@@ -247,21 +280,29 @@ const Tasks = () => {
           Tasks
         </Typography>
         <Button
-          onClick={handleCreateTask}
+          onClick={handleCreateTask    </PageLayout>
+  );
+}
           className="flex items-center gap-2"
         >
           <PlusIcon className="h-4 w-4" />
           New Task
         </Button>
-      </div>
+      </Card>
 
       {error && (
         <Alert color="red" className="mb-6">
-          {error}
+          {error    </PageLayout>
+  );
+}
         </Alert>
-      )}
+      )    </PageLayout>
+  );
+}
 
-      {/* Filters and View Controls */}
+      {/* Filters and View Controls */    </PageLayout>
+  );
+}
       <Card className="mb-6">
         <CardBody>
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -269,15 +310,25 @@ const Tasks = () => {
               <Input
                 type="text"
                 label="Search tasks..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                icon={<MagnifyingGlassIcon className="h-5 w-5" />}
+                value={searchTerm    </PageLayout>
+  );
+}
+                onChange={(e) => setSearchTerm(e.target.value)    </PageLayout>
+  );
+}
+                icon={<MagnifyingGlassIcon className="h-5 w-5" />    </PageLayout>
+  );
+}
               />
-            </div>
+            </Card>
             <div>
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                value={statusFilter    </PageLayout>
+  );
+}
+                onChange={(e) => setStatusFilter(e.target.value)    </PageLayout>
+  );
+}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Statuses</option>
@@ -286,49 +337,65 @@ const Tasks = () => {
                 <option value="Completed">Completed</option>
                 <option value="Overdue">Overdue</option>
               </select>
-            </div>
+            </Card>
             <div className="flex gap-2">
               <IconButton
-                variant={viewMode === 'grid' ? 'filled' : 'outlined'}
-                onClick={() => setViewMode('grid')}
+                variant={viewMode === 'grid' ? 'filled' : 'outlined'    </PageLayout>
+  );
+}
+                onClick={() => setViewMode('grid')    </PageLayout>
+  );
+}
               >
                 <Squares2X2Icon className="h-4 w-4" />
               </IconButton>
               <IconButton
-                variant={viewMode === 'list' ? 'filled' : 'outlined'}
-                onClick={() => setViewMode('list')}
+                variant={viewMode === 'list' ? 'filled' : 'outlined'    </PageLayout>
+  );
+}
+                onClick={() => setViewMode('list')    </PageLayout>
+  );
+}
               >
                 <ListBulletIcon className="h-4 w-4" />
               </IconButton>
-            </div>
+            </Card>
             <div className="flex items-end">
               <Button
                 variant="outlined"
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('');
-                }}
+                }    </PageLayout>
+  );
+}
                 className="w-full"
               >
                 Clear Filters
               </Button>
-            </div>
-          </div>
+            </Card>
+          </Card>
         </CardBody>
       </Card>
 
-      {/* Results Summary */}
+      {/* Results Summary */    </PageLayout>
+  );
+}
       <Typography variant="small" color="gray" className="mb-4">
         Showing {filteredTasks.length} of {tasks.length} tasks
       </Typography>
 
-      {/* Tasks Display */}
+      {/* Tasks Display */    </PageLayout>
+  );
+}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredTasks.map((task) => (
             <TaskCard key={task.id} task={task} />
-          ))}
-        </div>
+          ))    </PageLayout>
+  );
+}
+        </Card>
       ) : (
         <Card>
           <CardBody className="p-0">
@@ -368,24 +435,34 @@ const Tasks = () => {
                     <tr key={task.id}>
                       <td className="p-4 border-b border-blue-gray-50">
                         <Typography variant="small" color="blue-gray" className="font-normal">
-                          {task.title}
+                          {task.title    </PageLayout>
+  );
+}
                         </Typography>
                       </td>
                       <td className="p-4 border-b border-blue-gray-50">
                         <Chip
-                          color={getStatusColor(task.status)}
-                          value={task.status}
+                          color={getStatusColor(task.status)    </PageLayout>
+  );
+}
+                          value={task.status    </PageLayout>
+  );
+}
                           size="sm"
                         />
                       </td>
                       <td className="p-4 border-b border-blue-gray-50">
                         <Typography variant="small" color="blue-gray" className="font-normal">
-                          {task.assignee}
+                          {task.assignee    </PageLayout>
+  );
+}
                         </Typography>
                       </td>
                       <td className="p-4 border-b border-blue-gray-50">
                         <Typography variant="small" color="blue-gray" className="font-normal">
-                          {new Date(task.dueDate).toLocaleDateString()}
+                          {new Date(task.dueDate).toLocaleDateString()    </PageLayout>
+  );
+}
                         </Typography>
                       </td>
                       <td className="p-4 border-b border-blue-gray-50">
@@ -393,27 +470,35 @@ const Tasks = () => {
                           <IconButton
                             size="sm"
                             variant="text"
-                            onClick={() => handleViewTask(task)}
+                            onClick={() => handleViewTask(task)    </PageLayout>
+  );
+}
                           >
                             <EyeIcon className="h-4 w-4" />
                           </IconButton>
                           <IconButton
                             size="sm"
                             variant="text"
-                            onClick={() => handleEditTask(task)}
+                            onClick={() => handleEditTask(task)    </PageLayout>
+  );
+}
                           >
                             <PencilIcon className="h-4 w-4" />
                           </IconButton>
-                        </div>
+                        </Card>
                       </td>
                     </tr>
-                  ))}
+                  ))    </PageLayout>
+  );
+}
                 </tbody>
               </table>
-            </div>
+            </Card>
           </CardBody>
         </Card>
-      )}
+      )    </PageLayout>
+  );
+}
 
       {filteredTasks.length === 0 && (
         <Card>
@@ -423,12 +508,18 @@ const Tasks = () => {
             </Typography>
           </CardBody>
         </Card>
-      )}
+      )    </PageLayout>
+  );
+}
 
-      {/* Task Dialog */}
+      {/* Task Dialog */    </PageLayout>
+  );
+}
       <Dialog open={dialogOpen} handler={setDialogOpen} size="lg">
         <DialogHeader>
-          {isEditing ? 'Edit Task' : selectedTask ? 'Task Details' : 'Create New Task'}
+          {isEditing ? 'Edit Task' : selectedTask ? 'Task Details' : 'Create New Task'    </PageLayout>
+  );
+}
         </DialogHeader>
         <DialogBody divider className="space-y-4">
           {selectedTask && !isEditing ? (
@@ -439,76 +530,104 @@ const Tasks = () => {
                   Title
                 </Typography>
                 <Typography variant="h6" color="blue-gray">
-                  {selectedTask.title}
+                  {selectedTask.title    </PageLayout>
+  );
+}
                 </Typography>
-              </div>
+              </Card>
               <div>
                 <Typography variant="small" color="blue-gray" className="font-medium">
                   Description
                 </Typography>
                 <Typography variant="small" color="gray">
-                  {selectedTask.description}
+                  {selectedTask.description    </PageLayout>
+  );
+}
                 </Typography>
-              </div>
+              </Card>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <Typography variant="small" color="blue-gray" className="font-medium">
                     Status
                   </Typography>
                   <Chip
-                    color={getStatusColor(selectedTask.status)}
-                    value={selectedTask.status}
+                    color={getStatusColor(selectedTask.status)    </PageLayout>
+  );
+}
+                    value={selectedTask.status    </PageLayout>
+  );
+}
                     size="sm"
                   />
-                </div>
+                </Card>
                 <div>
                   <Typography variant="small" color="blue-gray" className="font-medium">
                     Priority
                   </Typography>
                   <Chip
-                    color={getPriorityColor(selectedTask.priority)}
-                    value={selectedTask.priority}
+                    color={getPriorityColor(selectedTask.priority)    </PageLayout>
+  );
+}
+                    value={selectedTask.priority    </PageLayout>
+  );
+}
                     size="sm"
                     variant="outlined"
                   />
-                </div>
+                </Card>
                 <div>
                   <Typography variant="small" color="blue-gray" className="font-medium">
                     Assignee
                   </Typography>
                   <Typography variant="small" color="gray">
-                    {selectedTask.assignee}
+                    {selectedTask.assignee    </PageLayout>
+  );
+}
                   </Typography>
-                </div>
+                </Card>
                 <div>
                   <Typography variant="small" color="blue-gray" className="font-medium">
                     Due Date
                   </Typography>
                   <Typography variant="small" color="gray">
-                    {new Date(selectedTask.dueDate).toLocaleDateString()}
+                    {new Date(selectedTask.dueDate).toLocaleDateString()    </PageLayout>
+  );
+}
                   </Typography>
-                </div>
-              </div>
-            </div>
+                </Card>
+              </Card>
+            </Card>
           ) : (
             // Edit/Create mode
             <div className="space-y-4">
               <Input
                 label="Title"
-                value={formData.title}
-                onChange={(e) => setFormData({...formData, title: e.target.value})}
+                value={formData.title    </PageLayout>
+  );
+}
+                onChange={(e) => setFormData({...formData, title: e.target.value})    </PageLayout>
+  );
+}
                 required
               />
               <Textarea
                 label="Description"
-                value={formData.description}
-                onChange={(e) => setFormData({...formData, description: e.target.value})}
+                value={formData.description    </PageLayout>
+  );
+}
+                onChange={(e) => setFormData({...formData, description: e.target.value})    </PageLayout>
+  );
+}
               />
               <div className="grid grid-cols-2 gap-4">
                 <Select
                   label="Status"
-                  value={formData.status}
-                  onChange={(value) => setFormData({...formData, status: value})}
+                  value={formData.status    </PageLayout>
+  );
+}
+                  onChange={(value) => setFormData({...formData, status: value})    </PageLayout>
+  );
+}
                 >
                   <Option value="Pending">Pending</Option>
                   <Option value="In Progress">In Progress</Option>
@@ -517,47 +636,69 @@ const Tasks = () => {
                 </Select>
                 <Select
                   label="Priority"
-                  value={formData.priority}
-                  onChange={(value) => setFormData({...formData, priority: value})}
+                  value={formData.priority    </PageLayout>
+  );
+}
+                  onChange={(value) => setFormData({...formData, priority: value})    </PageLayout>
+  );
+}
                 >
                   <Option value="Low">Low</Option>
                   <Option value="Medium">Medium</Option>
                   <Option value="High">High</Option>
                 </Select>
-              </div>
+              </Card>
               <div className="grid grid-cols-2 gap-4">
                 <Input
                   label="Assignee"
-                  value={formData.assignee}
-                  onChange={(e) => setFormData({...formData, assignee: e.target.value})}
+                  value={formData.assignee    </PageLayout>
+  );
+}
+                  onChange={(e) => setFormData({...formData, assignee: e.target.value})    </PageLayout>
+  );
+}
                 />
                 <Input
                   type="date"
                   label="Due Date"
-                  value={formData.dueDate}
-                  onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                  value={formData.dueDate    </PageLayout>
+  );
+}
+                  onChange={(e) => setFormData({...formData, dueDate: e.target.value})    </PageLayout>
+  );
+}
                 />
-              </div>
-            </div>
-          )}
+              </Card>
+            </Card>
+          )    </PageLayout>
+  );
+}
         </DialogBody>
         <DialogFooter>
           <Button variant="text" color="red" onClick={() => setDialogOpen(false)}>
-            {selectedTask && !isEditing ? 'Close' : 'Cancel'}
+            {selectedTask && !isEditing ? 'Close' : 'Cancel'    </PageLayout>
+  );
+}
           </Button>
           {(!selectedTask || isEditing) && (
             <Button variant="gradient" color="green" onClick={handleSaveTask}>
-              {isEditing ? 'Update Task' : 'Create Task'}
+              {isEditing ? 'Update Task' : 'Create Task'    </PageLayout>
+  );
+}
             </Button>
-          )}
+          )    </PageLayout>
+  );
+}
           {selectedTask && !isEditing && (
             <Button variant="gradient" color="blue" onClick={() => { setIsEditing(true); }}>
               Edit Task
             </Button>
-          )}
+          )    </PageLayout>
+  );
+}
         </DialogFooter>
       </Dialog>
-    </div>
+    </Card>
   );
 };
 

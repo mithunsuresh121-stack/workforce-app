@@ -24,9 +24,9 @@ const Sidebar = ({ onClose }) => {
             className="p-1 rounded-md text-gray-400 hover:text-gray-600 hover:bg-gray-100 lg:hidden"
           >
             <XMarkIcon className="w-6 h-6" />
-          </button>
+          </Button>
         )}
-      </div>
+      </Card>
 
       {/* Navigation menu */}
       <nav className="flex-1 mt-4">
@@ -52,8 +52,8 @@ const Sidebar = ({ onClose }) => {
         <p className="text-xs text-gray-500 text-center">
           © 2023 Workforce App
         </p>
-      </div>
-    </div>
+      </Card>
+    </Card>
   );
 };
 

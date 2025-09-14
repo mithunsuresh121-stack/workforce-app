@@ -1,3 +1,4 @@
+import PageLayout from "../layouts/PageLayout";
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
 import {
@@ -63,7 +64,9 @@ const Directory = () => {
         ]);
       } finally {
         setLoading(false);
-      }
+          </PageLayout>
+  );
+}
     };
 
     fetchUsers();
@@ -88,7 +91,9 @@ const Directory = () => {
       case 'Manager': return 'green';
       case 'Employee': return 'gray';
       default: return 'gray';
-    }
+        </PageLayout>
+  );
+}
   };
 
   const getStatusColor = (status) => {
@@ -99,9 +104,11 @@ const Directory = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <Spinner className="h-8 w-8" />
-      </div>
+      </Card>
     );
-  }
+      </PageLayout>
+  );
+}
 
   return (
     <div className="p-4">
@@ -111,11 +118,17 @@ const Directory = () => {
 
       {error && (
         <Alert color="red" className="mb-6">
-          {error}
+          {error    </PageLayout>
+  );
+}
         </Alert>
-      )}
+      )    </PageLayout>
+  );
+}
 
-      {/* Filters */}
+      {/* Filters */    </PageLayout>
+  );
+}
       <Card className="mb-6">
         <CardBody>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -123,83 +136,123 @@ const Directory = () => {
               <Input
                 type="text"
                 label="Search employees..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                icon={<MagnifyingGlassIcon className="h-5 w-5" />}
+                value={searchTerm    </PageLayout>
+  );
+}
+                onChange={(e) => setSearchTerm(e.target.value)    </PageLayout>
+  );
+}
+                icon={<MagnifyingGlassIcon className="h-5 w-5" />    </PageLayout>
+  );
+}
               />
-            </div>
+            </Card>
             <div>
               <select
-                value={roleFilter}
-                onChange={(e) => setRoleFilter(e.target.value)}
+                value={roleFilter    </PageLayout>
+  );
+}
+                onChange={(e) => setRoleFilter(e.target.value)    </PageLayout>
+  );
+}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Roles</option>
                 {uniqueRoles.map(role => (
                   <option key={role} value={role}>{role}</option>
-                ))}
+                ))    </PageLayout>
+  );
+}
               </select>
-            </div>
+            </Card>
             <div className="flex items-end">
               <Button
                 variant="outlined"
                 onClick={() => {
                   setSearchTerm('');
                   setRoleFilter('');
-                }}
+                }    </PageLayout>
+  );
+}
                 className="w-full"
               >
                 Clear Filters
               </Button>
-            </div>
-          </div>
+            </Card>
+          </Card>
         </CardBody>
       </Card>
 
-      {/* Results Summary */}
+      {/* Results Summary */    </PageLayout>
+  );
+}
       <Typography variant="small" color="gray" className="mb-4">
         Showing {filteredUsers.length} of {users.length} employees
       </Typography>
 
-      {/* Employee Cards Grid */}
+      {/* Employee Cards Grid */    </PageLayout>
+  );
+}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {filteredUsers.map((user) => (
           <Card key={user.id} className="hover:shadow-lg transition-shadow">
             <CardBody className="text-center">
               <Avatar
-                src={user.avatar}
-                alt={user.name}
+                src={user.avatar    </PageLayout>
+  );
+}
+                alt={user.name    </PageLayout>
+  );
+}
                 size="xl"
                 className="mx-auto mb-4"
               />
               <Typography variant="h6" color="blue-gray" className="mb-2">
-                {user.name}
+                {user.name    </PageLayout>
+  );
+}
               </Typography>
               <Typography variant="small" color="gray" className="mb-2">
-                {user.email}
+                {user.email    </PageLayout>
+  );
+}
               </Typography>
               <div className="flex justify-center gap-2 mb-3">
                 <Chip
-                  color={getRoleColor(user.role)}
-                  value={user.role}
+                  color={getRoleColor(user.role)    </PageLayout>
+  );
+}
+                  value={user.role    </PageLayout>
+  );
+}
                   size="sm"
                 />
                 <Chip
-                  color={getStatusColor(user.status)}
-                  value={user.status}
+                  color={getStatusColor(user.status)    </PageLayout>
+  );
+}
+                  value={user.status    </PageLayout>
+  );
+}
                   size="sm"
                   variant="outlined"
                 />
-              </div>
+              </Card>
               {user.department && (
                 <Typography variant="small" color="gray">
-                  Department: {user.department}
+                  Department: {user.department    </PageLayout>
+  );
+}
                 </Typography>
-              )}
+              )    </PageLayout>
+  );
+}
             </CardBody>
           </Card>
-        ))}
-      </div>
+        ))    </PageLayout>
+  );
+}
+      </Card>
 
       {filteredUsers.length === 0 && (
         <Card>
@@ -209,8 +262,10 @@ const Directory = () => {
             </Typography>
           </CardBody>
         </Card>
-      )}
-    </div>
+      )    </PageLayout>
+  );
+}
+    </Card>
   );
 };
 

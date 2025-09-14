@@ -1,3 +1,4 @@
+import PageLayout from "../layouts/PageLayout";
 import React, { useState, useEffect, useMemo } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
@@ -100,7 +101,9 @@ const Leave = () => {
         });
       } finally {
         setLoading(false);
-      }
+          </PageLayout>
+  );
+}
     };
 
     fetchLeaveData();
@@ -135,7 +138,9 @@ const Leave = () => {
       setError('Failed to submit leave request. Please try again.');
     } finally {
       setSubmitting(false);
-    }
+        </PageLayout>
+  );
+}
   };
 
   const getStatusColor = (status) => {
@@ -144,7 +149,9 @@ const Leave = () => {
       case 'Pending': return 'orange';
       case 'Rejected': return 'red';
       default: return 'gray';
-    }
+        </PageLayout>
+  );
+}
   };
 
   const getStatusIcon = (status) => {
@@ -153,7 +160,9 @@ const Leave = () => {
       case 'Pending': return <ClockIcon className="h-4 w-4" />;
       case 'Rejected': return <XCircleIcon className="h-4 w-4" />;
       default: return <ExclamationTriangleIcon className="h-4 w-4" />;
-    }
+        </PageLayout>
+  );
+}
   };
 
   const calculateDays = (startDate, endDate) => {
@@ -168,9 +177,11 @@ const Leave = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <Spinner className="h-8 w-8" />
-      </div>
+      </Card>
     );
-  }
+      </PageLayout>
+  );
+}
 
   return (
     <div className="p-4">
@@ -179,27 +190,37 @@ const Leave = () => {
           Leave Management
         </Typography>
         <Button
-          onClick={() => setDialogOpen(true)}
+          onClick={() => setDialogOpen(true)    </PageLayout>
+  );
+}
           className="flex items-center gap-2"
         >
           <PlusIcon className="h-4 w-4" />
           Request Leave
         </Button>
-      </div>
+      </Card>
 
       {error && (
         <Alert color="red" className="mb-6">
-          {error}
+          {error    </PageLayout>
+  );
+}
         </Alert>
-      )}
+      )    </PageLayout>
+  );
+}
 
-      {/* Leave Balances */}
+      {/* Leave Balances */    </PageLayout>
+  );
+}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
         {Object.entries(leaveBalances).map(([type, balance]) => (
           <Card key={type}>
             <CardBody>
               <Typography variant="h6" color="blue-gray" className="mb-2">
-                {type}
+                {type    </PageLayout>
+  );
+}
               </Typography>
               <div className="flex justify-between items-center mb-2">
                 <Typography variant="small" color="gray">
@@ -208,10 +229,14 @@ const Leave = () => {
                 <Typography variant="small" color="gray">
                   Total: {balance.total} days
                 </Typography>
-              </div>
+              </Card>
               <Progress
-                value={(balance.used / balance.total) * 100}
-                color={balance.used / balance.total > 0.8 ? 'red' : 'blue'}
+                value={(balance.used / balance.total) * 100    </PageLayout>
+  );
+}
+                color={balance.used / balance.total > 0.8 ? 'red' : 'blue'    </PageLayout>
+  );
+}
                 className="h-2"
               />
               <Typography variant="small" color="gray" className="mt-1">
@@ -219,17 +244,25 @@ const Leave = () => {
               </Typography>
             </CardBody>
           </Card>
-        ))}
-      </div>
+        ))    </PageLayout>
+  );
+}
+      </Card>
 
-      {/* Filters */}
+      {/* Filters */    </PageLayout>
+  );
+}
       <Card className="mb-6">
         <CardBody>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
+                value={statusFilter    </PageLayout>
+  );
+}
+                onChange={(e) => setStatusFilter(e.target.value)    </PageLayout>
+  );
+}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Statuses</option>
@@ -237,11 +270,15 @@ const Leave = () => {
                 <option value="Approved">Approved</option>
                 <option value="Rejected">Rejected</option>
               </select>
-            </div>
+            </Card>
             <div>
               <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
+                value={typeFilter    </PageLayout>
+  );
+}
+                onChange={(e) => setTypeFilter(e.target.value)    </PageLayout>
+  );
+}
                 className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 <option value="">All Types</option>
@@ -249,24 +286,28 @@ const Leave = () => {
                 <option value="Sick Leave">Sick Leave</option>
                 <option value="Personal Leave">Personal Leave</option>
               </select>
-            </div>
+            </Card>
             <div className="flex items-end">
               <Button
                 variant="outlined"
                 onClick={() => {
                   setStatusFilter('');
                   setTypeFilter('');
-                }}
+                }    </PageLayout>
+  );
+}
                 className="w-full"
               >
                 Clear Filters
               </Button>
-            </div>
-          </div>
+            </Card>
+          </Card>
         </CardBody>
       </Card>
 
-      {/* Leave History */}
+      {/* Leave History */    </PageLayout>
+  );
+}
       <Card>
         <CardHeader floated={false} shadow={false} color="transparent">
           <Typography variant="h5" color="blue-gray">
@@ -310,52 +351,72 @@ const Leave = () => {
                   <tr key={leave.id}>
                     <td className="p-4 border-b border-blue-gray-50">
                       <Typography variant="small" color="blue-gray" className="font-normal">
-                        {leave.type}
+                        {leave.type    </PageLayout>
+  );
+}
                       </Typography>
                     </td>
                     <td className="p-4 border-b border-blue-gray-50">
                       <div className="flex items-center gap-2">
                         <CalendarDaysIcon className="h-4 w-4 text-gray-400" />
                         <Typography variant="small" color="blue-gray" className="font-normal">
-                          {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                          {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()    </PageLayout>
+  );
+}
                         </Typography>
-                      </div>
+                      </Card>
                     </td>
                     <td className="p-4 border-b border-blue-gray-50">
                       <Typography variant="small" color="blue-gray" className="font-normal">
-                        {leave.days || calculateDays(leave.startDate, leave.endDate)}
+                        {leave.days || calculateDays(leave.startDate, leave.endDate)    </PageLayout>
+  );
+}
                       </Typography>
                     </td>
                     <td className="p-4 border-b border-blue-gray-50">
                       <Chip
-                        icon={getStatusIcon(leave.status)}
-                        color={getStatusColor(leave.status)}
-                        value={leave.status}
+                        icon={getStatusIcon(leave.status)    </PageLayout>
+  );
+}
+                        color={getStatusColor(leave.status)    </PageLayout>
+  );
+}
+                        value={leave.status    </PageLayout>
+  );
+}
                         size="sm"
                       />
                     </td>
                     <td className="p-4 border-b border-blue-gray-50">
                       <Typography variant="small" color="blue-gray" className="font-normal">
-                        {leave.reason}
+                        {leave.reason    </PageLayout>
+  );
+}
                       </Typography>
                     </td>
                   </tr>
-                ))}
+                ))    </PageLayout>
+  );
+}
               </tbody>
             </table>
-          </div>
+          </Card>
 
           {filteredLeaves.length === 0 && (
             <div className="text-center py-12">
               <Typography variant="h6" color="gray">
                 No leave requests found matching your criteria.
               </Typography>
-            </div>
-          )}
+            </Card>
+          )    </PageLayout>
+  );
+}
         </CardBody>
       </Card>
 
-      {/* Leave Request Dialog */}
+      {/* Leave Request Dialog */    </PageLayout>
+  );
+}
       <Dialog open={dialogOpen} handler={setDialogOpen} size="lg">
         <DialogHeader>Request Leave</DialogHeader>
         <DialogBody divider>
@@ -365,17 +426,29 @@ const Leave = () => {
               startDate: '',
               endDate: '',
               reason: ''
-            }}
-            validationSchema={validationSchema}
-            onSubmit={handleSubmit}
+            }    </PageLayout>
+  );
+}
+            validationSchema={validationSchema    </PageLayout>
+  );
+}
+            onSubmit={handleSubmit    </PageLayout>
+  );
+}
           >
             {({ values, errors, touched, setFieldValue }) => (
               <Form className="space-y-6">
                 <Select
                   label="Leave Type"
-                  value={values.type}
-                  onChange={(value) => setFieldValue('type', value)}
-                  error={touched.type && errors.type}
+                  value={values.type    </PageLayout>
+  );
+}
+                  onChange={(value) => setFieldValue('type', value)    </PageLayout>
+  );
+}
+                  error={touched.type && errors.type    </PageLayout>
+  );
+}
                 >
                   <Option value="Annual Leave">Annual Leave</Option>
                   <Option value="Sick Leave">Sick Leave</Option>
@@ -386,33 +459,57 @@ const Leave = () => {
                   <Input
                     type="date"
                     label="Start Date"
-                    value={values.startDate}
-                    onChange={(e) => setFieldValue('startDate', e.target.value)}
-                    error={touched.startDate && errors.startDate}
+                    value={values.startDate    </PageLayout>
+  );
+}
+                    onChange={(e) => setFieldValue('startDate', e.target.value)    </PageLayout>
+  );
+}
+                    error={touched.startDate && errors.startDate    </PageLayout>
+  );
+}
                   />
                   <Input
                     type="date"
                     label="End Date"
-                    value={values.endDate}
-                    onChange={(e) => setFieldValue('endDate', e.target.value)}
-                    error={touched.endDate && errors.endDate}
+                    value={values.endDate    </PageLayout>
+  );
+}
+                    onChange={(e) => setFieldValue('endDate', e.target.value)    </PageLayout>
+  );
+}
+                    error={touched.endDate && errors.endDate    </PageLayout>
+  );
+}
                   />
-                </div>
+                </Card>
 
                 <Textarea
                   label="Reason"
-                  value={values.reason}
-                  onChange={(e) => setFieldValue('reason', e.target.value)}
-                  error={touched.reason && errors.reason}
+                  value={values.reason    </PageLayout>
+  );
+}
+                  onChange={(e) => setFieldValue('reason', e.target.value)    </PageLayout>
+  );
+}
+                  error={touched.reason && errors.reason    </PageLayout>
+  );
+}
                 />
 
                 {values.startDate && values.endDate && (
                   <Alert color="blue">
-                    Total days: {calculateDays(values.startDate, values.endDate)}
+                    Total days: {calculateDays(values.startDate, values.endDate)    </PageLayout>
+  );
+}
                   </Alert>
-                )}
+                )    </PageLayout>
+  );
+}
               </Form>
-            )}
+            )    </PageLayout>
+  );
+}
           </Formik>
         </DialogBody>
         <DialogFooter>
@@ -425,15 +522,23 @@ const Leave = () => {
             onClick={() => {
               const form = document.querySelector('form');
               if (form) form.requestSubmit();
-            }}
-            loading={submitting}
-            disabled={submitting}
+            }    </PageLayout>
+  );
+}
+            loading={submitting    </PageLayout>
+  );
+}
+            disabled={submitting    </PageLayout>
+  );
+}
           >
-            {submitting ? 'Submitting...' : 'Submit Request'}
+            {submitting ? 'Submitting...' : 'Submit Request'    </PageLayout>
+  );
+}
           </Button>
         </DialogFooter>
       </Dialog>
-    </div>
+    </Card>
   );
 };
 
