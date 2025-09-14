@@ -1,12 +1,12 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { Card, CardBody, CardHeader, Typography, Input, Button, Alert, Avatar, Spinner } from '@material-tailwind/react';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 const Profile = () => {
-  const { user: authUser, login } = useContext(AuthContext);
+  const { user: authUser, login } = useAuth();
   const [user, setUser] = useState({ name: '', email: '', role: '', avatar: '' });
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState(false);
