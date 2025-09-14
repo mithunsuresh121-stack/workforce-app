@@ -1,14 +1,14 @@
-import React, { useState, useEffect, useContext } from 'react';
+import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Bar, Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { Card, CardBody, Typography, CardHeader, Spinner } from '@material-tailwind/react';
-import { AuthContext } from '../context/AuthContext';
+import { useAuth } from '../context/AuthContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 const Dashboard = () => {
-  const { user } = useContext(AuthContext);
+  const { user } = useAuth();
   const [kpis, setKpis] = useState({ total_employees: 0, active_tasks: 0, pending_leaves: 0, shifts_today: 0 });
   const [taskStatusData, setTaskStatusData] = useState([]);
   const [employeeDistributionData, setEmployeeDistributionData] = useState([]);
