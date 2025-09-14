@@ -1,3 +1,4 @@
+import PageLayout from "../layouts/PageLayout";
 import React, { useState, useEffect } from 'react';
 import { Formik, Form, Field } from 'formik';
 import * as Yup from 'yup';
@@ -30,12 +31,16 @@ const Profile = () => {
         });
       } finally {
         setLoading(false);
-      }
+          </PageLayout>
+  );
+}
     };
 
     if (authUser) {
       fetchUserProfile();
-    }
+        </PageLayout>
+  );
+}
   }, [authUser]);
 
   const validationSchema = Yup.object({
@@ -61,16 +66,20 @@ const Profile = () => {
       setAlert({ show: true, message: 'Failed to update profile. Please try again.', type: 'error' });
     } finally {
       setUpdating(false);
-    }
+        </PageLayout>
+  );
+}
   };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
         <Spinner className="h-8 w-8" />
-      </div>
+      </Card>
     );
-  }
+      </PageLayout>
+  );
+}
 
   return (
     <div className="p-4">
@@ -80,30 +89,46 @@ const Profile = () => {
 
       {alert.show && (
         <Alert color={alert.type === 'success' ? 'green' : 'red'} className="mb-6">
-          {alert.message}
+          {alert.message    </PageLayout>
+  );
+}
         </Alert>
-      )}
+      )    </PageLayout>
+  );
+}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Picture Card */}
+        {/* Profile Picture Card */    </PageLayout>
+  );
+}
         <Card className="lg:col-span-1">
           <CardBody className="text-center">
             <Avatar
-              src={user.avatar}
-              alt={user.name}
+              src={user.avatar    </PageLayout>
+  );
+}
+              alt={user.name    </PageLayout>
+  );
+}
               size="xl"
               className="mx-auto mb-4"
             />
             <Typography variant="h5" color="blue-gray" className="mb-2">
-              {user.name}
+              {user.name    </PageLayout>
+  );
+}
             </Typography>
             <Typography variant="small" color="gray">
-              {user.role}
+              {user.role    </PageLayout>
+  );
+}
             </Typography>
           </CardBody>
         </Card>
 
-        {/* Profile Form Card */}
+        {/* Profile Form Card */    </PageLayout>
+  );
+}
         <Card className="lg:col-span-2">
           <CardHeader floated={false} shadow={false} color="transparent">
             <Typography variant="h5" color="blue-gray">
@@ -112,9 +137,15 @@ const Profile = () => {
           </CardHeader>
           <CardBody>
             <Formik
-              initialValues={user}
-              validationSchema={validationSchema}
-              onSubmit={handleSubmit}
+              initialValues={user    </PageLayout>
+  );
+}
+              validationSchema={validationSchema    </PageLayout>
+  );
+}
+              onSubmit={handleSubmit    </PageLayout>
+  );
+}
               enableReinitialize
             >
               {({ errors, touched, setFieldValue }) => (
@@ -126,16 +157,26 @@ const Profile = () => {
                     <Input
                       size="lg"
                       name="name"
-                      value={user.name}
-                      onChange={(e) => setFieldValue('name', e.target.value)}
-                      error={touched.name && errors.name}
+                      value={user.name    </PageLayout>
+  );
+}
+                      onChange={(e) => setFieldValue('name', e.target.value)    </PageLayout>
+  );
+}
+                      error={touched.name && errors.name    </PageLayout>
+  );
+}
                     />
                     {touched.name && errors.name && (
                       <Typography variant="small" color="red" className="mt-1">
-                        {errors.name}
+                        {errors.name    </PageLayout>
+  );
+}
                       </Typography>
-                    )}
-                  </div>
+                    )    </PageLayout>
+  );
+}
+                  </Card>
 
                   <div>
                     <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
@@ -145,16 +186,26 @@ const Profile = () => {
                       size="lg"
                       type="email"
                       name="email"
-                      value={user.email}
-                      onChange={(e) => setFieldValue('email', e.target.value)}
-                      error={touched.email && errors.email}
+                      value={user.email    </PageLayout>
+  );
+}
+                      onChange={(e) => setFieldValue('email', e.target.value)    </PageLayout>
+  );
+}
+                      error={touched.email && errors.email    </PageLayout>
+  );
+}
                     />
                     {touched.email && errors.email && (
                       <Typography variant="small" color="red" className="mt-1">
-                        {errors.email}
+                        {errors.email    </PageLayout>
+  );
+}
                       </Typography>
-                    )}
-                  </div>
+                    )    </PageLayout>
+  );
+}
+                  </Card>
 
                   <div>
                     <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
@@ -163,30 +214,40 @@ const Profile = () => {
                     <Input
                       size="lg"
                       name="role"
-                      value={user.role}
+                      value={user.role    </PageLayout>
+  );
+}
                       disabled
                       className="bg-gray-50"
                     />
                     <Typography variant="small" color="gray" className="mt-1">
                       Role cannot be changed from this page
                     </Typography>
-                  </div>
+                  </Card>
 
                   <Button
                     type="submit"
                     className="w-full"
-                    loading={updating}
-                    disabled={updating}
+                    loading={updating    </PageLayout>
+  );
+}
+                    disabled={updating    </PageLayout>
+  );
+}
                   >
-                    {updating ? 'Updating...' : 'Update Profile'}
+                    {updating ? 'Updating...' : 'Update Profile'    </PageLayout>
+  );
+}
                   </Button>
                 </Form>
-              )}
+              )    </PageLayout>
+  );
+}
             </Formik>
           </CardBody>
         </Card>
-      </div>
-    </div>
+      </Card>
+    </Card>
   );
 };
 
