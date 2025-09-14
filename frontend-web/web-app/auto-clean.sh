@@ -1,48 +1,53 @@
 #!/bin/bash
-# Auto-clean unused imports flagged by ESLint
-# Then auto-commit changes to git
+set -e
 
-echo "🔍 Scanning for unused imports in ./src..."
+echo "🧹 Starting Auth/Theme provider auto-cleaner..."
 
-# Ensure eslint is installed
-if ! npx eslint -v > /dev/null 2>&1; then
-  echo "⚠️ ESLint not found. Installing locally..."
-  npm install eslint --save-dev
+APP_FILE="frontend-web/web-app/src/App.js"
+INDEX_FILE="frontend-web/web-app/src/index.js"
+
+# 1. Backup files before modification
+cp "$APP_FILE" "$APP_FILE.bak"
+cp "$INDEX_FILE" "$INDEX_FILE.bak"
+
+# 2. Clean App.js - strip out ThemeProvider/AuthProvider
+echo "🔎 Cleaning $APP_FILE ..."
+sed -i.bak '/AuthProvider/d' "$APP_FILE"
+sed -i.bak '/ThemeProvider/d' "$APP_FILE"
+
+# 3. Ensure App.js exports only App without providers
+if ! grep -q "function App" "$APP_FILE"; then
+  echo "⚠️ WARNING: App.js does not define a function App. Please review manually."
 fi
 
-# Run ESLint with JSON output so we can parse
-eslint_report=$(npx eslint ./src --format json)
+# 4. Clean imports for removed providers in App.js
+sed -i.bak '/AuthContext/d' "$APP_FILE"
+sed -i.bak '/@material-tailwind\/react/d' "$APP_FILE"
 
-# Extract files with issues
-files=$(echo "$eslint_report" | jq -r '.[] | select(.messages != null) | .filePath')
+echo "✅ App.js providers cleaned."
 
-if [ -z "$files" ]; then
-  echo "✅ No unused imports found. Codebase is clean!"
-  exit 0
+# 5. Verify index.js has proper wrapping
+echo "🔎 Checking $INDEX_FILE ..."
+if ! grep -q "ThemeProvider" "$INDEX_FILE"; then
+  echo "⚠️ ThemeProvider missing in index.js — inserting..."
+  sed -i.bak 's|<App />|<ThemeProvider>\n    <AuthProvider>\n      <App />\n    </AuthProvider>\n  </ThemeProvider>|' "$INDEX_FILE"
 fi
 
-echo "🧹 Cleaning unused imports in the following files:"
-echo "$files" | sort -u
+# 6. Clean duplicate wrapping in index.js (safety)
+sed -i.bak 's|<ThemeProvider>||g' "$INDEX_FILE"
+sed -i.bak 's|</ThemeProvider>||g' "$INDEX_FILE"
+sed -i.bak 's|<AuthProvider>||g' "$INDEX_FILE"
+sed -i.bak 's|</AuthProvider>||g' "$INDEX_FILE"
 
-# Fix each file
-for file in $(echo "$files" | sort -u); do
-  echo "   ➤ Fixing $file"
-  npx eslint --fix "$file"
-done
+# Re-insert clean structure
+sed -i.bak 's|<App />|<ThemeProvider>\n    <AuthProvider>\n      <App />\n    </AuthProvider>\n  </ThemeProvider>|' "$INDEX_FILE"
 
-# Final check
-echo "🔁 Re-running ESLint to verify cleanup..."
-npx eslint ./src --quiet
+echo "✅ index.js now wraps App correctly with ThemeProvider → AuthProvider → App."
 
-# Auto-commit changes
-if [ -n "$(git status --porcelain)" ]; then
-  echo "💾 Staging changes..."
-  git add ./src
+# 7. Reinstall & rebuild
+echo "📦 Reinstalling dependencies..."
+rm -rf node_modules package-lock.json
+npm install
 
-  echo "📝 Committing cleanup..."
-  git commit -m "chore: auto-clean unused imports with Blackbox script"
-
-  echo "✅ Cleanup committed successfully!"
-else
-  echo "✅ No changes to commit."
-fi
+echo "🚀 Restarting dev server..."
+npm start
