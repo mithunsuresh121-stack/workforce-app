@@ -1,17 +1,14 @@
-import React from 'react';
-import ReactDOM from 'react-dom/client';
-import './index.css';
-import App from './App';
-import { AuthProvider } from './contexts/AuthContext';
-import { ThemeProvider } from '@material-tailwind/react';
+import React from "react";
+import ReactDOM from "react-dom/client";
+import App from "./App";
+import { ThemeProvider } from "@material-tailwind/react";
+import { AuthProvider } from "./context/AuthProvider";
 
-const root = ReactDOM.createRoot(document.getElementById('root'));
+const root = ReactDOM.createRoot(document.getElementById("root"));
 root.render(
-  <React.StrictMode>
-    <ThemeProvider>
-      <AuthProvider>
-        <App />
-      </AuthProvider>
-    </ThemeProvider>
-  </React.StrictMode>
+  <ThemeProvider>
+    <AuthProvider>
+      <App />
+    </AuthProvider>
+  </ThemeProvider>
 );

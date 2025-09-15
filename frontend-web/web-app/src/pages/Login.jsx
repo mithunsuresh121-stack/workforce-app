@@ -2,6 +2,7 @@ import PageLayout from "../layouts/PageLayout";
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { Button } from "@material-tailwind/react";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -9,11 +10,14 @@ const Login = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // Handle login form submission
   const handleLogin = async (e) => {
     e.preventDefault();
+    setLoading(true);
     const result = await login(email, password);
+    setLoading(false);
     if (result.success) {
       navigate("/dashboard"); // Redirect to dashboard on successful login
     } else {
@@ -81,12 +85,13 @@ const Login = () => {
             </div>
 
             {/* Login button */}
-            <button
+            <Button
               onClick={handleLogin}
-              className="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 mt-4"
+              disabled={loading}
+              className="w-full"
             >
-              Login
-            </button>
+              {loading ? "Logging in..." : "Login"}
+            </Button>
           </div>
         </div>
       </div>
