@@ -1,10 +1,10 @@
 import requests
 
 # Demo credentials
-url = "http://localhost:8000/api/v1/auth/login"
+url = "http://localhost:8000/api/auth/login"
 payload = {
-    "email": "admin@techcorp.com",
-    "password": "password123"
+    "email": "admin@app.com",
+    "password": "supersecure123"
 }
 
 response = requests.post(url, json=payload)

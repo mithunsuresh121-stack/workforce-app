@@ -1,4 +1,3 @@
-import { Button } from "@material-tailwind/react";
 import React from 'react';
 import { BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
@@ -33,9 +32,9 @@ const Navbar = ({ onMenuClick }) => {
         <h1 className="text-2xl font-semibold text-gray-800">Dashboard</h1>
 
         <div className="flex items-center space-x-4">
-          <Button className="p-2 text-gray-400 hover:text-gray-600">
+          <button className="p-2 text-gray-400 hover:text-gray-600">
             <BellIcon className="w-6 h-6" />
-          </Button>
+          </button>
           <div className="flex items-center space-x-2">
             <UserCircleIcon className="w-8 h-8 text-gray-400" />
             <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>

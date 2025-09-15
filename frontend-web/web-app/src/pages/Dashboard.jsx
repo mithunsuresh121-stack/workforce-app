@@ -1,4 +1,4 @@
-import PageLayout from "../layouts/PageLayout";
+import Layout from "../components/Layout";
 import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Doughnut } from 'react-chartjs-2';
@@ -89,16 +89,16 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <PageLayout>
+      <Layout>
         <div className="flex items-center justify-center min-h-screen">
           <Spinner className="h-8 w-8" />
         </div>
-      </PageLayout>
+      </Layout>
     );
   }
 
   return (
-    <PageLayout>
+    <Layout>
       <div className="space-y-6">
         {/* Welcome Message */}
         <div className="mb-6">
@@ -188,8 +188,7 @@ const Dashboard = () => {
           </CardBody>
         </Card>
       </div>
-    </PageLayout>
+    </Layout>
   );
 };
 
-export default Dashboard;
