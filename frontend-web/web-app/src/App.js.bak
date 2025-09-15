@@ -11,8 +11,8 @@ import Leave from './pages/Leave';
 
 function App() {
   return (
-      <Router>
-        <Routes>
+    <Router>
+      <Routes>
         {/* Public route */}
         <Route path="/login" element={<Login />} />
 

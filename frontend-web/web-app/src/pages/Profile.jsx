@@ -4,7 +4,7 @@ import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { Card, CardBody, CardHeader, Typography, Input, Button, Alert, Avatar, Spinner } from '@material-tailwind/react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Profile = () => {
   const { user: authUser, login } = useAuth();
