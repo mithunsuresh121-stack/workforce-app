@@ -15,7 +15,7 @@ export const AuthProvider = ({ children }) => {
       axios
         .get("/api/auth/me")
         .then((response) => {
-          setUser(response.data.user);
+          setUser(response.data);
         })
         .catch(() => {
           localStorage.removeItem("token");
@@ -33,17 +33,38 @@ export const AuthProvider = ({ children }) => {
   const login = async (email, password) => {
     try {
       const response = await axios.post("/api/auth/login", { email, password });
-      const { token } = response.data;
-      localStorage.setItem("token", token);
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const { access_token } = response.data;
+      localStorage.setItem("token", access_token);
+      axios.defaults.headers.common["Authorization"] = `Bearer ${access_token}`;
       // Fetch user data after login
       const userResponse = await axios.get("/api/auth/me");
-      setUser(userResponse.data.user);
-      return { success: true };
+      const userData = userResponse.data;
+      setUser(userData);
+      return { success: true, user: userData };
     } catch (error) {
       return {
         success: false,
         error: error.response?.data?.message || "Login failed",
+      };
+    }
+  };
+
+  const signup = async (email, password, fullName, role = "Employee", companyId = null) => {
+    try {
+      await axios.post("/api/auth/signup", {
+        email,
+        password,
+        full_name: fullName,
+        role,
+        company_id: companyId
+      });
+      // After successful signup, automatically log the user in
+      const loginResult = await login(email, password);
+      return loginResult;
+    } catch (error) {
+      return {
+        success: false,
+        error: error.response?.data?.detail || "Signup failed",
       };
     }
   };
@@ -55,7 +76,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, loading }}>
       {children}
     </AuthContext.Provider>
   );

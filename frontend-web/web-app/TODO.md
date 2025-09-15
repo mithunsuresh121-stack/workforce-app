@@ -5,7 +5,7 @@
 - [x] Step 3: Clean up providers in App.js (remove ThemeProvider/AuthProvider if present)
 - [x] Step 4: Overwrite index.js with correct providers setup
 - [x] Step 5: Create e2e-login.spec.js Playwright test file
-- [ ] Step 6: Restart dev server with npm run start &
+- [x] Step 6: Restart dev server with npm run start &
 - [x] Step 7: Install Playwright dependencies
 - [x] Step 8: Run Playwright e2e-login test
-- [ ] Step 9: Commit all changes
+- [x] Step 9: Commit all changes

@@ -5,11 +5,13 @@ import axios from 'axios';
 import App from '../App';
 
 // Mock axios
-jest.mock('axios');
+const { vi } = require('vitest');
+
+vi.mock('axios');
 
 describe('Critical Path Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('Redirects to login when accessing dashboard without auth', async () => {
