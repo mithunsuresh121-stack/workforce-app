@@ -164,9 +164,8 @@ const Dashboard = () => {
           <div className="space-y-4">
             {recentActivities.map((activity, index) => (
               <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className={`w-3 h-3 rounded-full mt-1 ${
-                  activity.type === 'task' ? 'bg-blue-500' : 'bg-green-500'
-                }`}></div>
+                <div className={`w-3 h-3 rounded-full mt-1 ${activity.type === 'task' ? 'bg-blue-500' : 'bg-green-500'
+                  }`}></div>
                 <div className="flex-1">
                   <Typography variant="small" color="blue-gray" className="font-medium">
                     {activity.title}
