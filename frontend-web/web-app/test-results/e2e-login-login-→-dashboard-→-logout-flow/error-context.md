@@ -1,0 +1,63 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e1]:
+  - generic [ref=e3]:
+    - generic [ref=e5]:
+      - generic [ref=e6]:
+        - img "App Logo" [ref=e7]
+        - heading "Workforce App" [level=1] [ref=e8]
+      - generic [ref=e10]:
+        - generic [ref=e11]:
+          - generic [ref=e12]: Email
+          - textbox [ref=e13]: demo@company.com
+        - generic [ref=e14]:
+          - generic [ref=e15]: Password
+          - textbox [ref=e16]: password123
+          - button [ref=e17] [cursor=pointer]:
+            - img [ref=e18] [cursor=pointer]
+        - button "Login" [ref=e20] [cursor=pointer]
+        - paragraph [ref=e21]:
+          - text: Don't have an account?
+          - button "Sign Up" [ref=e22] [cursor=pointer]
+    - contentinfo [ref=e23]:
+      - paragraph [ref=e24]: © 2025 Workforce App. All rights reserved.
+  - iframe [active] [ref=e25]:
+    - generic [ref=f1e2]:
+      - generic [ref=f1e3]: "Compiled with problems:"
+      - button "Dismiss" [ref=f1e4] [cursor=pointer]: ×
+      - generic [ref=f1e6]:
+        - generic [ref=f1e7]: ERROR
+        - generic [ref=f1e8]:
+          - text: "[eslint] src/pages/Dashboard.jsx"
+          - generic [ref=f1e9]: "Line 23:13:"
+          - text: "'taskStatusData' is not defined"
+          - generic [ref=f1e11]: no-undef
+          - generic [ref=f1e12]: "Line 25:13:"
+          - text: "'taskStatusData' is not defined"
+          - generic [ref=f1e14]: no-undef
+          - generic [ref=f1e15]: "Line 32:13:"
+          - text: "'employeeDistributionData' is not defined"
+          - generic [ref=f1e17]: no-undef
+          - generic [ref=f1e18]: "Line 34:13:"
+          - text: "'employeeDistributionData' is not defined"
+          - generic [ref=f1e20]: no-undef
+          - generic [ref=f1e21]: "Line 65:52:"
+          - text: "'kpis' is not defined"
+          - generic [ref=f1e23]: no-undef
+          - generic [ref=f1e24]: "Line 71:53:"
+          - text: "'kpis' is not defined"
+          - generic [ref=f1e26]: no-undef
+          - generic [ref=f1e27]: "Line 77:54:"
+          - text: "'kpis' is not defined"
+          - generic [ref=f1e29]: no-undef
+          - generic [ref=f1e30]: "Line 83:54:"
+          - text: "'kpis' is not defined"
+          - generic [ref=f1e32]: no-undef
+          - generic [ref=f1e33]: "Line 116:14:"
+          - text: "'recentActivities' is not defined"
+          - generic [ref=f1e35]: no-undef
+          - text: Search for the
+          - generic [ref=f1e37]: keywords
+          - text: to learn more about each error.
+```

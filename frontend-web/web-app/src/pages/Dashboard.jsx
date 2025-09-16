@@ -9,56 +9,35 @@ ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend,
 
 const Dashboard = () => {
   const { user } = useAuth();
-  const [kpis, setKpis] = useState({ total_employees: 0, active_tasks: 0, pending_leaves: 0, shifts_today: 0 });
+  const [loading, setLoading] = useState(true);
+  const [kpis, setKpis] = useState({
+    total_employees: 0,
+    active_tasks: 0,
+    pending_leaves: 0,
+    shifts_today: 0,
+  });
   const [taskStatusData, setTaskStatusData] = useState([]);
   const [employeeDistributionData, setEmployeeDistributionData] = useState([]);
   const [recentActivities, setRecentActivities] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
 
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        setLoading(true);
-
-        // Fetch KPIs
-        const kpisResponse = await axios.get('/api/dashboard/kpis');
-        setKpis(kpisResponse.data);
-
-        // Fetch task status chart data
-        const taskStatusResponse = await axios.get('/api/dashboard/charts/task-status');
-        setTaskStatusData(taskStatusResponse.data);
-
-        // Fetch employee distribution chart data
-        const employeeDistResponse = await axios.get('/api/dashboard/charts/employee-distribution');
-        setEmployeeDistributionData(employeeDistResponse.data);
-
-        // Fetch recent activities
-        const activitiesResponse = await axios.get('/api/dashboard/recent-activities?limit=5');
-        setRecentActivities(activitiesResponse.data);
-
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-        // Fallback dummy data for development
-        setKpis({ total_employees: 150, active_tasks: 45, pending_leaves: 12, shifts_today: 8 });
-        setTaskStatusData([
-          { name: 'Pending', value: 10 },
-          { name: 'In Progress', value: 25 },
-          { name: 'Completed', value: 30 },
-          { name: 'Overdue', value: 5 }
+        const [kpisRes, taskStatusRes, employeeDistRes, activitiesRes] = await Promise.all([
+          axios.get('/api/dashboard/kpis'),
+          axios.get('/api/dashboard/charts/task-status'),
+          axios.get('/api/dashboard/charts/employee-distribution'),
+          axios.get('/api/dashboard/recent-activities'),
         ]);
-        setEmployeeDistributionData([
-          { name: 'Super Admin', value: 1 },
-          { name: 'Company Admin', value: 2 },
-          { name: 'Manager', value: 5 },
-          { name: 'Employee', value: 142 }
-        ]);
-        setRecentActivities([
-          { type: 'task', title: 'Complete project documentation', description: 'Finish writing the API docs', status: 'completed', timestamp: new Date().toISOString() },
-          { type: 'leave', title: 'Annual leave request', description: 'John Doe requested 3 days leave', status: 'pending', timestamp: new Date().toISOString() },
-          { type: 'task', title: 'Review code changes', description: 'PR #123 needs review', status: 'in_progress', timestamp: new Date().toISOString() },
-          { type: 'leave', title: 'Sick leave approval', description: 'Jane Smith approved sick leave', status: 'approved', timestamp: new Date().toISOString() },
-          { type: 'task', title: 'Update database schema', description: 'Add new fields to employee table', status: 'pending', timestamp: new Date().toISOString() }
-        ]);
+
+        setKpis(kpisRes.data);
+        setTaskStatusData(taskStatusRes.data);
+        setEmployeeDistributionData(employeeDistRes.data);
+        setRecentActivities(activitiesRes.data);
+      } catch (err) {
+        console.error('Error fetching dashboard data:', err);
+        setError('Failed to load dashboard data');
       } finally {
         setLoading(false);
       }
@@ -66,6 +45,26 @@ const Dashboard = () => {
 
     fetchDashboardData();
   }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner className="h-8 w-8" />
+        <div className="ml-2">Loading dashboard...</div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="text-center text-red-600">
+          <Typography variant="h5">Error loading dashboard</Typography>
+          <Typography variant="body1">{error}</Typography>
+        </div>
+      </div>
+    );
+  }
 
   // Prepare chart data
   const taskStatusChartData = {
@@ -86,24 +85,16 @@ const Dashboard = () => {
     }]
   };
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <Spinner className="h-8 w-8" />
-      </div>
-    );
-  }
-
   return (
     <div className="space-y-6">
       {/* Welcome Message */}
       <div className="mb-6">
-        <Typography variant="h3" color="blue-gray" className="mb-2">
+        <h3 className="text-2xl font-bold text-gray-800 mb-2">
           Welcome back, {user?.name || 'User'}!
-        </Typography>
-        <Typography variant="lead" color="gray">
+        </h3>
+        <p className="text-gray-600">
           Here's what's happening with your workforce today.
-        </Typography>
+        </p>
       </div>
 
       {/* KPI Cards */}

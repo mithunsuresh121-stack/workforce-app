@@ -5,7 +5,7 @@ import axios from 'axios';
 import App from '../App';
 
 // Mock axios
-const { vi } = require('vitest');
+import { vi } from 'vitest';
 
 vi.mock('axios');
 

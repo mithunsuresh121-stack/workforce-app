@@ -1,14 +1,9 @@
-import React from 'react';
-import { Typography } from '@material-tailwind/react';
+import React from "react";
 
 const Footer = () => {
   return (
-    <footer className="bg-white border-t px-4 py-4 md:px-6">
-      <div className="text-center">
-        <Typography variant="small" color="gray" className="font-normal">
-          © 2023 Workforce App. All rights reserved.
-        </Typography>
-      </div>
+    <footer className="bg-blue-50 text-gray-700 py-4 text-center">
+      <p className="text-sm">&copy; {new Date().getFullYear()} Workforce App. All rights reserved.</p>
     </footer>
   );
 };
