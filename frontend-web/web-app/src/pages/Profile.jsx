@@ -1,9 +1,10 @@
+import PageLayout from "../layouts/PageLayout";
 import React, { useState, useEffect } from 'react';
-import { Formik, Form, Field } from 'formik';
+import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
 import { Card, CardBody, CardHeader, Typography, Input, Button, Alert, Avatar, Spinner } from '@material-tailwind/react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Profile = () => {
   const { user: authUser, login } = useAuth();
@@ -66,127 +67,131 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <Spinner className="h-8 w-8" />
-      </div>
+      <PageLayout>
+        <div className="flex justify-center items-center h-64">
+          <Spinner className="h-8 w-8" />
+        </div>
+      </PageLayout>
     );
   }
 
   return (
-    <div className="p-4">
-      <Typography variant="h3" color="blue-gray" className="mb-6">
-        Profile
-      </Typography>
+    <PageLayout>
+      <div className="p-4">
+        <Typography variant="h3" color="blue-gray" className="mb-6">
+          Profile
+        </Typography>
 
-      {alert.show && (
-        <Alert color={alert.type === 'success' ? 'green' : 'red'} className="mb-6">
-          {alert.message}
-        </Alert>
-      )}
+        {alert.show && (
+          <Alert color={alert.type === 'success' ? 'green' : 'red'} className="mb-6">
+            {alert.message}
+          </Alert>
+        )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Profile Picture Card */}
-        <Card className="lg:col-span-1">
-          <CardBody className="text-center">
-            <Avatar
-              src={user.avatar}
-              alt={user.name}
-              size="xl"
-              className="mx-auto mb-4"
-            />
-            <Typography variant="h5" color="blue-gray" className="mb-2">
-              {user.name}
-            </Typography>
-            <Typography variant="small" color="gray">
-              {user.role}
-            </Typography>
-          </CardBody>
-        </Card>
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+          {/* Profile Picture Card */}
+          <Card className="lg:col-span-1">
+            <CardBody className="text-center">
+              <Avatar
+                src={user.avatar}
+                alt={user.name}
+                size="xl"
+                className="mx-auto mb-4"
+              />
+              <Typography variant="h5" color="blue-gray" className="mb-2">
+                {user.name}
+              </Typography>
+              <Typography variant="small" color="gray">
+                {user.role}
+              </Typography>
+            </CardBody>
+          </Card>
 
-        {/* Profile Form Card */}
-        <Card className="lg:col-span-2">
-          <CardHeader floated={false} shadow={false} color="transparent">
-            <Typography variant="h5" color="blue-gray">
-              Edit Profile
-            </Typography>
-          </CardHeader>
-          <CardBody>
-            <Formik
-              initialValues={user}
-              validationSchema={validationSchema}
-              onSubmit={handleSubmit}
-              enableReinitialize
-            >
-              {({ errors, touched, setFieldValue }) => (
-                <Form className="space-y-6">
-                  <div>
-                    <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                      Full Name
-                    </Typography>
-                    <Input
-                      size="lg"
-                      name="name"
-                      value={user.name}
-                      onChange={(e) => setFieldValue('name', e.target.value)}
-                      error={touched.name && errors.name}
-                    />
-                    {touched.name && errors.name && (
-                      <Typography variant="small" color="red" className="mt-1">
-                        {errors.name}
+          {/* Profile Form Card */}
+          <Card className="lg:col-span-2">
+            <CardHeader floated={false} shadow={false} color="transparent">
+              <Typography variant="h5" color="blue-gray">
+                Edit Profile
+              </Typography>
+            </CardHeader>
+            <CardBody>
+              <Formik
+                initialValues={user}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
+                enableReinitialize
+              >
+                {({ errors, touched, setFieldValue }) => (
+                  <Form className="space-y-6">
+                    <div>
+                      <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
+                        Full Name
                       </Typography>
-                    )}
-                  </div>
+                      <Input
+                        size="lg"
+                        name="name"
+                        value={user.name}
+                        onChange={(e) => setFieldValue('name', e.target.value)}
+                        error={touched.name && errors.name}
+                      />
+                      {touched.name && errors.name && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          {errors.name}
+                        </Typography>
+                      )}
+                    </div>
 
-                  <div>
-                    <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                      Email Address
-                    </Typography>
-                    <Input
-                      size="lg"
-                      type="email"
-                      name="email"
-                      value={user.email}
-                      onChange={(e) => setFieldValue('email', e.target.value)}
-                      error={touched.email && errors.email}
-                    />
-                    {touched.email && errors.email && (
-                      <Typography variant="small" color="red" className="mt-1">
-                        {errors.email}
+                    <div>
+                      <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
+                        Email Address
                       </Typography>
-                    )}
-                  </div>
+                      <Input
+                        size="lg"
+                        type="email"
+                        name="email"
+                        value={user.email}
+                        onChange={(e) => setFieldValue('email', e.target.value)}
+                        error={touched.email && errors.email}
+                      />
+                      {touched.email && errors.email && (
+                        <Typography variant="small" color="red" className="mt-1">
+                          {errors.email}
+                        </Typography>
+                      )}
+                    </div>
 
-                  <div>
-                    <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                      Role
-                    </Typography>
-                    <Input
-                      size="lg"
-                      name="role"
-                      value={user.role}
-                      disabled
-                      className="bg-gray-50"
-                    />
-                    <Typography variant="small" color="gray" className="mt-1">
-                      Role cannot be changed from this page
-                    </Typography>
-                  </div>
+                    <div>
+                      <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
+                        Role
+                      </Typography>
+                      <Input
+                        size="lg"
+                        name="role"
+                        value={user.role}
+                        disabled
+                        className="bg-gray-50"
+                      />
+                      <Typography variant="small" color="gray" className="mt-1">
+                        Role cannot be changed from this page
+                      </Typography>
+                    </div>
 
-                  <Button
-                    type="submit"
-                    className="w-full"
-                    loading={updating}
-                    disabled={updating}
-                  >
-                    {updating ? 'Updating...' : 'Update Profile'}
-                  </Button>
-                </Form>
-              )}
-            </Formik>
-          </CardBody>
-        </Card>
+                    <Button
+                      type="submit"
+                      className="w-full"
+                      loading={updating}
+                      disabled={updating}
+                    >
+                      {updating ? 'Updating...' : 'Update Profile'}
+                    </Button>
+                  </Form>
+                )}
+              </Formik>
+            </CardBody>
+          </Card>
+        </div>
       </div>
-    </div>
+    </PageLayout>
   );
 };
 

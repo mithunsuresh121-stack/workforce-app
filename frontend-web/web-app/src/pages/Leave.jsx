@@ -1,35 +1,8 @@
+import PageLayout from "../layouts/PageLayout";
 import React, { useState, useEffect, useMemo } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
 import axios from 'axios';
-import {
-  Card,
-  CardBody,
-  CardHeader,
-  Typography,
-  Button,
-  Input,
-  Textarea,
-  Select,
-  Option,
-  Chip,
-  Dialog,
-  DialogHeader,
-  DialogBody,
-  DialogFooter,
-  Spinner,
-  Alert,
-  IconButton,
-  Progress
-} from '@material-tailwind/react';
-import {
-  PlusIcon,
-  CalendarDaysIcon,
-  ClockIcon,
-  CheckCircleIcon,
-  XCircleIcon,
-  ExclamationTriangleIcon
-} from '@heroicons/react/24/outline';
 
 const Leave = () => {
   const [leaves, setLeaves] = useState([]);
@@ -149,10 +122,10 @@ const Leave = () => {
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case 'Approved': return <CheckCircleIcon className="h-4 w-4" />;
-      case 'Pending': return <ClockIcon className="h-4 w-4" />;
-      case 'Rejected': return <XCircleIcon className="h-4 w-4" />;
-      default: return <ExclamationTriangleIcon className="h-4 w-4" />;
+      case 'Approved': return '✓';
+      case 'Pending': return '⏳';
+      case 'Rejected': return '✗';
+      default: return '⚠';
     }
   };
 
@@ -167,64 +140,65 @@ const Leave = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <Spinner className="h-8 w-8" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <Typography variant="h3" color="blue-gray">
-          Leave Management
-        </Typography>
-        <Button
-          onClick={() => setDialogOpen(true)}
-          className="flex items-center gap-2"
-        >
-          <PlusIcon className="h-4 w-4" />
-          Request Leave
-        </Button>
-      </div>
+    <PageLayout>
+      <div className="p-4">
+        <div className="flex justify-between items-center mb-6">
+          <h3 className="text-3xl font-bold text-gray-800">
+            Leave Management
+          </h3>
+          <button
+            onClick={() => setDialogOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
+          >
+            +
+            Request Leave
+          </button>
+        </div>
 
-      {error && (
-        <Alert color="red" className="mb-6">
-          {error}
-        </Alert>
-      )}
+        {error && (
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
+            {error}
+          </div>
+        )}
 
-      {/* Leave Balances */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {Object.entries(leaveBalances).map(([type, balance]) => (
-          <Card key={type}>
-            <CardBody>
-              <Typography variant="h6" color="blue-gray" className="mb-2">
+        {/* Leave Balances */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
+          {Object.entries(leaveBalances).map(([type, balance]) => (
+            <div key={type} className="bg-white p-6 rounded-lg shadow-md border">
+              <h6 className="text-lg font-semibold text-gray-800 mb-2">
                 {type}
-              </Typography>
+              </h6>
               <div className="flex justify-between items-center mb-2">
-                <Typography variant="small" color="gray">
+                <p className="text-sm text-gray-600">
                   Used: {balance.used} days
-                </Typography>
-                <Typography variant="small" color="gray">
+                </p>
+                <p className="text-sm text-gray-600">
                   Total: {balance.total} days
-                </Typography>
+                </p>
               </div>
-              <Progress
-                value={(balance.used / balance.total) * 100}
-                color={balance.used / balance.total > 0.8 ? 'red' : 'blue'}
-                className="h-2"
-              />
-              <Typography variant="small" color="gray" className="mt-1">
+              <div className="h-2 bg-gray-200 rounded">
+                <div
+                  className={`h-2 rounded ${
+                    balance.used / balance.total > 0.8 ? 'bg-red-600' : 'bg-blue-600'
+                  }`}
+                  style={{ width: `${(balance.used / balance.total) * 100}%` }}
+                />
+              </div>
+              <p className="text-sm text-gray-600 mt-1">
                 {balance.total - balance.used} days remaining
-              </Typography>
-            </CardBody>
-          </Card>
-        ))}
-      </div>
+              </p>
+            </div>
+          ))}
+        </div>
 
-      {/* Filters */}
-      <Card className="mb-6">
-        <CardBody>
+        {/* Filters */}
+        <div className="bg-white p-6 rounded-lg shadow-md border mb-6">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div>
               <select
@@ -251,93 +225,90 @@ const Leave = () => {
               </select>
             </div>
             <div className="flex items-end">
-              <Button
-                variant="outlined"
+              <button
                 onClick={() => {
                   setStatusFilter('');
                   setTypeFilter('');
                 }}
-                className="w-full"
+                className="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
                 Clear Filters
-              </Button>
+              </button>
             </div>
           </div>
-        </CardBody>
-      </Card>
+        </div>
 
-      {/* Leave History */}
-      <Card>
-        <CardHeader floated={false} shadow={false} color="transparent">
-          <Typography variant="h5" color="blue-gray">
-            Leave History
-          </Typography>
-        </CardHeader>
-        <CardBody className="p-0">
-          <div className="overflow-x-auto">
+        {/* Leave History */}
+        <div className="bg-white rounded-lg shadow-md border">
+          <div className="p-4 border-b border-gray-200">
+            <h5 className="text-lg font-semibold text-gray-800">Leave History</h5>
+          </div>
+          <div className="overflow-x-auto p-4">
             <table className="w-full min-w-max table-auto text-left">
               <thead>
                 <tr>
-                  <th className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                    <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
+                  <th className="border-b border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-normal leading-none opacity-70">
                       Type
-                    </Typography>
+                    </p>
                   </th>
-                  <th className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                    <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
+                  <th className="border-b border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-normal leading-none opacity-70">
                       Dates
-                    </Typography>
+                    </p>
                   </th>
-                  <th className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                    <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
+                  <th className="border-b border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-normal leading-none opacity-70">
                       Days
-                    </Typography>
+                    </p>
                   </th>
-                  <th className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                    <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
+                  <th className="border-b border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-normal leading-none opacity-70">
                       Status
-                    </Typography>
+                    </p>
                   </th>
-                  <th className="border-b border-blue-gray-100 bg-blue-gray-50 p-4">
-                    <Typography variant="small" color="blue-gray" className="font-normal leading-none opacity-70">
+                  <th className="border-b border-gray-200 bg-gray-50 p-4">
+                    <p className="text-sm font-normal leading-none opacity-70">
                       Reason
-                    </Typography>
+                    </p>
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {filteredLeaves.map((leave) => (
                   <tr key={leave.id}>
-                    <td className="p-4 border-b border-blue-gray-50">
-                      <Typography variant="small" color="blue-gray" className="font-normal">
+                    <td className="p-4 border-b border-gray-100">
+                      <p className="text-sm font-normal">
                         {leave.type}
-                      </Typography>
+                      </p>
                     </td>
-                    <td className="p-4 border-b border-blue-gray-50">
+                    <td className="p-4 border-b border-gray-100">
                       <div className="flex items-center gap-2">
-                        <CalendarDaysIcon className="h-4 w-4 text-gray-400" />
-                        <Typography variant="small" color="blue-gray" className="font-normal">
+                        <span className="text-gray-400">📅</span>
+                        <p className="text-sm font-normal">
                           {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
-                        </Typography>
+                        </p>
                       </div>
                     </td>
-                    <td className="p-4 border-b border-blue-gray-50">
-                      <Typography variant="small" color="blue-gray" className="font-normal">
+                    <td className="p-4 border-b border-gray-100">
+                      <p className="text-sm font-normal">
                         {leave.days || calculateDays(leave.startDate, leave.endDate)}
-                      </Typography>
+                      </p>
                     </td>
-                    <td className="p-4 border-b border-blue-gray-50">
-                      <Chip
-                        icon={getStatusIcon(leave.status)}
-                        color={getStatusColor(leave.status)}
-                        value={leave.status}
-                        size="sm"
-                      />
+                    <td className="p-4 border-b border-gray-100">
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                        leave.status === 'Approved' ? 'bg-green-100 text-green-800 border-green-200' :
+                        leave.status === 'Pending' ? 'bg-orange-100 text-orange-800 border-orange-200' :
+                        leave.status === 'Rejected' ? 'bg-red-100 text-red-800 border-red-200' :
+                        'bg-gray-100 text-gray-800 border-gray-200'
+                      }`}>
+                        {getStatusIcon(leave.status)} {leave.status}
+                      </span>
                     </td>
-                    <td className="p-4 border-b border-blue-gray-50">
-                      <Typography variant="small" color="blue-gray" className="font-normal">
+                    <td className="p-4 border-b border-gray-100">
+                      <p className="text-sm font-normal">
                         {leave.reason}
-                      </Typography>
+                      </p>
                     </td>
                   </tr>
                 ))}
@@ -347,93 +318,126 @@ const Leave = () => {
 
           {filteredLeaves.length === 0 && (
             <div className="text-center py-12">
-              <Typography variant="h6" color="gray">
+              <p className="text-lg font-semibold text-gray-600">
                 No leave requests found matching your criteria.
-              </Typography>
+              </p>
             </div>
           )}
-        </CardBody>
-      </Card>
+        </div>
 
-      {/* Leave Request Dialog */}
-      <Dialog open={dialogOpen} handler={setDialogOpen} size="lg">
-        <DialogHeader>Request Leave</DialogHeader>
-        <DialogBody divider>
-          <Formik
-            initialValues={{
-              type: '',
-              startDate: '',
-              endDate: '',
-              reason: ''
-            }}
-            validationSchema={validationSchema}
-            onSubmit={handleSubmit}
-          >
-            {({ values, errors, touched, setFieldValue }) => (
-              <Form className="space-y-6">
-                <Select
-                  label="Leave Type"
-                  value={values.type}
-                  onChange={(value) => setFieldValue('type', value)}
-                  error={touched.type && errors.type}
-                >
-                  <Option value="Annual Leave">Annual Leave</Option>
-                  <Option value="Sick Leave">Sick Leave</Option>
-                  <Option value="Personal Leave">Personal Leave</Option>
-                </Select>
+        {/* Leave Request Dialog */}
+        {dialogOpen && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
+            <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
+              <h4 className="text-xl font-semibold mb-4">Request Leave</h4>
+              <Formik
+                initialValues={{
+                  type: '',
+                  startDate: '',
+                  endDate: '',
+                  reason: ''
+                }}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
+              >
+                {({ values, errors, touched, setFieldValue }) => (
+                  <Form className="space-y-6">
+                    <div>
+                      <label className="block mb-1 font-medium">Leave Type</label>
+                      <select
+                        value={values.type}
+                        onChange={(e) => setFieldValue('type', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          touched.type && errors.type ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      >
+                        <option value="">Select leave type</option>
+                        <option value="Annual Leave">Annual Leave</option>
+                        <option value="Sick Leave">Sick Leave</option>
+                        <option value="Personal Leave">Personal Leave</option>
+                      </select>
+                      {touched.type && errors.type && (
+                        <p className="text-red-500 text-sm mt-1">{errors.type}</p>
+                      )}
+                    </div>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    type="date"
-                    label="Start Date"
-                    value={values.startDate}
-                    onChange={(e) => setFieldValue('startDate', e.target.value)}
-                    error={touched.startDate && errors.startDate}
-                  />
-                  <Input
-                    type="date"
-                    label="End Date"
-                    value={values.endDate}
-                    onChange={(e) => setFieldValue('endDate', e.target.value)}
-                    error={touched.endDate && errors.endDate}
-                  />
-                </div>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <label className="block mb-1 font-medium">Start Date</label>
+                        <input
+                          type="date"
+                          value={values.startDate}
+                          onChange={(e) => setFieldValue('startDate', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            touched.startDate && errors.startDate ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {touched.startDate && errors.startDate && (
+                          <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>
+                        )}
+                      </div>
+                      <div>
+                        <label className="block mb-1 font-medium">End Date</label>
+                        <input
+                          type="date"
+                          value={values.endDate}
+                          onChange={(e) => setFieldValue('endDate', e.target.value)}
+                          className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                            touched.endDate && errors.endDate ? 'border-red-500' : 'border-gray-300'
+                          }`}
+                        />
+                        {touched.endDate && errors.endDate && (
+                          <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>
+                        )}
+                      </div>
+                    </div>
 
-                <Textarea
-                  label="Reason"
-                  value={values.reason}
-                  onChange={(e) => setFieldValue('reason', e.target.value)}
-                  error={touched.reason && errors.reason}
-                />
+                    <div>
+                      <label className="block mb-1 font-medium">Reason</label>
+                      <textarea
+                        value={values.reason}
+                        onChange={(e) => setFieldValue('reason', e.target.value)}
+                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
+                          touched.reason && errors.reason ? 'border-red-500' : 'border-gray-300'
+                        }`}
+                      />
+                      {touched.reason && errors.reason && (
+                        <p className="text-red-500 text-sm mt-1">{errors.reason}</p>
+                      )}
+                    </div>
 
-                {values.startDate && values.endDate && (
-                  <Alert color="blue">
-                    Total days: {calculateDays(values.startDate, values.endDate)}
-                  </Alert>
+                    {values.startDate && values.endDate && (
+                      <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded">
+                        Total days: {calculateDays(values.startDate, values.endDate)}
+                      </div>
+                    )}
+
+                    <div className="flex justify-end gap-4">
+                      <button
+                        type="button"
+                        onClick={() => setDialogOpen(false)}
+                        className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      >
+                        Cancel
+                      </button>
+                      <button
+                        type="submit"
+                        disabled={submitting}
+                        className={`px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                          submitting ? 'opacity-50 cursor-not-allowed' : ''
+                        }`}
+                      >
+                        {submitting ? 'Submitting...' : 'Submit Request'}
+                      </button>
+                    </div>
+                  </Form>
                 )}
-              </Form>
-            )}
-          </Formik>
-        </DialogBody>
-        <DialogFooter>
-          <Button variant="text" color="red" onClick={() => setDialogOpen(false)}>
-            Cancel
-          </Button>
-          <Button
-            variant="gradient"
-            color="green"
-            onClick={() => {
-              const form = document.querySelector('form');
-              if (form) form.requestSubmit();
-            }}
-            loading={submitting}
-            disabled={submitting}
-          >
-            {submitting ? 'Submitting...' : 'Submit Request'}
-          </Button>
-        </DialogFooter>
-      </Dialog>
-    </div>
+              </Formik>
+            </div>
+          </div>
+        )}
+      </div>
+    </PageLayout>
   );
 };
 

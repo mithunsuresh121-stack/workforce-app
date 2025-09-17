@@ -1,16 +1,11 @@
-# TODO: Fix AuthContext with useAuth and Rebuild
+# TODO: Enhance Login Page UI
 
-- [x] Overwrite AuthContext.jsx with fixed version including useAuth hook
-- [x] Update Login.jsx to use synchronous login without await
-- [x] Update ProtectedRoute.jsx to use useAuth hook and remove loading logic
-- [x] Clean node_modules and package-lock.json
-- [x] Reinstall dependencies with npm install --legacy-peer-deps
-- [x] Run npm dedupe
-- [x] Rebuild project with npm run build || npm start
-
-# TODO: Fix React Fast Refresh Issue
-
-- [x] Install react-refresh and @pmmmwh/react-refresh-webpack-plugin as dev dependencies
-- [x] Update babel.config.js to conditionally include 'react-refresh/babel' plugin in development mode
-- [x] Clean node_modules and package-lock.json, then reinstall
-- [ ] Run npm start to verify Fast Refresh
+## Tasks
+- [x] Extend theme.js with styles for password input wrapper if needed
+- [x] Update Login.jsx: Add imports for Footer and eye icons
+- [x] Update Login.jsx: Add showPassword state
+- [x] Update Login.jsx: Modify password input with toggle button and dynamic type
+- [x] Update Login.jsx: Change layout to flex-col with Footer
+- [x] Update Login.jsx: Use theme classes for inputs and button for consistency
+- [x] Update Login.jsx: Enhance professional look with better spacing and shadows
+- [ ] Test the UI changes by running the app
