@@ -3,20 +3,25 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import axios from 'axios';
 import App from '../App';
+import { AuthProvider } from '../contexts/AuthContext';
 
 // Mock axios
-jest.mock('axios');
+import { vi } from 'vitest';
+
+vi.mock('axios');
 
 describe('Critical Path Tests', () => {
   beforeEach(() => {
-    jest.clearAllMocks();
+    vi.clearAllMocks();
   });
 
   test('Redirects to login when accessing dashboard without auth', async () => {
     render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
     expect(await screen.findByText(/login/i)).toBeInTheDocument();
   });
@@ -27,9 +32,11 @@ describe('Critical Path Tests', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/login']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/login']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     fireEvent.change(screen.getByLabelText(/email/i), { target: { value: 'demo@company.com' } });
@@ -43,9 +50,11 @@ describe('Critical Path Tests', () => {
 
   test('Sidebar navigation works', async () => {
     render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     const profileLink = await screen.findByText(/profile/i);
@@ -70,9 +79,11 @@ describe('Critical Path Tests', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/dashboard']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/dashboard']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     expect(await screen.findByText(/total employees/i)).toBeInTheDocument();
@@ -88,9 +99,11 @@ describe('Critical Path Tests', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/profile']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/profile']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     expect(await screen.findByDisplayValue(/demo user/i)).toBeInTheDocument();
@@ -113,9 +126,11 @@ describe('Critical Path Tests', () => {
     });
 
     render(
-      <MemoryRouter initialEntries={['/directory']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/directory']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     expect(await screen.findByText(/john doe/i)).toBeInTheDocument();
@@ -135,9 +150,11 @@ describe('Critical Path Tests', () => {
     axios.delete.mockResolvedValueOnce({});
 
     render(
-      <MemoryRouter initialEntries={['/tasks']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/tasks']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     expect(await screen.findByText(/task 1/i)).toBeInTheDocument();
@@ -154,9 +171,11 @@ describe('Critical Path Tests', () => {
     axios.post.mockResolvedValueOnce({ data: { id: 2, type: 'Sick Leave' } });
 
     render(
-      <MemoryRouter initialEntries={['/leave']}>
-        <App />
-      </MemoryRouter>
+      <AuthProvider>
+        <MemoryRouter initialEntries={['/leave']}>
+          <App />
+        </MemoryRouter>
+      </AuthProvider>
     );
 
     expect(await screen.findByText(/annual leave/i)).toBeInTheDocument();

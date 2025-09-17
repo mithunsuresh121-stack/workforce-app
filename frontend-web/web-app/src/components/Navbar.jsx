@@ -1,10 +1,9 @@
 import React from 'react';
 import { BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../contexts/AuthContext';
 
 const Navbar = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
-
 
   return (
     <header className="bg-white shadow-sm border-b">
