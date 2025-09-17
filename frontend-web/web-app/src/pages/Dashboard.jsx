@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import axios from 'axios';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
-import { Card, CardBody, Typography, CardHeader, Spinner } from '@material-tailwind/react';
 import { useAuth } from '../contexts/AuthContext';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
@@ -49,7 +48,7 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Spinner className="h-8 w-8" />
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         <div className="ml-2">Loading dashboard...</div>
       </div>
     );
@@ -59,8 +58,8 @@ const Dashboard = () => {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <div className="text-center text-red-600">
-          <Typography variant="h5">Error loading dashboard</Typography>
-          <Typography variant="body1">{error}</Typography>
+          <h5 className="text-xl font-semibold mb-2">Error loading dashboard</h5>
+          <p className="text-sm">{error}</p>
         </div>
       </div>
     );
@@ -99,80 +98,70 @@ const Dashboard = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray">Total Employees</Typography>
-            <Typography variant="h3" color="blue">{kpis.total_employees}</Typography>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray">Active Tasks</Typography>
-            <Typography variant="h3" color="green">{kpis.active_tasks}</Typography>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray">Pending Leaves</Typography>
-            <Typography variant="h3" color="orange">{kpis.pending_leaves}</Typography>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray">Shifts Today</Typography>
-            <Typography variant="h3" color="purple">{kpis.shifts_today}</Typography>
-          </CardBody>
-        </Card>
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+          <h5 className="text-lg font-semibold text-gray-700 mb-2">Total Employees</h5>
+          <p className="text-3xl font-bold text-blue-600">{kpis.total_employees}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+          <h5 className="text-lg font-semibold text-gray-700 mb-2">Active Tasks</h5>
+          <p className="text-3xl font-bold text-green-600">{kpis.active_tasks}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+          <h5 className="text-lg font-semibold text-gray-700 mb-2">Pending Leaves</h5>
+          <p className="text-3xl font-bold text-orange-600">{kpis.pending_leaves}</p>
+        </div>
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+          <h5 className="text-lg font-semibold text-gray-700 mb-2">Shifts Today</h5>
+          <p className="text-3xl font-bold text-purple-600">{kpis.shifts_today}</p>
+        </div>
       </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <Card>
-          <CardHeader floated={false} shadow={false} color="transparent">
-            <Typography variant="h5" color="blue-gray">Task Status Distribution</Typography>
-          </CardHeader>
-          <CardBody>
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+          <div className="mb-4">
+            <h5 className="text-lg font-semibold text-gray-700">Task Status Distribution</h5>
+          </div>
+          <div className="h-64">
             <Doughnut data={taskStatusChartData} />
-          </CardBody>
-        </Card>
+          </div>
+        </div>
 
-        <Card>
-          <CardHeader floated={false} shadow={false} color="transparent">
-            <Typography variant="h5" color="blue-gray">Employee Role Distribution</Typography>
-          </CardHeader>
-          <CardBody>
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+          <div className="mb-4">
+            <h5 className="text-lg font-semibold text-gray-700">Employee Role Distribution</h5>
+          </div>
+          <div className="h-64">
             <Doughnut data={employeeDistributionChartData} />
-          </CardBody>
-        </Card>
+          </div>
+        </div>
       </div>
 
       {/* Recent Activities */}
-      <Card>
-        <CardHeader floated={false} shadow={false} color="transparent">
-          <Typography variant="h5" color="blue-gray">Recent Activities</Typography>
-        </CardHeader>
-        <CardBody>
-          <div className="space-y-4">
-            {recentActivities.map((activity, index) => (
-              <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                <div className={`w-3 h-3 rounded-full mt-1 ${activity.type === 'task' ? 'bg-blue-500' : 'bg-green-500'
-                  }`}></div>
-                <div className="flex-1">
-                  <Typography variant="small" color="blue-gray" className="font-medium">
-                    {activity.title}
-                  </Typography>
-                  <Typography variant="small" color="gray">
-                    {activity.description}
-                  </Typography>
-                  <Typography variant="small" color="gray">
-                    Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
-                  </Typography>
-                </div>
+      <div className="bg-white p-6 rounded-lg shadow-md border">
+        <div className="mb-4">
+          <h5 className="text-lg font-semibold text-gray-700">Recent Activities</h5>
+        </div>
+        <div className="space-y-4">
+          {recentActivities.map((activity, index) => (
+            <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+              <div className={`w-3 h-3 rounded-full mt-1 ${activity.type === 'task' ? 'bg-blue-500' : 'bg-green-500'
+                }`}></div>
+              <div className="flex-1">
+                <p className="text-sm font-medium text-gray-800">
+                  {activity.title}
+                </p>
+                <p className="text-sm text-gray-600">
+                  {activity.description}
+                </p>
+                <p className="text-sm text-gray-500">
+                  Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
+                </p>
               </div>
-            ))}
-          </div>
-        </CardBody>
-      </Card>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 };

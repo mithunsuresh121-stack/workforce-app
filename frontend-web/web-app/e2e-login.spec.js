@@ -80,7 +80,13 @@ test('login → dashboard → logout flow', async ({ page }) => {
   console.log('Welcome back elements found:', welcomeElements);
 
   if (welcomeElements === 0) {
-    throw new Error('No "Welcome back" text found on dashboard');
+    console.warn('No "Welcome back" text found on dashboard, trying alternative selector');
+    // Try alternative selector with partial text
+    const altWelcomeElements = await page.locator('text=Welcome back').count();
+    console.log('Alternative welcome elements found:', altWelcomeElements);
+    if (altWelcomeElements === 0) {
+      throw new Error('No "Welcome back" text found on dashboard with alternative selector');
+    }
   }
 
   await expect(page.locator('h3').filter({ hasText: 'Welcome back' })).toBeVisible();
