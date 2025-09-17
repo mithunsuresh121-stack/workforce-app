@@ -1,4 +1,4 @@
-const { test, expect } = require('@playwright/test');
+import { test, expect } from '@playwright/test';
 
 const START_URL = process.env.START_URL || 'http://localhost:3000';
 const DEMO_EMAIL = process.env.DEMO_EMAIL || 'admin';

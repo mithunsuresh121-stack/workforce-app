@@ -1,18 +1,6 @@
 import PageLayout from "../layouts/PageLayout";
 import React, { useEffect, useState, useMemo } from 'react';
 import axios from 'axios';
-import {
-  Card,
-  CardBody,
-  Typography,
-  Input,
-  Button,
-  Avatar,
-  Chip,
-  Spinner,
-  Alert
-} from '@material-tailwind/react';
-import { MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 
 const Directory = () => {
   const [users, setUsers] = useState([]);
@@ -81,25 +69,13 @@ const Directory = () => {
 
   const uniqueRoles = [...new Set(users.map(user => user.role))];
 
-  const getRoleColor = (role) => {
-    switch (role) {
-      case 'Super Admin': return 'purple';
-      case 'Company Admin': return 'blue';
-      case 'Manager': return 'green';
-      case 'Employee': return 'gray';
-      default: return 'gray';
-    }
-  };
 
-  const getStatusColor = (status) => {
-    return status === 'Active' ? 'green' : 'red';
-  };
 
   if (loading) {
     return (
       <PageLayout>
         <div className="flex justify-center items-center h-64">
-          <Spinner className="h-8 w-8" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
         </div>
       </PageLayout>
     );
@@ -108,110 +84,107 @@ const Directory = () => {
   return (
     <PageLayout>
       <div className="p-4">
-        <Typography variant="h3" color="blue-gray" className="mb-6">
+        <h3 className="text-3xl font-bold text-gray-800 mb-6">
           Employee Directory
-        </Typography>
+        </h3>
 
         {error && (
-          <Alert color="red" className="mb-6">
+          <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
             {error}
-          </Alert>
+          </div>
         )}
 
         {/* Filters */}
-        <Card className="mb-6">
-          <CardBody>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="relative">
-                <Input
-                  type="text"
-                  label="Search employees..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  icon={<MagnifyingGlassIcon className="h-5 w-5" />}
-                />
-              </div>
-              <div>
-                <select
-                  value={roleFilter}
-                  onChange={(e) => setRoleFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-                >
-                  <option value="">All Roles</option>
-                  {uniqueRoles.map(role => (
-                    <option key={role} value={role}>{role}</option>
-                  ))}
-                </select>
-              </div>
-              <div className="flex items-end">
-                <Button
-                  variant="outlined"
-                  onClick={() => {
-                    setSearchTerm('');
-                    setRoleFilter('');
-                  }}
-                  className="w-full"
-                >
-                  Clear Filters
-                </Button>
-              </div>
+        <div className="bg-white p-6 rounded-lg shadow-md border mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <input
+                type="text"
+                placeholder="Search employees..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              />
             </div>
-          </CardBody>
-        </Card>
+            <div>
+              <select
+                value={roleFilter}
+                onChange={(e) => setRoleFilter(e.target.value)}
+                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                <option value="">All Roles</option>
+                {uniqueRoles.map(role => (
+                  <option key={role} value={role}>{role}</option>
+                ))}
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setSearchTerm('');
+                  setRoleFilter('');
+                }}
+                className="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
 
         {/* Results Summary */}
-        <Typography variant="small" color="gray" className="mb-4">
+        <p className="text-sm text-gray-600 mb-4">
           Showing {filteredUsers.length} of {users.length} employees
-        </Typography>
+        </p>
 
         {/* Employee Cards Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredUsers.map((user) => (
-            <Card key={user.id} className="hover:shadow-lg transition-shadow">
-              <CardBody className="text-center">
-                <Avatar
+            <div key={user.id} className="bg-white p-6 rounded-lg shadow-md border hover:shadow-lg transition-shadow">
+              <div className="text-center">
+                <img
                   src={user.avatar}
                   alt={user.name}
-                  size="xl"
-                  className="mx-auto mb-4"
+                  className="w-20 h-20 rounded-full mx-auto mb-4"
                 />
-                <Typography variant="h6" color="blue-gray" className="mb-2">
+                <h6 className="text-lg font-semibold text-gray-800 mb-2">
                   {user.name}
-                </Typography>
-                <Typography variant="small" color="gray" className="mb-2">
+                </h6>
+                <p className="text-sm text-gray-600 mb-2">
                   {user.email}
-                </Typography>
+                </p>
                 <div className="flex justify-center gap-2 mb-3">
-                  <Chip
-                    color={getRoleColor(user.role)}
-                    value={user.role}
-                    size="sm"
-                  />
-                  <Chip
-                    color={getStatusColor(user.status)}
-                    value={user.status}
-                    size="sm"
-                    variant="outlined"
-                  />
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                    user.role === 'Super Admin' ? 'bg-purple-100 text-purple-800' :
+                    user.role === 'Company Admin' ? 'bg-blue-100 text-blue-800' :
+                    user.role === 'Manager' ? 'bg-green-100 text-green-800' :
+                    'bg-gray-100 text-gray-800'
+                  }`}>
+                    {user.role}
+                  </span>
+                  <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
+                    user.status === 'Active' ? 'bg-green-100 text-green-800 border-green-200' :
+                    'bg-red-100 text-red-800 border-red-200'
+                  }`}>
+                    {user.status}
+                  </span>
                 </div>
                 {user.department && (
-                  <Typography variant="small" color="gray">
+                  <p className="text-sm text-gray-600">
                     Department: {user.department}
-                  </Typography>
+                  </p>
                 )}
-              </CardBody>
-            </Card>
+              </div>
+            </div>
           ))}
         </div>
 
         {filteredUsers.length === 0 && (
-          <Card>
-            <CardBody className="text-center py-12">
-              <Typography variant="h6" color="gray">
-                No employees found matching your criteria.
-              </Typography>
-            </CardBody>
-          </Card>
+          <div className="bg-white p-12 rounded-lg shadow-md border text-center">
+            <h6 className="text-lg font-semibold text-gray-600">
+              No employees found matching your criteria.
+            </h6>
+          </div>
         )}
       </div>
     </PageLayout>

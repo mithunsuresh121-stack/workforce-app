@@ -13,7 +13,7 @@ const Layout = ({ children }) => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50">
+    <div className="flex h-screen bg-white">
       {/* Sidebar - hidden on mobile, shown on desktop */}
       <div className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-lg transform ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'} transition-transform duration-300 ease-in-out lg:translate-x-0 lg:static lg:inset-0`}>
         <Sidebar onClose={() => setSidebarOpen(false)} />
@@ -33,10 +33,10 @@ const Layout = ({ children }) => {
         <Navbar onMenuClick={toggleSidebar} />
 
         {/* Main content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-4 lg:p-6">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-white p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
             {/* Content wrapper with professional spacing */}
-            <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
+            <div className="bg-white rounded-lg shadow-md border border-gray-300 p-8">
               {children}
             </div>
           </div>
