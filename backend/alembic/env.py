@@ -7,7 +7,7 @@ import os
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from app.db import Base
-from app.models import user, task, shift, leave  # noqa
+from app.models import user, task, shift, leave, profile_update_request  # noqa
 from app.config import settings
 
 config = context.config

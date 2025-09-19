@@ -1,6 +1,6 @@
 import PageLayout from "../layouts/PageLayout";
 import React, { useEffect, useState, useMemo } from 'react';
-import axios from 'axios';
+import { api } from '../contexts/AuthContext';
 
 const Directory = () => {
   const [users, setUsers] = useState([]);
@@ -14,7 +14,7 @@ const Directory = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await axios.get('/api/users');
+        const response = await api.get('/users');
         setUsers(response.data);
       } catch (error) {
         console.error('Error fetching users:', error);
