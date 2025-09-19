@@ -6,6 +6,7 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import SuperAdminApprovals from './pages/SuperAdminApprovals';
 import Directory from './pages/Directory';
 import Tasks from './pages/Tasks';
 import Leave from './pages/Leave';
@@ -46,6 +47,11 @@ function App() {
       <Route path="/leave" element={
         <ProtectedRoute>
           <Layout><Leave /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/approvals" element={
+        <ProtectedRoute>
+          <Layout><SuperAdminApprovals /></Layout>
         </ProtectedRoute>
       } />
     </Routes>

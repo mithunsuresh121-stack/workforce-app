@@ -15,6 +15,13 @@ class EmployeeProfile(Base):
     hire_date = Column(DateTime, nullable=True)
     manager_id = Column(Integer, ForeignKey("users.id"), nullable=True)
     is_active = Column(Boolean, default=True)
+    # gender column removed as per request
+    # gender = Column(String, nullable=True)
+    address = Column(String, nullable=True)
+    city = Column(String, nullable=True)
+    emergency_contact = Column(String, nullable=True)
+    employee_id = Column(String, unique=True, nullable=True)
+    profile_picture_url = Column(String, nullable=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 

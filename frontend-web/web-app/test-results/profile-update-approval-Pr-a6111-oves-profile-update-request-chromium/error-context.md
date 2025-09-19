@@ -1,0 +1,85 @@
+# Page snapshot
+
+```yaml
+- generic [ref=e3]:
+  - generic [ref=e5]:
+    - heading "Workforce App" [level=2] [ref=e7]
+    - navigation [ref=e8]:
+      - link "Dashboard" [ref=e9] [cursor=pointer]:
+        - /url: /dashboard
+        - img [ref=e10] [cursor=pointer]
+        - generic [ref=e12] [cursor=pointer]: Dashboard
+      - link "Profile" [ref=e13] [cursor=pointer]:
+        - /url: /profile
+        - img [ref=e14] [cursor=pointer]
+        - generic [ref=e16] [cursor=pointer]: Profile
+      - link "Directory" [ref=e17] [cursor=pointer]:
+        - /url: /directory
+        - img [ref=e18] [cursor=pointer]
+        - generic [ref=e20] [cursor=pointer]: Directory
+      - link "Tasks" [ref=e21] [cursor=pointer]:
+        - /url: /tasks
+        - img [ref=e22] [cursor=pointer]
+        - generic [ref=e24] [cursor=pointer]: Tasks
+      - link "Leave" [ref=e25] [cursor=pointer]:
+        - /url: /leave
+        - img [ref=e26] [cursor=pointer]
+        - generic [ref=e28] [cursor=pointer]: Leave
+    - paragraph [ref=e30]: © 2023 Workforce App
+  - generic [ref=e31]:
+    - banner [ref=e32]:
+      - generic [ref=e33]:
+        - heading "Dashboard" [level=1] [ref=e34]
+        - generic [ref=e35]:
+          - button [ref=e36] [cursor=pointer]:
+            - img [ref=e37] [cursor=pointer]
+          - generic [ref=e39]:
+            - img [ref=e40]
+            - generic [ref=e42]: User
+            - button "Logout" [ref=e43] [cursor=pointer]
+    - main [ref=e44]:
+      - generic [ref=e47]:
+        - generic [ref=e49]:
+          - heading "Workforce App" [level=2] [ref=e51]
+          - navigation [ref=e52]:
+            - link "Dashboard" [ref=e53] [cursor=pointer]:
+              - /url: /dashboard
+              - img [ref=e54] [cursor=pointer]
+              - generic [ref=e56] [cursor=pointer]: Dashboard
+            - link "Profile" [ref=e57] [cursor=pointer]:
+              - /url: /profile
+              - img [ref=e58] [cursor=pointer]
+              - generic [ref=e60] [cursor=pointer]: Profile
+            - link "Directory" [ref=e61] [cursor=pointer]:
+              - /url: /directory
+              - img [ref=e62] [cursor=pointer]
+              - generic [ref=e64] [cursor=pointer]: Directory
+            - link "Tasks" [ref=e65] [cursor=pointer]:
+              - /url: /tasks
+              - img [ref=e66] [cursor=pointer]
+              - generic [ref=e68] [cursor=pointer]: Tasks
+            - link "Leave" [ref=e69] [cursor=pointer]:
+              - /url: /leave
+              - img [ref=e70] [cursor=pointer]
+              - generic [ref=e72] [cursor=pointer]: Leave
+          - paragraph [ref=e74]: © 2023 Workforce App
+        - generic [ref=e75]:
+          - generic [ref=e77]:
+            - heading "Dashboard" [level=1] [ref=e78]
+            - generic [ref=e79]:
+              - button [ref=e80] [cursor=pointer]:
+                - img [ref=e81] [cursor=pointer]
+              - generic [ref=e83]:
+                - img [ref=e84]
+                - generic [ref=e86]: User
+                - button "Logout" [ref=e87] [cursor=pointer]
+          - main [ref=e88]:
+            - generic [ref=e91]:
+              - heading "Profile Update Requests" [level=3] [ref=e92]
+              - alert [ref=e93]:
+                - generic [ref=e94]: Failed to load requests. Please try again.
+              - heading "No pending requests" [level=6] [ref=e98]
+          - paragraph [ref=e100]: © 2025 Workforce App. All rights reserved.
+    - contentinfo [ref=e101]:
+      - paragraph [ref=e102]: © 2025 Workforce App. All rights reserved.
+```

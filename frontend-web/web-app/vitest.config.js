@@ -9,5 +9,5 @@ export default defineConfig({
       web: [/\\.jsx?$/],
     },
     setupFiles: './src/setupTests.js',
-  },
+  }
 });

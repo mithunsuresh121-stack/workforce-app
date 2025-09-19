@@ -1,68 +1,53 @@
 import PageLayout from "../layouts/PageLayout";
 import React, { useState, useEffect } from 'react';
-import { Formik, Form } from 'formik';
-import * as Yup from 'yup';
-import axios from 'axios';
-import { Card, CardBody, CardHeader, Typography, Input, Button, Alert, Avatar, Spinner } from '@material-tailwind/react';
-import { useAuth } from '../contexts/AuthContext';
+import { Typography, Alert, Spinner, Dialog, DialogHeader, DialogBody, DialogFooter, Button } from '@material-tailwind/react';
+import { useAuth, api } from '../contexts/AuthContext';
+import ProfileCard from '../components/ProfileCard';
+import ProfileDetails from '../components/ProfileDetails';
+import EditProfileForm from '../components/EditProfileForm';
 
 const Profile = () => {
-  const { user: authUser, login } = useAuth();
-  const [user, setUser] = useState({ name: '', email: '', role: '', avatar: '' });
+  const { user: authUser } = useAuth();
+  const [profile, setProfile] = useState(null);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    if (profile) {
+      setUser({
+        full_name: authUser?.full_name,
+        role: authUser?.role,
+        employee_id: profile.employee_id,
+        profile_picture_url: profile.profile_picture_url,
+      });
+    }
+  }, [profile, authUser]);
   const [loading, setLoading] = useState(true);
-  const [updating, setUpdating] = useState(false);
+  const [editing, setEditing] = useState(false);
   const [alert, setAlert] = useState({ show: false, message: '', type: 'success' });
 
   useEffect(() => {
-    const fetchUserProfile = async () => {
+    const fetchProfile = async () => {
       try {
         setLoading(true);
-        // Try to fetch from API, fallback to auth context
-        const response = await axios.get('/api/user/profile');
-        setUser(response.data);
+        // Fetch employee profile from backend
+        const response = await api.get('/profile/me');
+        setProfile(response.data);
       } catch (error) {
         console.error('Error fetching profile:', error);
-        // Fallback to auth context data
-        setUser({
-          name: authUser?.name || 'John Doe',
-          email: authUser?.email || 'john@example.com',
-          role: authUser?.role || 'Employee',
-          avatar: authUser?.avatar || 'https://via.placeholder.com/150'
-        });
+        setAlert({ show: true, message: 'Failed to load profile. Please try again.', type: 'error' });
       } finally {
         setLoading(false);
       }
     };
 
     if (authUser) {
-      fetchUserProfile();
+      fetchProfile();
     }
   }, [authUser]);
 
-  const validationSchema = Yup.object({
-    name: Yup.string().required('Name is required'),
-    email: Yup.string().email('Invalid email').required('Email is required'),
-  });
-
-  const handleSubmit = async (values) => {
-    try {
-      setUpdating(true);
-      setAlert({ show: false });
-
-      // Update profile via API
-      const response = await axios.put('/api/user/profile', values);
-      setUser(response.data);
-
-      // Update auth context if needed
-      login({ ...authUser, ...response.data });
-
-      setAlert({ show: true, message: 'Profile updated successfully!', type: 'success' });
-    } catch (error) {
-      console.error('Error updating profile:', error);
-      setAlert({ show: true, message: 'Failed to update profile. Please try again.', type: 'error' });
-    } finally {
-      setUpdating(false);
-    }
+  const handleEditSuccess = () => {
+    setEditing(false);
+    setAlert({ show: true, message: 'Profile update request submitted successfully! It will be reviewed by an administrator.', type: 'success' });
   };
 
   if (loading) {
@@ -89,107 +74,36 @@ const Profile = () => {
         )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Picture Card */}
-          <Card className="lg:col-span-1">
-            <CardBody className="text-center">
-              <Avatar
-                src={user.avatar}
-                alt={user.name}
-                size="xl"
-                className="mx-auto mb-4"
-              />
-              <Typography variant="h5" color="blue-gray" className="mb-2">
-                {user.name}
-              </Typography>
-              <Typography variant="small" color="gray">
-                {user.role}
-              </Typography>
-            </CardBody>
-          </Card>
+          {/* Profile Card */}
+          <div className="lg:col-span-1">
+            <ProfileCard
+              user={user}
+              onEdit={() => setEditing(true)}
+            />
+          </div>
 
-          {/* Profile Form Card */}
-          <Card className="lg:col-span-2">
-            <CardHeader floated={false} shadow={false} color="transparent">
-              <Typography variant="h5" color="blue-gray">
-                Edit Profile
-              </Typography>
-            </CardHeader>
-            <CardBody>
-              <Formik
-                initialValues={user}
-                validationSchema={validationSchema}
-                onSubmit={handleSubmit}
-                enableReinitialize
-              >
-                {({ errors, touched, setFieldValue }) => (
-                  <Form className="space-y-6">
-                    <div>
-                      <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                        Full Name
-                      </Typography>
-                      <Input
-                        size="lg"
-                        name="name"
-                        value={user.name}
-                        onChange={(e) => setFieldValue('name', e.target.value)}
-                        error={touched.name && errors.name}
-                      />
-                      {touched.name && errors.name && (
-                        <Typography variant="small" color="red" className="mt-1">
-                          {errors.name}
-                        </Typography>
-                      )}
-                    </div>
-
-                    <div>
-                      <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                        Email Address
-                      </Typography>
-                      <Input
-                        size="lg"
-                        type="email"
-                        name="email"
-                        value={user.email}
-                        onChange={(e) => setFieldValue('email', e.target.value)}
-                        error={touched.email && errors.email}
-                      />
-                      {touched.email && errors.email && (
-                        <Typography variant="small" color="red" className="mt-1">
-                          {errors.email}
-                        </Typography>
-                      )}
-                    </div>
-
-                    <div>
-                      <Typography variant="small" color="blue-gray" className="mb-2 font-medium">
-                        Role
-                      </Typography>
-                      <Input
-                        size="lg"
-                        name="role"
-                        value={user.role}
-                        disabled
-                        className="bg-gray-50"
-                      />
-                      <Typography variant="small" color="gray" className="mt-1">
-                        Role cannot be changed from this page
-                      </Typography>
-                    </div>
-
-                    <Button
-                      type="submit"
-                      className="w-full"
-                      loading={updating}
-                      disabled={updating}
-                    >
-                      {updating ? 'Updating...' : 'Update Profile'}
-                    </Button>
-                  </Form>
-                )}
-              </Formik>
-            </CardBody>
-          </Card>
+          {/* Profile Details */}
+          <div className="lg:col-span-2">
+            <ProfileDetails profile={profile} />
+          </div>
         </div>
+
+        {/* Edit Profile Dialog */}
+        <Dialog open={editing} handler={setEditing} size="xl">
+          <DialogHeader>Edit Profile</DialogHeader>
+          <DialogBody>
+            <EditProfileForm
+              profile={profile}
+              onClose={() => setEditing(false)}
+              onSuccess={handleEditSuccess}
+            />
+          </DialogBody>
+          <DialogFooter>
+            <Button variant="text" color="red" onClick={() => setEditing(false)}>
+              Cancel
+            </Button>
+          </DialogFooter>
+        </Dialog>
       </div>
     </PageLayout>
   );

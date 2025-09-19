@@ -33,12 +33,9 @@ const Layout = ({ children }) => {
         <Navbar onMenuClick={toggleSidebar} />
 
         {/* Main content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-white p-6 lg:p-8">
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-gray-50 p-6 lg:p-8">
           <div className="max-w-7xl mx-auto">
-            {/* Content wrapper with professional spacing */}
-            <div className="bg-white rounded-lg shadow-md border border-gray-300 p-8">
-              {children}
-            </div>
+            {children}
           </div>
         </main>
 

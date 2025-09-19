@@ -4,6 +4,7 @@
     "@types/react-router-dom": "^5.3.3"
   },
   "dependencies": {
+    "@material-tailwind/react": "^2.1.10",
     "dotenv": "^17.2.2",
     "mysql2": "^3.14.4",
     "pg": "^8.16.3",

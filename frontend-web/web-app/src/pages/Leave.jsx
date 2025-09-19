@@ -2,7 +2,7 @@ import PageLayout from "../layouts/PageLayout";
 import React, { useState, useEffect, useMemo } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
-import axios from 'axios';
+import { api } from '../contexts/AuthContext';
 
 const Leave = () => {
   const [leaves, setLeaves] = useState([]);
@@ -21,11 +21,11 @@ const Leave = () => {
         setError('');
 
         // Fetch leave requests
-        const leavesResponse = await axios.get('/api/leaves');
+        const leavesResponse = await api.get('/leaves');
         setLeaves(leavesResponse.data);
 
         // Fetch leave balances
-        const balancesResponse = await axios.get('/api/leaves/balances');
+        const balancesResponse = await api.get('/leaves/balances');
         setLeaveBalances(balancesResponse.data);
 
       } catch (error) {
@@ -99,7 +99,7 @@ const Leave = () => {
   const handleSubmit = async (values, { resetForm }) => {
     try {
       setSubmitting(true);
-      const response = await axios.post('/api/leaves', values);
+      const response = await api.post('/leaves', values);
       setLeaves([response.data, ...leaves]);
       setDialogOpen(false);
       resetForm();
