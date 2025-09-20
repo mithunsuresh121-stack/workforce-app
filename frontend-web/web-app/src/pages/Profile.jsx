@@ -1,4 +1,3 @@
-import PageLayout from "../layouts/PageLayout";
 import React, { useState, useEffect } from 'react';
 import { Typography, Alert, Spinner, Dialog, DialogHeader, DialogBody, DialogFooter, Button } from '@material-tailwind/react';
 import { useAuth, api } from '../contexts/AuthContext';
@@ -52,60 +51,56 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <PageLayout>
-        <div className="flex justify-center items-center h-64">
-          <Spinner className="h-8 w-8" />
-        </div>
-      </PageLayout>
+      <div className="flex justify-center items-center h-64">
+        <Spinner className="h-8 w-8" />
+      </div>
     );
   }
 
   return (
-    <PageLayout>
-      <div className="p-4">
-        <Typography variant="h3" color="blue-gray" className="mb-6">
-          Profile
-        </Typography>
+    <div className="p-4">
+      <Typography variant="h3" color="blue-gray" className="mb-6">
+        Profile
+      </Typography>
 
-        {alert.show && (
-          <Alert color={alert.type === 'success' ? 'green' : 'red'} className="mb-6">
-            {alert.message}
-          </Alert>
-        )}
+      {alert.show && (
+        <Alert color={alert.type === 'success' ? 'green' : 'red'} className="mb-6">
+          {alert.message}
+        </Alert>
+      )}
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Profile Card */}
-          <div className="lg:col-span-1">
-            <ProfileCard
-              user={user}
-              onEdit={() => setEditing(true)}
-            />
-          </div>
-
-          {/* Profile Details */}
-          <div className="lg:col-span-2">
-            <ProfileDetails profile={profile} />
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Profile Card */}
+        <div className="lg:col-span-1">
+          <ProfileCard
+            user={user}
+            onEdit={() => setEditing(true)}
+          />
         </div>
 
-        {/* Edit Profile Dialog */}
-        <Dialog open={editing} handler={setEditing} size="xl">
-          <DialogHeader>Edit Profile</DialogHeader>
-          <DialogBody>
-            <EditProfileForm
-              profile={profile}
-              onClose={() => setEditing(false)}
-              onSuccess={handleEditSuccess}
-            />
-          </DialogBody>
-          <DialogFooter>
-            <Button variant="text" color="red" onClick={() => setEditing(false)}>
-              Cancel
-            </Button>
-          </DialogFooter>
-        </Dialog>
+        {/* Profile Details */}
+        <div className="lg:col-span-2">
+          <ProfileDetails profile={profile} />
+        </div>
       </div>
-    </PageLayout>
+
+      {/* Edit Profile Dialog */}
+      <Dialog open={editing} handler={setEditing} size="xl">
+        <DialogHeader>Edit Profile</DialogHeader>
+        <DialogBody>
+          <EditProfileForm
+            profile={profile}
+            onClose={() => setEditing(false)}
+            onSuccess={handleEditSuccess}
+          />
+        </DialogBody>
+        <DialogFooter>
+          <Button variant="text" color="red" onClick={() => setEditing(false)}>
+            Cancel
+          </Button>
+        </DialogFooter>
+      </Dialog>
+    </div>
   );
 };
 

@@ -1,4 +1,3 @@
-import PageLayout from "../layouts/PageLayout";
 import React, { useEffect, useState, useMemo } from 'react';
 import {
   PlusIcon,
@@ -111,8 +110,6 @@ const Tasks = () => {
     }
   };
 
-
-
   const handleCreateTask = () => {
     setIsEditing(false);
     setFormData({
@@ -220,17 +217,14 @@ const Tasks = () => {
 
   if (loading) {
     return (
-      <PageLayout>
-        <div className="flex justify-center items-center h-64">
-          <Spinner className="h-8 w-8" />
-        </div>
-      </PageLayout>
+      <div className="flex justify-center items-center h-64">
+        <Spinner className="h-8 w-8" />
+      </div>
     );
   }
 
   return (
-    <PageLayout>
-      <div className="p-4">
+    <div className="p-4">
       <div className="flex justify-between items-center mb-6">
         <Typography variant="h3" color="blue-gray">
           Tasks
@@ -594,8 +588,7 @@ const Tasks = () => {
           </div>
         </div>
       )}
-      </div>
-    </PageLayout>
+    </div>
   );
 };
 
