@@ -70,6 +70,36 @@ const Dashboard = () => {
     }
   };
 
+  // Handle activity click navigation
+  const handleActivityClick = (activity) => {
+    const { type, entity_id } = activity;
+
+    // Fallback to dashboard if entity_id is missing
+    if (!entity_id) {
+      navigate('/dashboard');
+      return;
+    }
+
+    switch (type) {
+      case 'TaskCreated':
+      case 'TaskUpdated':
+      case 'TaskCompleted':
+        navigate(`/tasks/${entity_id}`);
+        break;
+      case 'ApprovalRequested':
+      case 'ApprovalGranted':
+      case 'ApprovalRejected':
+        navigate(`/approvals/${entity_id}`);
+        break;
+      case 'TeamJoined':
+        navigate('/directory'); // Fallback to directory if teams route doesn't exist
+        break;
+      default:
+        navigate('/dashboard'); // Fallback for unknown activity types
+        break;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -164,9 +194,16 @@ const Dashboard = () => {
           <div className="space-y-4">
             {recentActivities.length > 0 ? (
               recentActivities.map((activity, index) => (
-                <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-                  <div className={`w-3 h-3 rounded-full mt-1 ${activity.type === 'task' ? 'bg-blue-500' : 'bg-green-500'
-                    }`}></div>
+                <div
+                  key={index}
+                  className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                  onClick={() => handleActivityClick(activity)}
+                >
+                  <div className={`w-3 h-3 rounded-full mt-1 ${
+                    activity.type.includes('Task') ? 'bg-blue-500' :
+                    activity.type.includes('Approval') ? 'bg-green-500' :
+                    'bg-purple-500'
+                  }`}></div>
                   <div className="flex-1">
                     <p className="text-sm font-medium text-gray-800">
                       {activity.title}

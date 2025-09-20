@@ -147,17 +147,27 @@ def get_recent_activities(
 
         for task in recent_tasks:
             title = getattr(task, "title", None) or f"Task #{getattr(task, 'id', 'N/A')}"
+            task_status = getattr(task, "status", None)
+
+            # Determine activity type based on task status
+            if task_status == TaskStatus.COMPLETED.value:
+                activity_type = "TaskCompleted"
+            elif task_status == TaskStatus.IN_PROGRESS.value:
+                activity_type = "TaskUpdated"
+            else:
+                activity_type = "TaskCreated"
+
             activities.append({
-                "type": "task",
-                "id": getattr(task, "id", None),
+                "type": activity_type,
+                "entity_id": getattr(task, "id", None),
                 "title": title,
-                "description": f"Task '{title}' was created",
-                "status": getattr(task, "status", None),
+                "description": f"Task '{title}' was {activity_type.replace('Task', '').lower()}",
+                "status": task_status,
                 "timestamp": getattr(task, "created_at", datetime.min),
                 "user": f"User {getattr(task, 'assignee_id', None)}" if getattr(task, "assignee_id", None) else "System",
             })
 
-        # Get recent leaves (last N)
+        # Get recent leaves (last N) - treat as approval requests
         leaves = list_leaves_by_tenant(db, str(company_id))
         recent_leaves = sorted(
             leaves,
@@ -167,17 +177,41 @@ def get_recent_activities(
 
         for leave in recent_leaves:
             leave_type = getattr(leave, "type", "Leave")
-            start_at = getattr(leave, "start_at", None)
-            end_at = getattr(leave, "end_at", None)
+            leave_status = getattr(leave, "status", None)
+
+            # Determine activity type based on leave status
+            if leave_status == LeaveStatus.PENDING.value:
+                activity_type = "ApprovalRequested"
+            elif leave_status == LeaveStatus.APPROVED.value:
+                activity_type = "ApprovalGranted"
+            else:
+                activity_type = "ApprovalRejected"
+
             activities.append({
-                "type": "leave",
-                "id": getattr(leave, "id", None),
+                "type": activity_type,
+                "entity_id": getattr(leave, "id", None),
                 "title": f"Leave Request - {leave_type}",
-                "description": f"Leave request for {leave_type} from {start_at} to {end_at}",
-                "status": getattr(leave, "status", None),
+                "description": f"Leave request for {leave_type} was {activity_type.replace('Approval', '').lower()}",
+                "status": leave_status,
                 "timestamp": getattr(leave, "created_at", datetime.min),
                 "user": f"Employee {getattr(leave, 'employee_id', 'N/A')}",
             })
+
+        # Add some sample team activities (placeholder for team system)
+        # In a real implementation, this would come from a teams table
+        team_activities = [
+            {
+                "type": "TeamJoined",
+                "entity_id": 1,  # Would be actual team ID
+                "title": "Team Assignment",
+                "description": "You were assigned to Development Team",
+                "status": "Active",
+                "timestamp": datetime.now(),
+                "user": "System",
+            }
+        ]
+
+        activities.extend(team_activities)
 
         # Sort all activities by timestamp and return limited results
         sorted_activities = sorted(activities, key=lambda x: x["timestamp"], reverse=True)[:limit]
