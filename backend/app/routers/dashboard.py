@@ -233,7 +233,18 @@ def get_task_status_chart(
     """
     try:
         company_id = _require_company_id(current_user)
-        tasks = list_tasks(db, company_id)
+        user_role = getattr(current_user, "role", "Employee").strip()
+
+        # Employee-specific: only show their own tasks
+        if user_role == "Employee":
+            tasks = list_tasks(db, company_id)
+            tasks = [
+                task for task in tasks
+                if getattr(task, "assignee_id", None) == current_user.id
+            ]
+        else:
+            # Manager, CompanyAdmin, SuperAdmin: show all company tasks
+            tasks = list_tasks(db, company_id)
 
         # Initialize counts from enum values to avoid typos
         status_count = {s.value: 0 for s in TaskStatus}
@@ -255,6 +266,77 @@ def get_task_status_chart(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching task status data: {str(e)}")
+
+
+@router.get("/charts/reports")
+def get_reports_chart(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get reports/requests distribution for charts (profile updates, leave requests)
+    """
+    try:
+        company_id = _require_company_id(current_user)
+        user_role = getattr(current_user, "role", "Employee").strip()
+
+        # Import the profile update request model
+        from ..models.profile_update_request import ProfileUpdateRequest
+
+        # Employee-specific: only show their own requests
+        if user_role == "Employee":
+            # Get their own profile update requests
+            profile_requests = db.query(ProfileUpdateRequest).filter(
+                ProfileUpdateRequest.user_id == current_user.id
+            ).all()
+
+            # Get their own leave requests
+            leaves = list_leaves_by_tenant(db, str(company_id))
+            leaves = [
+                leave for leave in leaves
+                if getattr(leave, "employee_id", None) == current_user.id
+            ]
+        else:
+            # Manager, CompanyAdmin, SuperAdmin: show all company requests
+            profile_requests = db.query(ProfileUpdateRequest).filter(
+                ProfileUpdateRequest.user_id.in_(
+                    db.query(User.id).filter(User.company_id == company_id)
+                )
+            ).all()
+
+            # Get all leave requests for the company
+            leaves = list_leaves_by_tenant(db, str(company_id))
+
+        # Count profile update requests by status
+        profile_status_count = {"pending": 0, "approved": 0, "rejected": 0}
+        for request in profile_requests:
+            status = getattr(request, "status", "pending")
+            if status in profile_status_count:
+                profile_status_count[status] += 1
+
+        # Count leave requests by status
+        leave_status_count = {"Pending": 0, "Approved": 0, "Rejected": 0}
+        for leave in leaves:
+            status = getattr(leave, "status", "Pending")
+            if status in leave_status_count:
+                leave_status_count[status] += 1
+
+        # Combine the data for the chart
+        # For employees, show their own requests
+        # For managers/admins, show company-wide requests
+        reports_data = [
+            {"name": "Submitted", "value": profile_status_count["pending"] + leave_status_count["Pending"]},
+            {"name": "Pending Review", "value": profile_status_count["pending"] + leave_status_count["Pending"]},
+            {"name": "Approved", "value": profile_status_count["approved"] + leave_status_count["Approved"]},
+            {"name": "Rejected", "value": profile_status_count["rejected"] + leave_status_count["Rejected"]},
+        ]
+
+        return reports_data
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching reports data: {str(e)}")
 
 
 @router.get("/charts/employee-distribution")
