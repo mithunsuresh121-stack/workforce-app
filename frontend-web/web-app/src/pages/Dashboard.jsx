@@ -1,4 +1,3 @@
-import PageLayout from "../layouts/PageLayout";
 import React, { useState, useEffect } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
@@ -48,25 +47,21 @@ const Dashboard = () => {
 
   if (loading) {
     return (
-      <PageLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Spinner className="h-8 w-8" />
-          <Typography variant="small" className="ml-2">Loading dashboard...</Typography>
-        </div>
-      </PageLayout>
+      <div className="flex items-center justify-center min-h-screen">
+        <Spinner className="h-8 w-8" />
+        <Typography variant="small" className="ml-2">Loading dashboard...</Typography>
+      </div>
     );
   }
 
   if (error) {
     return (
-      <PageLayout>
-        <div className="flex items-center justify-center min-h-screen">
-          <Alert color="red" className="max-w-md">
-            <Typography variant="h5" className="mb-2">Error loading dashboard</Typography>
-            <Typography variant="small">{error}</Typography>
-          </Alert>
-        </div>
-      </PageLayout>
+      <div className="flex items-center justify-center min-h-screen">
+        <Alert color="red" className="max-w-md">
+          <Typography variant="h5" className="mb-2">Error loading dashboard</Typography>
+          <Typography variant="small">{error}</Typography>
+        </Alert>
+      </div>
     );
   }
 
@@ -90,8 +85,7 @@ const Dashboard = () => {
   };
 
   return (
-    <PageLayout>
-      <div className="p-4">
+    <div className="p-4">
         {/* Welcome Message */}
         <div className="mb-6">
           <Typography variant="h3" color="blue-gray" className="mb-2">
@@ -176,8 +170,7 @@ const Dashboard = () => {
           ))}
         </div>
       </div>
-      </div>
-    </PageLayout>
+    </div>
   );
 };
 
