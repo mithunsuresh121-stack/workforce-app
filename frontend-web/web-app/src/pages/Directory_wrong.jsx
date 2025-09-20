@@ -13,7 +13,7 @@ const Directory = () => {
       try {
         setLoading(true);
         setError('');
-        const response = await api.get('/employees');
+        const response = await api.get('/api/employees');
         setUsers(response.data);
       } catch (error) {
         console.error('Error fetching users:', error);
