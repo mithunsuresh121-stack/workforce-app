@@ -31,43 +31,91 @@ def get_dashboard_kpis(
     try:
         company_id = _require_company_id(current_user)
 
-        # Get total employees
-        employees = list_users_by_company(db, company_id)
-        total_employees = len(employees)
+        # Check user role for role-based dashboard
+        user_role = getattr(current_user, "role", "Employee").strip()
 
-        # Get active tasks (tasks that are not completed)
-        tasks = list_tasks(db, company_id)
-        active_tasks = sum(
-            1
-            for task in tasks
-            if (getattr(task, "status", "") or "").strip() != TaskStatus.COMPLETED.value
-        )
+        # Employee-specific KPIs
+        if user_role == "Employee":
+            # Get tasks assigned to this specific employee
+            tasks = list_tasks(db, company_id)
+            employee_tasks = [
+                task for task in tasks
+                if getattr(task, "assignee_id", None) == current_user.id
+            ]
 
-        # Get pending leave requests
-        # list_leaves_by_tenant uses tenant_id as str; company_id is int
-        leaves = list_leaves_by_tenant(db, str(company_id))
-        pending_leaves = sum(
-            1
-            for leave in leaves
-            if (getattr(leave, "status", "") or "").strip() == LeaveStatus.PENDING.value
-        )
+            # Calculate employee-specific metrics
+            total_tasks = len(employee_tasks)
+            active_tasks = sum(
+                1 for task in employee_tasks
+                if (getattr(task, "status", "") or "").strip() == TaskStatus.IN_PROGRESS.value
+            )
+            completed_tasks = sum(
+                1 for task in employee_tasks
+                if (getattr(task, "status", "") or "").strip() == TaskStatus.COMPLETED.value
+            )
 
-        # Get shifts for today
-        today = date.today()
-        shifts = list_shifts_by_tenant(db, str(company_id))
-        shifts_today = 0
-        for shift in shifts:
-            start = getattr(shift, "start_at", None)
-            end = getattr(shift, "end_at", None)
-            if (start and start.date() == today) or (end and end.date() == today):
-                shifts_today += 1
+            # Get pending approvals for this employee (if approval system exists)
+            # For now, we'll use pending leaves as a proxy for pending approvals
+            leaves = list_leaves_by_tenant(db, str(company_id))
+            employee_leaves = [
+                leave for leave in leaves
+                if getattr(leave, "employee_id", None) == current_user.id
+            ]
+            pending_approvals = sum(
+                1 for leave in employee_leaves
+                if (getattr(leave, "status", "") or "").strip() == LeaveStatus.PENDING.value
+            )
 
-        return {
-            "total_employees": total_employees,
-            "active_tasks": active_tasks,
-            "pending_leaves": pending_leaves,
-            "shifts_today": shifts_today,
-        }
+            # Get active teams count (if team system exists)
+            # For now, we'll use a placeholder - this would need to be implemented based on team structure
+            active_teams = 1  # Placeholder - employee is part of at least their own team/department
+
+            return {
+                "total_tasks": total_tasks,
+                "active_tasks": active_tasks,
+                "completed_tasks": completed_tasks,
+                "pending_approvals": pending_approvals,
+                "active_teams": active_teams,
+            }
+
+        # Manager, CompanyAdmin, and SuperAdmin - keep existing response
+        else:
+            # Get total employees
+            employees = list_users_by_company(db, company_id)
+            total_employees = len(employees)
+
+            # Get active tasks (tasks that are not completed)
+            tasks = list_tasks(db, company_id)
+            active_tasks = sum(
+                1
+                for task in tasks
+                if (getattr(task, "status", "") or "").strip() != TaskStatus.COMPLETED.value
+            )
+
+            # Get pending leave requests
+            leaves = list_leaves_by_tenant(db, str(company_id))
+            pending_leaves = sum(
+                1
+                for leave in leaves
+                if (getattr(leave, "status", "") or "").strip() == LeaveStatus.PENDING.value
+            )
+
+            # Get shifts for today
+            today = date.today()
+            shifts = list_shifts_by_tenant(db, str(company_id))
+            shifts_today = 0
+            for shift in shifts:
+                start = getattr(shift, "start_at", None)
+                end = getattr(shift, "end_at", None)
+                if (start and start.date() == today) or (end and end.date() == today):
+                    shifts_today += 1
+
+            return {
+                "total_employees": total_employees,
+                "active_tasks": active_tasks,
+                "pending_leaves": pending_leaves,
+                "shifts_today": shifts_today,
+            }
 
     except HTTPException:
         # Re-raise known client errors untouched

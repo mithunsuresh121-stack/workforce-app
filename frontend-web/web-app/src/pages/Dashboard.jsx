@@ -3,11 +3,13 @@ import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { useAuth, api } from '../contexts/AuthContext';
 import { Card, CardBody, Typography, Spinner, Alert } from '@material-tailwind/react';
+import { useNavigate } from 'react-router-dom';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [kpis, setKpis] = useState({
     total_employees: 0,
@@ -45,6 +47,29 @@ const Dashboard = () => {
     fetchDashboardData();
   }, []);
 
+  // Handle card click navigation
+  const handleCardClick = (cardType) => {
+    switch (cardType) {
+      case 'total_tasks':
+        navigate('/tasks');
+        break;
+      case 'active_tasks':
+        navigate('/tasks?filter=active');
+        break;
+      case 'completed_tasks':
+        navigate('/tasks?filter=completed');
+        break;
+      case 'pending_approvals':
+        navigate('/approvals');
+        break;
+      case 'active_teams':
+        navigate('/directory'); // Fallback to directory if teams route doesn't exist
+        break;
+      default:
+        break;
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -65,6 +90,110 @@ const Dashboard = () => {
     );
   }
 
+  // Check user role for role-based rendering
+  const userRole = user?.role || 'Employee';
+
+  // Employee-specific dashboard
+  if (userRole === 'Employee') {
+    return (
+      <div className="p-4">
+        {/* Welcome Message */}
+        <div className="mb-6">
+          <Typography variant="h3" color="blue-gray" className="mb-2">
+            Welcome back, {user?.name || 'User'}!
+          </Typography>
+          <Typography variant="small" color="gray">
+            Here's what's happening with your tasks today.
+          </Typography>
+        </div>
+
+        {/* Employee KPI Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            onClick={() => handleCardClick('total_tasks')}
+          >
+            <CardBody className="text-center">
+              <Typography variant="h5" color="blue-gray" className="mb-2">Total Tasks</Typography>
+              <Typography variant="h3" color="blue">{kpis.total_tasks || 0}</Typography>
+            </CardBody>
+          </Card>
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            onClick={() => handleCardClick('active_tasks')}
+          >
+            <CardBody className="text-center">
+              <Typography variant="h5" color="blue-gray" className="mb-2">Active Tasks</Typography>
+              <Typography variant="h3" color="green">{kpis.active_tasks || 0}</Typography>
+            </CardBody>
+          </Card>
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            onClick={() => handleCardClick('completed_tasks')}
+          >
+            <CardBody className="text-center">
+              <Typography variant="h5" color="blue-gray" className="mb-2">Completed Tasks</Typography>
+              <Typography variant="h3" color="purple">{kpis.completed_tasks || 0}</Typography>
+            </CardBody>
+          </Card>
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            onClick={() => handleCardClick('pending_approvals')}
+          >
+            <CardBody className="text-center">
+              <Typography variant="h5" color="blue-gray" className="mb-2">Pending Approvals</Typography>
+              <Typography variant="h3" color="orange">{kpis.pending_approvals || 0}</Typography>
+            </CardBody>
+          </Card>
+          <Card
+            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            onClick={() => handleCardClick('active_teams')}
+          >
+            <CardBody className="text-center">
+              <Typography variant="h5" color="blue-gray" className="mb-2">Active Teams</Typography>
+              <Typography variant="h3" color="indigo">{kpis.active_teams || 0}</Typography>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Recent Activities */}
+        <div className="bg-white p-6 rounded-lg shadow-md border">
+          <div className="mb-4">
+            <h5 className="text-lg font-semibold text-gray-700">Recent Activities</h5>
+          </div>
+          <div className="space-y-4">
+            {recentActivities.length > 0 ? (
+              recentActivities.map((activity, index) => (
+                <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
+                  <div className={`w-3 h-3 rounded-full mt-1 ${activity.type === 'task' ? 'bg-blue-500' : 'bg-green-500'
+                    }`}></div>
+                  <div className="flex-1">
+                    <p className="text-sm font-medium text-gray-800">
+                      {activity.title}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      {activity.description}
+                    </p>
+                    <p className="text-sm text-gray-500">
+                      Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              <div className="text-center py-8">
+                <Typography variant="small" color="gray">
+                  No recent activities to display.
+                </Typography>
+              </div>
+            )}
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Manager, CompanyAdmin, and SuperAdmin dashboard (original layout)
   // Prepare chart data
   const taskStatusChartData = {
     labels: taskStatusData.map(item => item.name),
@@ -86,43 +215,43 @@ const Dashboard = () => {
 
   return (
     <div className="p-4">
-        {/* Welcome Message */}
-        <div className="mb-6">
-          <Typography variant="h3" color="blue-gray" className="mb-2">
-            Welcome back, {user?.name || 'User'}!
-          </Typography>
-          <Typography variant="small" color="gray">
-            Here's what's happening with your workforce today.
-          </Typography>
-        </div>
+      {/* Welcome Message */}
+      <div className="mb-6">
+        <Typography variant="h3" color="blue-gray" className="mb-2">
+          Welcome back, {user?.name || 'User'}!
+        </Typography>
+        <Typography variant="small" color="gray">
+          Here's what's happening with your workforce today.
+        </Typography>
+      </div>
 
-        {/* KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-          <Card>
-            <CardBody>
-              <Typography variant="h5" color="blue-gray" className="mb-2">Total Employees</Typography>
-              <Typography variant="h3" color="blue">{kpis.total_employees}</Typography>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <Typography variant="h5" color="blue-gray" className="mb-2">Active Tasks</Typography>
-              <Typography variant="h3" color="green">{kpis.active_tasks}</Typography>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <Typography variant="h5" color="blue-gray" className="mb-2">Pending Leaves</Typography>
-              <Typography variant="h3" color="orange">{kpis.pending_leaves}</Typography>
-            </CardBody>
-          </Card>
-          <Card>
-            <CardBody>
-              <Typography variant="h5" color="blue-gray" className="mb-2">Shifts Today</Typography>
-              <Typography variant="h3" color="purple">{kpis.shifts_today}</Typography>
-            </CardBody>
-          </Card>
-        </div>
+      {/* KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
+        <Card>
+          <CardBody>
+            <Typography variant="h5" color="blue-gray" className="mb-2">Total Employees</Typography>
+            <Typography variant="h3" color="blue">{kpis.total_employees}</Typography>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <Typography variant="h5" color="blue-gray" className="mb-2">Active Tasks</Typography>
+            <Typography variant="h3" color="green">{kpis.active_tasks}</Typography>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <Typography variant="h5" color="blue-gray" className="mb-2">Pending Leaves</Typography>
+            <Typography variant="h3" color="orange">{kpis.pending_leaves}</Typography>
+          </CardBody>
+        </Card>
+        <Card>
+          <CardBody>
+            <Typography variant="h5" color="blue-gray" className="mb-2">Shifts Today</Typography>
+            <Typography variant="h3" color="purple">{kpis.shifts_today}</Typography>
+          </CardBody>
+        </Card>
+      </div>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
