@@ -4,7 +4,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { useAuth, api } from '../contexts/AuthContext';
 import { Card, CardBody, Typography, Spinner, Alert } from '@material-tailwind/react';
 import { useNavigate } from 'react-router-dom';
-import DashboardCharts from '../components/DashboardCharts';
+import DashboardCharts from '../components/DashboardCharts_corrected';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -27,10 +27,10 @@ const Dashboard = () => {
     const fetchDashboardData = async () => {
       try {
         const [kpisRes, taskStatusRes, employeeDistRes, activitiesRes] = await Promise.all([
-          api.get('/dashboard/kpis'),
-          api.get('/dashboard/charts/task-status'),
-          api.get('/dashboard/charts/employee-distribution'),
-          api.get('/dashboard/recent-activities'),
+          api.get('/api/dashboard/kpis'),
+          api.get('/api/dashboard/charts/task-status'),
+          api.get('/api/dashboard/charts/employee-distribution'),
+          api.get('/api/dashboard/recent-activities'),
         ]);
 
         setKpis(kpisRes.data);
