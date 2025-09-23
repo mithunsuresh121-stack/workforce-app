@@ -14,10 +14,14 @@ const DashboardCharts = () => {
   useEffect(() => {
     const fetchChartData = async () => {
       try {
+        console.log('Fetching chart data...');
         const [taskStatusRes, reportsRes] = await Promise.all([
           api.get('/dashboard/charts/task-status'),
           api.get('/dashboard/charts/reports'),
         ]);
+
+        console.log('Task Status Data:', taskStatusRes.data);
+        console.log('Reports Data:', reportsRes.data);
 
         setTaskStatusData(taskStatusRes.data);
         setReportsData(reportsRes.data);
@@ -108,30 +112,38 @@ const DashboardCharts = () => {
             Task Status Distribution
           </Typography>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={taskStatusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                  onClick={handleTaskStatusClick}
-                  style={{ cursor: 'pointer' }}
-                >
-                  {taskStatusData.map((entry, index) => (
-                    <Cell
-                      key={`cell-${index}`}
-                      fill={COLORS.taskStatus[index % COLORS.taskStatus.length]}
-                    />
-                  ))}
-                </Pie>
-                <Tooltip content={<TaskStatusTooltip />} />
-              </PieChart>
-            </ResponsiveContainer>
+            {taskStatusData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={taskStatusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius={80}
+                    fill="#8884d8"
+                    dataKey="value"
+                    onClick={handleTaskStatusClick}
+                    style={{ cursor: 'pointer' }}
+                  >
+                    {taskStatusData.map((entry, index) => (
+                      <Cell
+                        key={`cell-${index}`}
+                        fill={COLORS.taskStatus[index % COLORS.taskStatus.length]}
+                      />
+                    ))}
+                  </Pie>
+                  <Tooltip content={<TaskStatusTooltip />} />
+                </PieChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Typography variant="small" color="gray">
+                  No task data available
+                </Typography>
+              </div>
+            )}
           </div>
           <Typography variant="small" color="gray" className="mt-2 text-center">
             Click on segments to view tasks by status
@@ -146,21 +158,29 @@ const DashboardCharts = () => {
             Reports & Requests
           </Typography>
           <div className="h-64">
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={reportsData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip content={<ReportsTooltip />} />
-                <Legend />
-                <Bar
-                  dataKey="value"
-                  fill="#8884d8"
-                  onClick={handleReportsClick}
-                  style={{ cursor: 'pointer' }}
-                />
-              </BarChart>
-            </ResponsiveContainer>
+            {reportsData.length > 0 ? (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={reportsData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="name" />
+                  <YAxis />
+                  <Tooltip content={<ReportsTooltip />} />
+                  <Legend />
+                  <Bar
+                    dataKey="value"
+                    fill="#8884d8"
+                    onClick={handleReportsClick}
+                    style={{ cursor: 'pointer' }}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            ) : (
+              <div className="flex items-center justify-center h-full">
+                <Typography variant="small" color="gray">
+                  No reports data available
+                </Typography>
+              </div>
+            )}
           </div>
           <Typography variant="small" color="gray" className="mt-2 text-center">
             Click on bars to view requests by status

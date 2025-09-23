@@ -50,6 +50,17 @@ def get_my_profile(
                     hire_date="2023-06-01",
                     manager_id=None
                 )
+            elif current_user.email == "test_employee@example.com":
+                profile = create_employee_profile(
+                    db=db,
+                    user_id=current_user.id,
+                    company_id=current_user.company_id or 1,  # Default to company ID 1 if None
+                    department="Engineering",
+                    position="Software Engineer",
+                    phone="+1234567892",
+                    hire_date="2023-07-01",
+                    manager_id=None
+                )
             else:
                 raise HTTPException(
                     status_code=status.HTTP_404_NOT_FOUND,
@@ -95,6 +106,25 @@ def get_my_profile(
                 profile_picture_url=None,
                 created_at="2023-06-01T00:00:00",
                 updated_at="2023-06-01T00:00:00"
+            )
+        elif current_user.email == "test_employee@example.com":
+            return EmployeeProfileOut(
+                id=3,
+                user_id=current_user.id,
+                company_id=current_user.company_id or 1,
+                department="Engineering",
+                position="Software Engineer",
+                phone="+1234567892",
+                hire_date="2023-07-01",
+                manager_id=None,
+                is_active=True,
+                address="789 Test St",
+                city="Test City",
+                emergency_contact="Emergency Contact",
+                employee_id="EMP003",
+                profile_picture_url=None,
+                created_at="2023-07-01T00:00:00",
+                updated_at="2023-07-01T00:00:00"
             )
         else:
             raise HTTPException(
