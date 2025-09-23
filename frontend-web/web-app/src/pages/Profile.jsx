@@ -303,8 +303,8 @@ const Profile = () => {
           </div>
           <Chip
             size="sm"
-            color="white"
-            className="bg-white text-blue-600"
+            color="blue-gray"
+            className="bg-blue-gray-50 text-blue-600"
             value="Pending Admin Review"
             icon={<ClockIcon className="h-4 w-4" />}
           />
