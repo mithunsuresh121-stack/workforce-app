@@ -1,11 +1,19 @@
-# Auto-Fix + Auto-Test Script Steps
+# TODO List for Frontend Profile Update E2E Tests and Manual Testing Instructions
 
-- [x] Step 1: Check React versions with npm ls react react-dom
-- [x] Step 2: Deduplicate React with npm dedupe react react-dom
-- [x] Step 3: Clean up providers in App.js (remove ThemeProvider/AuthProvider if present)
-- [x] Step 4: Overwrite index.js with correct providers setup
-- [x] Step 5: Create e2e-login.spec.js Playwright test file
-- [x] Step 6: Restart dev server with npm run start &
-- [x] Step 7: Install Playwright dependencies
-- [x] Step 8: Run Playwright e2e-login test
-- [x] Step 9: Commit all changes
+## Completed
+- Fixed test environment by separating Playwright and Vitest tests into different directories.
+- Updated playwright.config.js to point to e2e directory.
+- Fixed frontend Profile.jsx to correctly fetch and display profile data.
+
+## Pending
+- Write Playwright end-to-end tests for profile update and approval workflow.
+  - Employee submits profile update request.
+  - Super Admin approves or rejects the request.
+  - Form validation tests.
+  - Employee views updated profile after approval.
+- Prepare manual testing instructions for profile update feature.
+
+## Next Steps
+- Run the new Playwright e2e tests to verify functionality.
+- Review and refine manual testing instructions.
+- Address any test failures or issues found during test runs.

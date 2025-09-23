@@ -36,6 +36,11 @@ from .schemas import (
     EmployeeCreate,
     EmployeeOut,
 
+    # Profile Update Request schemas
+    ProfileUpdateRequestCreate,
+    ProfileUpdateRequestOut,
+    ProfileUpdateRequestReview,
+
     # Payroll schemas
     SalaryCreate,
     SalaryOut,

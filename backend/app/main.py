@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings, engine, Base
-from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications, notification_preferences
+from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications, notification_preferences, profile
 from .custom_json_response import CustomJSONResponse
 
 # Only create tables when running the app directly, not when imported for testing
@@ -13,7 +13,7 @@ app = FastAPI(title="Workforce App", version="1.0", default_response_class=Custo
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In production, replace with specific origins
+    allow_origins=["http://localhost:3000"],  # Allow frontend origin explicitly
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -30,6 +30,7 @@ app.include_router(payroll.router, prefix="/api")
 app.include_router(attendance.router, prefix="/api")
 app.include_router(notifications.router, prefix="/api")
 app.include_router(notification_preferences.router, prefix="/api")
+app.include_router(profile.router, prefix="/api")
 
 from .seed_demo_user import seed_demo_user
 from .deps import get_db

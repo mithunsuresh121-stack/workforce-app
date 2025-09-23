@@ -234,6 +234,12 @@ class EmployeeProfileBase(BaseModel):
     hire_date: Optional[datetime] = None
     manager_id: Optional[int] = None
     is_active: Optional[bool] = True
+    # gender: Optional[str] = None  # removed as per request
+    address: Optional[str] = None
+    city: Optional[str] = None
+    emergency_contact: Optional[str] = None
+    employee_id: Optional[str] = None
+    profile_picture_url: Optional[str] = None
 
 class EmployeeProfileCreate(EmployeeProfileBase):
     pass
@@ -245,6 +251,12 @@ class EmployeeProfileUpdate(BaseModel):
     hire_date: Optional[datetime] = None
     manager_id: Optional[int] = None
     is_active: Optional[bool] = None
+    # gender: Optional[str] = None  # removed as per request
+    address: Optional[str] = None
+    city: Optional[str] = None
+    emergency_contact: Optional[str] = None
+    employee_id: Optional[str] = None
+    profile_picture_url: Optional[str] = None
 
 class EmployeeProfileOut(EmployeeProfileBase):
     id: int
@@ -413,3 +425,36 @@ class PayrollEntryOut(PayrollEntryBase):
 
     class Config:
         from_attributes = True
+
+# Profile Update Request Schemas
+class RequestStatus(str, Enum):
+    pending = "pending"
+    approved = "approved"
+    rejected = "rejected"
+
+class ProfileUpdateRequestBase(BaseModel):
+    user_id: int
+    request_type: str  # "update" or "delete"
+    payload: Optional[dict] = None
+
+class ProfileUpdateRequestCreate(ProfileUpdateRequestBase):
+    pass
+
+class ProfileUpdateRequestOut(BaseModel):
+    id: int
+    user_id: int
+    requested_by_id: int
+    request_type: str
+    payload: Optional[dict]
+    status: RequestStatus
+    created_at: datetime
+    reviewed_at: Optional[datetime]
+    reviewed_by_id: Optional[int]
+    review_comment: Optional[str]
+
+    class Config:
+        from_attributes = True
+
+class ProfileUpdateRequestReview(BaseModel):
+    status: RequestStatus
+    review_comment: Optional[str] = None
