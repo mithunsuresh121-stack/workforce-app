@@ -5,6 +5,7 @@ from .task import Task
 from .leave import Leave
 from .shift import Shift
 from .employee_profile import EmployeeProfile
+from .profile_update_request import ProfileUpdateRequest
 from .attendance import Attendance, Break
 from .payroll import (
     Employee,
@@ -23,6 +24,7 @@ __all__ = [
     "Leave",
     "Shift",
     "EmployeeProfile",
+    "ProfileUpdateRequest",
     "Attendance",
     "Break",
     "Employee",

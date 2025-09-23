@@ -2,7 +2,11 @@ from .auth import router as auth_router
 from .tasks import router as tasks_router
 from .companies import router as companies_router
 from .dashboard import router as dashboard_router
+from .profile import router as profile_router
 from .employees import router as employees_router
 from .leaves import router as leaves_router
 from .shifts import router as shifts_router
 from .payroll import router as payroll_router
+from .attendance import router as attendance_router
+from .notifications import router as notifications_router
+from .notification_preferences import router as notification_preferences_router

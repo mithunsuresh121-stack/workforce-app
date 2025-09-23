@@ -1,6 +1,6 @@
 import requests
 
-BASE_URL = 'http://localhost:8000'
+BASE_URL = 'http://localhost:8000/api'
 EMPLOYEE_ID = 1
 
 def auth_header(token):

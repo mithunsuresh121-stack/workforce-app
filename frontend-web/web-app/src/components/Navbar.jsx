@@ -1,9 +1,11 @@
 import React from 'react';
 import { BellIcon, UserCircleIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 
 const Navbar = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <header className="bg-white shadow-sm border-b">
@@ -36,8 +38,21 @@ const Navbar = ({ onMenuClick }) => {
             <BellIcon className="w-6 h-6" />
           </button>
           <div className="flex items-center space-x-2">
-            <UserCircleIcon className="w-8 h-8 text-gray-400" />
-            <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
+            <button
+              onClick={() => navigate('/profile')}
+              className="flex items-center space-x-2 p-1 rounded-md hover:bg-gray-100 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              aria-label="Go to profile"
+              tabIndex={0}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  navigate('/profile');
+                }
+              }}
+            >
+              <UserCircleIcon className="w-8 h-8 text-gray-400" />
+              <span className="text-sm font-medium text-gray-700">{user?.name || 'User'}</span>
+            </button>
             <button
               onClick={logout}
               className="ml-4 px-3 py-1 text-sm text-red-600 border border-red-600 rounded hover:bg-red-600 hover:text-white transition"
