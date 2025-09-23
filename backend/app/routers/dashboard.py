@@ -375,3 +375,180 @@ def get_employee_distribution_chart(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching employee distribution data: {str(e)}")
+
+
+@router.get("/charts/contribution/tasks-completed")
+def get_tasks_completed_chart(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get tasks completed by the employee over time for contribution charts
+    """
+    try:
+        company_id = _require_company_id(current_user)
+        user_role = getattr(current_user, "role", "Employee").strip()
+
+        # Only allow employees to access this endpoint
+        if user_role != "Employee":
+            raise HTTPException(status_code=403, detail="Access denied. This endpoint is for employees only.")
+
+        from datetime import datetime, timedelta
+
+        # Get tasks completed by this employee
+        tasks = list_tasks(db, company_id)
+        employee_tasks = [
+            task for task in tasks
+            if getattr(task, "assignee_id", None) == current_user.id
+        ]
+
+        # Group by completion status and time periods
+        completed_tasks = [
+            task for task in employee_tasks
+            if (getattr(task, "status", "") or "").strip() == TaskStatus.COMPLETED.value
+        ]
+
+        # Group by time periods (last 30 days, 30-60 days, 60-90 days, older)
+        now = datetime.now()
+        time_periods = {
+            "Last 7 days": timedelta(days=7),
+            "Last 30 days": timedelta(days=30),
+            "Last 90 days": timedelta(days=90),
+            "Older": None
+        }
+
+        time_data = {period: 0 for period in time_periods.keys()}
+
+        for task in completed_tasks:
+            updated_at = getattr(task, "updated_at", None)
+            if updated_at:
+                if now - updated_at <= time_periods["Last 7 days"]:
+                    time_data["Last 7 days"] += 1
+                elif now - updated_at <= time_periods["Last 30 days"]:
+                    time_data["Last 30 days"] += 1
+                elif now - updated_at <= time_periods["Last 90 days"]:
+                    time_data["Last 90 days"] += 1
+                else:
+                    time_data["Older"] += 1
+
+        return [
+            {"name": "Last 7 days", "value": time_data["Last 7 days"]},
+            {"name": "Last 30 days", "value": time_data["Last 30 days"]},
+            {"name": "Last 90 days", "value": time_data["Last 90 days"]},
+            {"name": "Older", "value": time_data["Older"]},
+        ]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching tasks completed data: {str(e)}")
+
+
+@router.get("/charts/contribution/tasks-created")
+def get_tasks_created_chart(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get tasks created/assigned by the employee for contribution charts
+    """
+    try:
+        company_id = _require_company_id(current_user)
+        user_role = getattr(current_user, "role", "Employee").strip()
+
+        # Only allow employees to access this endpoint
+        if user_role != "Employee":
+            raise HTTPException(status_code=403, detail="Access denied. This endpoint is for employees only.")
+
+        # Get tasks created by this employee
+        tasks = list_tasks(db, company_id)
+        created_tasks = [
+            task for task in tasks
+            if getattr(task, "assigned_by", None) == current_user.id
+        ]
+
+        # Group by status
+        status_data = {s.value: 0 for s in TaskStatus}
+
+        for task in created_tasks:
+            s = (getattr(task, "status", "") or "").strip()
+            if s in status_data:
+                status_data[s] += 1
+
+        return [
+            {"name": "Pending", "value": status_data["Pending"]},
+            {"name": "In Progress", "value": status_data["In Progress"]},
+            {"name": "Completed", "value": status_data["Completed"]},
+            {"name": "Overdue", "value": status_data["Overdue"]},
+        ]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching tasks created data: {str(e)}")
+
+
+@router.get("/charts/contribution/productivity")
+def get_productivity_chart(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get productivity metrics for the employee for contribution charts
+    """
+    try:
+        company_id = _require_company_id(current_user)
+        user_role = getattr(current_user, "role", "Employee").strip()
+
+        # Only allow employees to access this endpoint
+        if user_role != "Employee":
+            raise HTTPException(status_code=403, detail="Access denied. This endpoint is for employees only.")
+
+        # Get tasks assigned to this employee
+        tasks = list_tasks(db, company_id)
+        employee_tasks = [
+            task for task in tasks
+            if getattr(task, "assignee_id", None) == current_user.id
+        ]
+
+        total_tasks = len(employee_tasks)
+        if total_tasks == 0:
+            return [
+                {"name": "No Tasks", "value": 1}
+            ]
+
+        # Calculate productivity metrics
+        completed_tasks = sum(
+            1 for task in employee_tasks
+            if (getattr(task, "status", "") or "").strip() == TaskStatus.COMPLETED.value
+        )
+
+        in_progress_tasks = sum(
+            1 for task in employee_tasks
+            if (getattr(task, "status", "") or "").strip() == TaskStatus.IN_PROGRESS.value
+        )
+
+        pending_tasks = sum(
+            1 for task in employee_tasks
+            if (getattr(task, "status", "") or "").strip() == TaskStatus.PENDING.value
+        )
+
+        overdue_tasks = sum(
+            1 for task in employee_tasks
+            if (getattr(task, "status", "") or "").strip() == TaskStatus.OVERDUE.value
+        )
+
+        # Calculate completion rate
+        completion_rate = (completed_tasks / total_tasks) * 100 if total_tasks > 0 else 0
+
+        return [
+            {"name": "Completed", "value": completed_tasks},
+            {"name": "In Progress", "value": in_progress_tasks},
+            {"name": "Pending", "value": pending_tasks},
+            {"name": "Overdue", "value": overdue_tasks},
+        ]
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching productivity data: {str(e)}")
