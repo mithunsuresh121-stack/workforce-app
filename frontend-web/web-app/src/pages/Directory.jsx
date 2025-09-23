@@ -58,9 +58,9 @@ const Directory = () => {
 
   const filteredUsers = useMemo(() => {
     return users.filter(user => {
-      const matchesSearch = user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           user.department?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesSearch = (user.name?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                           (user.email?.toLowerCase().includes(searchTerm.toLowerCase()) || false) ||
+                           (user.department?.toLowerCase().includes(searchTerm.toLowerCase()) || false);
       const matchesRole = !roleFilter || user.role === roleFilter;
       return matchesSearch && matchesRole;
     });
