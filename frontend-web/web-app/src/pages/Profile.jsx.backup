@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Alert,
+  Spinner,
   Dialog,
   DialogHeader,
   DialogBody,
@@ -136,36 +137,32 @@ const Profile = () => {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
             {/* Header Content */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex-1 min-w-0">
-                <Typography variant="h3" color="blue-gray" className="mb-3 font-bold leading-tight">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <Typography variant="h3" color="blue-gray" className="mb-2 font-bold">
                   Employee Profile
                 </Typography>
-                <Typography variant="lead" color="gray" className="flex items-center gap-2 text-base">
-                  <UserIcon className="h-5 w-5 flex-shrink-0" />
-                  <span className="leading-relaxed">Manage your personal and professional information</span>
+                <Typography variant="lead" color="gray" className="flex items-center gap-2">
+                  <UserIcon className="h-5 w-5" />
+                  Manage your personal and professional information
                 </Typography>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
-                <Tooltip content="Export Profile" placement="top">
-                  <IconButton
-                    variant="outlined"
-                    size="lg"
-                    className="flex items-center justify-center gap-2 min-w-[120px]"
-                  >
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Tooltip content="Export Profile">
+                  <IconButton variant="outlined" size="lg" className="flex items-center gap-2">
                     <ShareIcon className="h-5 w-5" />
-                    <span className="hidden sm:inline font-medium">Export</span>
+                    <span className="hidden sm:inline">Export</span>
                   </IconButton>
                 </Tooltip>
                 <Button
                   onClick={() => setEditing(true)}
                   size="lg"
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 min-w-[140px]"
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <PencilIcon className="h-5 w-5" />
-                  <span className="font-medium">Edit Profile</span>
+                  Edit Profile
                 </Button>
               </div>
             </div>

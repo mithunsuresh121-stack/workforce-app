@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import {
   Typography,
   Alert,
+  Spinner,
   Dialog,
   DialogHeader,
   DialogBody,
@@ -17,7 +18,9 @@ import {
   Chip,
   Progress,
   IconButton,
-  Tooltip
+  Tooltip,
+  Breadcrumbs,
+  Badge
 } from '@material-tailwind/react';
 import {
   UserIcon,
@@ -27,12 +30,17 @@ import {
   ShareIcon,
   CheckCircleIcon,
   ClockIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  HomeIcon,
+  ChevronRightIcon,
+  ArrowLeftIcon,
+  DocumentTextIcon,
+  ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { useAuth, api } from '../contexts/AuthContext';
-import ProfileCard from '../components/ProfileCard_enhanced';
-import ProfileDetails from '../components/ProfileDetails_enhanced';
-import EditProfileForm from '../components/EditProfileForm_enhanced';
+import ProfileCard from '../components/ProfileCard';
+import ProfileDetails from '../components/ProfileDetails';
+import EditProfileForm from '../components/EditProfileForm';
 
 const Profile = () => {
   const { user: authUser } = useAuth();
@@ -79,23 +87,7 @@ const Profile = () => {
         setProfile(response.data);
       } catch (error) {
         console.error('Error fetching profile:', error);
-        // Use mock data for demonstration when database is not available
-        setProfile({
-          id: 1,
-          user_id: 35,
-          company_id: 1,
-          department: 'Engineering',
-          position: 'Software Engineer',
-          phone: '+1-555-0123',
-          hire_date: '2023-01-15T00:00:00Z',
-          address: '123 Tech Street',
-          city: 'San Francisco',
-          emergency_contact: 'Jane Doe - +1-555-0456',
-          employee_id: 'EMP001',
-          profile_picture_url: null,
-          is_active: true
-        });
-        setAlert({ show: true, message: 'Using demo data - Database connection issue detected.', type: 'warning' });
+        setAlert({ show: true, message: 'Failed to load profile. Please try again.', type: 'error' });
       } finally {
         setLoading(false);
       }
@@ -135,37 +127,45 @@ const Profile = () => {
       <div className="bg-white shadow-sm border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="py-6">
+            {/* Breadcrumb Navigation */}
+            <Breadcrumbs className="mb-4">
+              <a href="/" className="flex items-center gap-2 text-gray-600 hover:text-blue-600 transition-colors">
+                <HomeIcon className="h-4 w-4" />
+                Dashboard
+              </a>
+              <span className="flex items-center gap-2 text-blue-600">
+                <UserIcon className="h-4 w-4" />
+                Employee Profile
+              </span>
+            </Breadcrumbs>
+
             {/* Header Content */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex-1 min-w-0">
-                <Typography variant="h3" color="blue-gray" className="mb-3 font-bold leading-tight">
+            <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+              <div>
+                <Typography variant="h3" color="blue-gray" className="mb-2 font-bold">
                   Employee Profile
                 </Typography>
-                <Typography variant="lead" color="gray" className="flex items-center gap-2 text-base">
-                  <UserIcon className="h-5 w-5 flex-shrink-0" />
-                  <span className="leading-relaxed">Manage your personal and professional information</span>
+                <Typography variant="lead" color="gray" className="flex items-center gap-2">
+                  <DocumentTextIcon className="h-5 w-5" />
+                  Manage your personal and professional information
                 </Typography>
               </div>
 
               {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
-                <Tooltip content="Export Profile" placement="top">
-                  <IconButton
-                    variant="outlined"
-                    size="lg"
-                    className="flex items-center justify-center gap-2 min-w-[120px]"
-                  >
+              <div className="flex flex-col sm:flex-row gap-3">
+                <Tooltip content="Export Profile">
+                  <IconButton variant="outlined" size="lg" className="flex items-center gap-2">
                     <ShareIcon className="h-5 w-5" />
-                    <span className="hidden sm:inline font-medium">Export</span>
+                    <span className="hidden sm:inline">Export</span>
                   </IconButton>
                 </Tooltip>
                 <Button
                   onClick={() => setEditing(true)}
                   size="lg"
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 min-w-[140px]"
+                  className="flex items-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300"
                 >
                   <PencilIcon className="h-5 w-5" />
-                  <span className="font-medium">Edit Profile</span>
+                  Edit Profile
                 </Button>
               </div>
             </div>
@@ -182,15 +182,15 @@ const Profile = () => {
               <div className="flex-1">
                 <div className="flex items-center justify-between mb-3">
                   <Typography variant="h6" color="blue-gray" className="flex items-center gap-2">
-                    <CheckCircleIcon className="h-6 w-6" />
+                    <ChartBarIcon className="h-6 w-6" />
                     Profile Completion
                   </Typography>
-                  <Chip
-                    size="lg"
+                  <Badge
                     color={profileCompletion === 100 ? 'green' : profileCompletion >= 75 ? 'blue' : 'amber'}
                     className="px-3 py-1"
-                    value={`${profileCompletion}% Complete`}
-                  />
+                  >
+                    {profileCompletion}% Complete
+                  </Badge>
                 </div>
                 <Progress
                   value={profileCompletion}
@@ -301,13 +301,10 @@ const Profile = () => {
               Request changes to your profile information
             </Typography>
           </div>
-          <Chip
-            size="sm"
-            color="white"
-            className="bg-white text-blue-600"
-            value="Pending Admin Review"
-            icon={<ClockIcon className="h-4 w-4" />}
-          />
+          <Badge color="white" className="bg-white text-blue-600">
+            <ClockIcon className="h-4 w-4 mr-1" />
+            Pending Admin Review
+          </Badge>
         </DialogHeader>
         <DialogBody className="px-6 py-4">
           <EditProfileForm
