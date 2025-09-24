@@ -1,25 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import {
-  Typography,
-  Alert,
-  Dialog,
-  DialogHeader,
-  DialogBody,
-  DialogFooter,
-  Button,
-  Card,
-  CardBody,
-  Tabs,
-  TabsHeader,
-  TabsBody,
-  Tab,
-  TabPanel,
-  Chip,
-  Progress,
-  IconButton,
-  Tooltip
-} from '@material-tailwind/react';
-import {
   UserIcon,
   PhoneIcon,
   CalendarIcon,
@@ -27,11 +7,13 @@ import {
   ShareIcon,
   CheckCircleIcon,
   ClockIcon,
-  ExclamationTriangleIcon
+  ExclamationTriangleIcon,
+  ArrowDownTrayIcon,
+  EyeIcon
 } from '@heroicons/react/24/outline';
 import { useAuth, api } from '../contexts/AuthContext';
-import ProfileCard from '../components/ProfileCard_enhanced';
-import ProfileDetails from '../components/ProfileDetails_enhanced';
+import ProfileCard from '../components/ProfileCard_linear';
+import ProfileDetails from '../components/ProfileDetails_linear';
 import EditProfileForm from '../components/EditProfileForm_enhanced';
 
 const Profile = () => {
@@ -113,15 +95,15 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex justify-center items-center">
-        <div className="text-center bg-white p-8 rounded-2xl shadow-lg">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
-          <Typography variant="h6" color="blue-gray" className="mb-2">
+      <div className="min-h-screen bg-surface flex justify-center items-center">
+        <div className="text-center bg-surface border border-border rounded-lg p-8 shadow-linear-lg">
+          <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h3 className="text-lg font-semibold text-neutral-900 mb-2">
             Loading Profile...
-          </Typography>
-          <Typography variant="small" color="gray">
+          </h3>
+          <p className="text-neutral-600">
             Please wait while we fetch your information
-          </Typography>
+          </p>
         </div>
       </div>
     );
@@ -130,106 +112,111 @@ const Profile = () => {
   const profileCompletion = calculateProfileCompletion(profile);
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-surface">
       {/* Modern Header Section */}
-      <div className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="py-6">
-            {/* Header Content */}
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-              <div className="flex-1 min-w-0">
-                <Typography variant="h3" color="blue-gray" className="mb-3 font-bold leading-tight">
-                  Employee Profile
-                </Typography>
-                <Typography variant="lead" color="gray" className="flex items-center gap-2 text-base">
-                  <UserIcon className="h-5 w-5 flex-shrink-0" />
-                  <span className="leading-relaxed">Manage your personal and professional information</span>
-                </Typography>
+      <div className="bg-surface border-b border-border">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          {/* Header Content */}
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
+            <div className="flex-1 min-w-0">
+              <h1 className="text-2xl font-semibold text-neutral-900 mb-2">
+                Employee Profile
+              </h1>
+              <div className="flex items-center gap-2 text-neutral-600">
+                <UserIcon className="w-5 h-5 flex-shrink-0" />
+                <span>Manage your personal and professional information</span>
               </div>
+            </div>
 
-              {/* Action Buttons */}
-              <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
-                <Tooltip content="Export Profile" placement="top">
-                  <IconButton
-                    variant="outlined"
-                    size="lg"
-                    className="flex items-center justify-center gap-2 min-w-[120px]"
-                  >
-                    <ShareIcon className="h-5 w-5" />
-                    <span className="hidden sm:inline font-medium">Export</span>
-                  </IconButton>
-                </Tooltip>
-                <Button
-                  onClick={() => setEditing(true)}
-                  size="lg"
-                  className="flex items-center justify-center gap-2 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 shadow-lg hover:shadow-xl transition-all duration-300 min-w-[140px]"
-                >
-                  <PencilIcon className="h-5 w-5" />
-                  <span className="font-medium">Edit Profile</span>
-                </Button>
-              </div>
+            {/* Action Buttons */}
+            <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
+              <button className="flex items-center justify-center gap-2 px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 hover:border-neutral-300 transition-colors duration-200 min-w-[120px]">
+                <ArrowDownTrayIcon className="w-5 h-5" />
+                <span className="hidden sm:inline font-medium">Export</span>
+              </button>
+              <button
+                onClick={() => setEditing(true)}
+                className="flex items-center justify-center gap-2 px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 min-w-[140px] font-medium"
+              >
+                <PencilIcon className="w-5 h-5" />
+                <span>Edit Profile</span>
+              </button>
             </div>
           </div>
         </div>
       </div>
 
       {/* Main Content Container */}
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <div className="max-w-7xl mx-auto px-6 py-8">
         {/* Profile Completion Status */}
-        <Card className="mb-8 shadow-lg border-0 bg-gradient-to-r from-white to-blue-50">
-          <CardBody className="p-6">
-            <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-              <div className="flex-1">
-                <div className="flex items-center justify-between mb-3">
-                  <Typography variant="h6" color="blue-gray" className="flex items-center gap-2">
-                    <CheckCircleIcon className="h-6 w-6" />
-                    Profile Completion
-                  </Typography>
-                  <Chip
-                    size="lg"
-                    color={profileCompletion === 100 ? 'green' : profileCompletion >= 75 ? 'blue' : 'amber'}
-                    className="px-3 py-1"
-                    value={`${profileCompletion}% Complete`}
-                  />
+        <div className="mb-8 bg-surface border border-border rounded-lg p-6">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+            <div className="flex-1">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
+                  <CheckCircleIcon className="w-6 h-6 text-success-500" />
+                  Profile Completion
+                </h3>
+                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                  profileCompletion === 100 ? 'bg-success-100 text-success-700' :
+                  profileCompletion >= 75 ? 'bg-accent-100 text-accent-700' :
+                  'bg-warning-100 text-warning-700'
+                }`}>
+                  {profileCompletion}% Complete
                 </div>
-                <Progress
-                  value={profileCompletion}
-                  color={profileCompletion === 100 ? 'green' : 'blue'}
-                  className="h-3 mb-2"
-                />
-                <Typography variant="small" color="gray">
-                  {profileCompletion === 100
-                    ? '🎉 Your profile is complete! Great job maintaining your information.'
-                    : `📝 ${100 - profileCompletion}% of fields need to be filled to complete your profile.`
-                  }
-                </Typography>
               </div>
-              {profileCompletion < 100 && (
-                <div className="flex-shrink-0">
-                  <Button
-                    variant="outlined"
-                    size="sm"
-                    onClick={() => setEditing(true)}
-                    className="flex items-center gap-2"
-                  >
-                    <PencilIcon className="h-4 w-4" />
-                    Complete Profile
-                  </Button>
-                </div>
-              )}
+              <div className="w-full bg-neutral-200 rounded-full h-3 mb-3">
+                <div
+                  className={`h-3 rounded-full transition-all duration-300 ${
+                    profileCompletion === 100 ? 'bg-success-500' : 'bg-accent-500'
+                  }`}
+                  style={{ width: `${profileCompletion}%` }}
+                ></div>
+              </div>
+              <p className="text-neutral-600">
+                {profileCompletion === 100
+                  ? '🎉 Your profile is complete! Great job maintaining your information.'
+                  : `📝 ${100 - profileCompletion}% of fields need to be filled to complete your profile.`
+                }
+              </p>
             </div>
-          </CardBody>
-        </Card>
+            {profileCompletion < 100 && (
+              <div className="flex-shrink-0">
+                <button
+                  onClick={() => setEditing(true)}
+                  className="flex items-center gap-2 px-4 py-2 text-accent-600 border border-accent-200 rounded-lg hover:bg-accent-50 transition-colors duration-200"
+                >
+                  <PencilIcon className="w-4 h-4" />
+                  Complete Profile
+                </button>
+              </div>
+            )}
+          </div>
+        </div>
 
         {alert.show && (
-          <Alert
-            color={alert.type === 'success' ? 'green' : 'red'}
-            className="mb-6 shadow-lg"
-            onClose={() => setAlert({ show: false })}
-            icon={alert.type === 'success' ? <CheckCircleIcon className="h-5 w-5" /> : <ExclamationTriangleIcon className="h-5 w-5" />}
-          >
-            {alert.message}
-          </Alert>
+          <div className={`mb-6 p-4 rounded-lg border ${
+            alert.type === 'success'
+              ? 'bg-success-50 border-success-200 text-success-800'
+              : 'bg-danger-50 border-danger-200 text-danger-800'
+          }`}>
+            <div className="flex items-start gap-3">
+              {alert.type === 'success' ? (
+                <CheckCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              ) : (
+                <ExclamationTriangleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              )}
+              <p>{alert.message}</p>
+              <button
+                onClick={() => setAlert({ show: false })}
+                className="ml-auto text-current hover:opacity-70"
+              >
+                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+              </button>
+            </div>
+          </div>
         )}
 
         {/* Main Content Grid */}
@@ -247,86 +234,72 @@ const Profile = () => {
 
           {/* Profile Details - Main Content */}
           <div className="xl:col-span-3">
-            <Card className="shadow-lg border-0 overflow-hidden">
-              <CardBody className="p-0">
-                <Tabs value={activeTab} onChange={setActiveTab}>
-                  <TabsHeader className="bg-gradient-to-r from-gray-50 to-blue-50 border-b border-blue-gray-100">
-                    {tabs.map(({ label, value, icon: Icon }) => (
-                      <Tab
-                        key={value}
-                        value={value}
-                        onClick={() => setActiveTab(value)}
-                        className={`transition-all duration-300 ${
-                          activeTab === value
-                            ? 'text-blue-600 bg-white shadow-sm'
-                            : 'text-gray-600 hover:text-blue-500 hover:bg-blue-50'
-                        }`}
-                      >
-                        <div className="flex items-center gap-2 px-4 py-3">
-                          <Icon className="w-5 h-5" />
-                          <span className="font-medium">{label}</span>
-                        </div>
-                      </Tab>
-                    ))}
-                  </TabsHeader>
-                  <TabsBody className="bg-white">
-                    <TabPanel value="overview" className="p-6">
-                      <ProfileDetails profile={profile} view="overview" />
-                    </TabPanel>
-                    <TabPanel value="personal" className="p-6">
-                      <ProfileDetails profile={profile} view="personal" />
-                    </TabPanel>
-                    <TabPanel value="contact" className="p-6">
-                      <ProfileDetails profile={profile} view="contact" />
-                    </TabPanel>
-                    <TabPanel value="work" className="p-6">
-                      <ProfileDetails profile={profile} view="work" />
-                    </TabPanel>
-                  </TabsBody>
-                </Tabs>
-              </CardBody>
-            </Card>
+            <div className="bg-surface border border-border rounded-lg overflow-hidden">
+              <div className="border-b border-border">
+                <div className="flex">
+                  {tabs.map(({ label, value, icon: Icon }) => (
+                    <button
+                      key={value}
+                      onClick={() => setActiveTab(value)}
+                      className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors duration-200 ${
+                        activeTab === value
+                          ? 'text-accent-600 border-b-2 border-accent-500 bg-accent-50'
+                          : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
+                      }`}
+                    >
+                      <Icon className="w-5 h-5" />
+                      <span>{label}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
+              <div className="p-6">
+                {activeTab === 'overview' && <ProfileDetails profile={profile} view="overview" />}
+                {activeTab === 'personal' && <ProfileDetails profile={profile} view="personal" />}
+                {activeTab === 'contact' && <ProfileDetails profile={profile} view="contact" />}
+                {activeTab === 'work' && <ProfileDetails profile={profile} view="work" />}
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
       {/* Edit Profile Dialog */}
-      <Dialog open={editing} handler={setEditing} size="xl" className="max-h-[90vh] overflow-y-auto">
-        <DialogHeader className="flex items-center justify-between bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
-          <div>
-            <Typography variant="h4" className="text-white">
-              Edit Profile
-            </Typography>
-            <Typography variant="small" className="text-blue-100">
-              Request changes to your profile information
-            </Typography>
+      {editing && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+          <div className="bg-surface rounded-lg shadow-linear-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div>
+                <h2 className="text-xl font-semibold text-neutral-900">
+                  Edit Profile
+                </h2>
+                <p className="text-neutral-600 mt-1">
+                  Request changes to your profile information
+                </p>
+              </div>
+              <div className="flex items-center gap-2 px-3 py-1 bg-warning-100 text-warning-700 rounded-full text-sm font-medium">
+                <ClockIcon className="w-4 h-4" />
+                Pending Admin Review
+              </div>
+            </div>
+            <div className="p-6">
+              <EditProfileForm
+                profile={profile}
+                onClose={() => setEditing(false)}
+                onSuccess={handleEditSuccess}
+              />
+            </div>
+            <div className="flex justify-end gap-3 p-6 border-t border-border bg-neutral-50">
+              <button
+                onClick={() => setEditing(false)}
+                className="px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
+              >
+                Cancel
+              </button>
+            </div>
           </div>
-          <Chip
-            size="sm"
-            color="blue-gray"
-            className="bg-blue-gray-50 text-blue-600"
-            value="Pending Admin Review"
-            icon={<ClockIcon className="h-4 w-4" />}
-          />
-        </DialogHeader>
-        <DialogBody className="px-6 py-4">
-          <EditProfileForm
-            profile={profile}
-            onClose={() => setEditing(false)}
-            onSuccess={handleEditSuccess}
-          />
-        </DialogBody>
-        <DialogFooter className="px-6 pb-6 bg-gray-50">
-          <Button
-            variant="text"
-            color="red"
-            onClick={() => setEditing(false)}
-            className="mr-3"
-          >
-            Cancel
-          </Button>
-        </DialogFooter>
-      </Dialog>
+        </div>
+      )}
     </div>
   );
 };

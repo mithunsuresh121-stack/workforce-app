@@ -6,10 +6,12 @@ import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
 import Profile from './pages/Profile';
+import ProfileProfessional from './pages/Profile_professional';
 import SuperAdminApprovals from './pages/SuperAdminApprovals';
 import Directory from './pages/Directory';
 import Tasks from './pages/Tasks';
 import Leave from './pages/Leave';
+import Company from './pages/Company';
 
 function App() {
   const AppRoutes = () => (
@@ -34,6 +36,11 @@ function App() {
           <Layout><Profile /></Layout>
         </ProtectedRoute>
       } />
+      <Route path="/profile-professional" element={
+        <ProtectedRoute>
+          <Layout><ProfileProfessional /></Layout>
+        </ProtectedRoute>
+      } />
       <Route path="/directory" element={
         <ProtectedRoute>
           <Layout><Directory /></Layout>
@@ -52,6 +59,11 @@ function App() {
       <Route path="/approvals" element={
         <ProtectedRoute>
           <Layout><SuperAdminApprovals /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/company" element={
+        <ProtectedRoute>
+          <Layout><Company /></Layout>
         </ProtectedRoute>
       } />
     </Routes>

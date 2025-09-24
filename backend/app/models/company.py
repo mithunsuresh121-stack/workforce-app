@@ -16,6 +16,7 @@ class Company(Base):
     state = Column(String, nullable=True)
     country = Column(String, nullable=True)
     postal_code = Column(String, nullable=True)
+    logo_url = Column(String, nullable=True)  # URL to company logo
     is_active = Column(Boolean, default=True)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())

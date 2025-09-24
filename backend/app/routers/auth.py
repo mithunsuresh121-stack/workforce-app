@@ -71,6 +71,23 @@ def get_current_user_profile(response: Response, current_user: UserOut = Depends
     if current_user.role not in valid_roles:
         # Map invalid role to Employee as fallback
         current_user.role = "Employee"
+
+    # Include company information if user has a company_id
+    if current_user.company_id:
+        from ..crud import get_company_by_id
+        from ..deps import get_db
+        from sqlalchemy.orm import Session
+
+        # Create a new session to get company data
+        db = next(get_db())
+        try:
+            company = get_company_by_id(db, current_user.company_id)
+            if company:
+                current_user.company = company
+        except Exception:
+            # If there's an error getting company data, continue without it
+            pass
+
     return current_user
 
 @router.get("/notifications", response_model=List[Notification])
