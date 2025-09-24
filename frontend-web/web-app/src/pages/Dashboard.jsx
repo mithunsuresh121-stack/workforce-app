@@ -2,7 +2,6 @@ import React, { useState, useEffect } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
 import { useAuth, api } from '../contexts/AuthContext';
-import { Card, CardBody, Typography, Spinner, Alert } from '@material-tailwind/react';
 import { useNavigate } from 'react-router-dom';
 import DashboardCharts from '../components/DashboardCharts';
 
@@ -104,8 +103,10 @@ const Dashboard = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Spinner className="h-8 w-8" />
-        <Typography variant="small" className="ml-2">Loading dashboard...</Typography>
+        <div className="flex items-center space-x-3">
+          <div className="w-6 h-6 border-2 border-accent-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-neutral-600 font-medium">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
@@ -113,10 +114,10 @@ const Dashboard = () => {
   if (error) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Alert color="red" className="max-w-md">
-          <Typography variant="h5" className="mb-2">Error loading dashboard</Typography>
-          <Typography variant="small">{error}</Typography>
-        </Alert>
+        <div className="bg-danger-50 border border-danger-200 rounded-linear shadow-linear p-6 max-w-md">
+          <h3 className="text-lg font-semibold text-danger-800 mb-2">Error loading dashboard</h3>
+          <p className="text-danger-600">{error}</p>
+        </div>
       </div>
     );
   }
@@ -127,107 +128,107 @@ const Dashboard = () => {
   // Employee-specific dashboard
   if (userRole === 'Employee') {
     return (
-      <div className="p-4">
+      <div className="space-y-8">
         {/* Welcome Message */}
-        <div className="mb-6">
-          <Typography variant="h3" color="blue-gray" className="mb-2">
+        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+          <h2 className="text-2xl font-semibold text-neutral-900 mb-2">
             Welcome back, {user?.name || 'User'}!
-          </Typography>
-          <Typography variant="small" color="gray">
+          </h2>
+          <p className="text-neutral-600">
             Here's what's happening with your tasks today.
-          </Typography>
+          </p>
         </div>
 
         {/* Employee KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6 mb-6">
-          <Card
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+          <div
+            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-accent-200 transition-all duration-200 group"
             onClick={() => handleCardClick('total_tasks')}
           >
-            <CardBody className="text-center">
-              <Typography variant="h5" color="blue-gray" className="mb-2">Total Tasks</Typography>
-              <Typography variant="h3" color="blue">{kpis.total_tasks || 0}</Typography>
-            </CardBody>
-          </Card>
-          <Card
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Total Tasks</h3>
+              <p className="text-3xl font-bold text-accent-600">{kpis.total_tasks || 0}</p>
+            </div>
+          </div>
+          <div
+            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-success-200 transition-all duration-200 group"
             onClick={() => handleCardClick('active_tasks')}
           >
-            <CardBody className="text-center">
-              <Typography variant="h5" color="blue-gray" className="mb-2">Active Tasks</Typography>
-              <Typography variant="h3" color="green">{kpis.active_tasks || 0}</Typography>
-            </CardBody>
-          </Card>
-          <Card
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Active Tasks</h3>
+              <p className="text-3xl font-bold text-success-600">{kpis.active_tasks || 0}</p>
+            </div>
+          </div>
+          <div
+            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-primary-200 transition-all duration-200 group"
             onClick={() => handleCardClick('completed_tasks')}
           >
-            <CardBody className="text-center">
-              <Typography variant="h5" color="blue-gray" className="mb-2">Completed Tasks</Typography>
-              <Typography variant="h3" color="purple">{kpis.completed_tasks || 0}</Typography>
-            </CardBody>
-          </Card>
-          <Card
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Completed Tasks</h3>
+              <p className="text-3xl font-bold text-primary-600">{kpis.completed_tasks || 0}</p>
+            </div>
+          </div>
+          <div
+            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-warning-200 transition-all duration-200 group"
             onClick={() => handleCardClick('pending_approvals')}
           >
-            <CardBody className="text-center">
-              <Typography variant="h5" color="blue-gray" className="mb-2">Pending Approvals</Typography>
-              <Typography variant="h3" color="orange">{kpis.pending_approvals || 0}</Typography>
-            </CardBody>
-          </Card>
-          <Card
-            className="cursor-pointer hover:shadow-lg transition-shadow duration-200"
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Pending Approvals</h3>
+              <p className="text-3xl font-bold text-warning-600">{kpis.pending_approvals || 0}</p>
+            </div>
+          </div>
+          <div
+            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-accent-200 transition-all duration-200 group"
             onClick={() => handleCardClick('active_teams')}
           >
-            <CardBody className="text-center">
-              <Typography variant="h5" color="blue-gray" className="mb-2">Active Teams</Typography>
-              <Typography variant="h3" color="indigo">{kpis.active_teams || 0}</Typography>
-            </CardBody>
-          </Card>
+            <div className="text-center">
+              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Active Teams</h3>
+              <p className="text-3xl font-bold text-accent-600">{kpis.active_teams || 0}</p>
+            </div>
+          </div>
         </div>
 
         {/* Employee Charts */}
-        <div className="mb-6">
+        <div>
           <DashboardCharts />
         </div>
 
         {/* Recent Activities */}
-        <div className="bg-white p-6 rounded-lg shadow-md border">
-          <div className="mb-4">
-            <h5 className="text-lg font-semibold text-gray-700">Recent Activities</h5>
+        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-neutral-900">Recent Activities</h3>
           </div>
           <div className="space-y-4">
             {recentActivities.length > 0 ? (
               recentActivities.map((activity, index) => (
                 <div
                   key={index}
-                  className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg cursor-pointer hover:bg-gray-100 transition-colors duration-200"
+                  className="flex items-start space-x-4 p-4 bg-neutral-50 rounded-linear cursor-pointer hover:bg-neutral-100 transition-colors duration-200 group"
                   onClick={() => handleActivityClick(activity)}
                 >
-                  <div className={`w-3 h-3 rounded-full mt-1 ${
-                    activity.type.includes('Task') ? 'bg-blue-500' :
-                    activity.type.includes('Approval') ? 'bg-green-500' :
-                    'bg-purple-500'
+                  <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
+                    activity.type.includes('Task') ? 'bg-accent-500' :
+                    activity.type.includes('Approval') ? 'bg-success-500' :
+                    'bg-primary-500'
                   }`}></div>
-                  <div className="flex-1">
-                    <p className="text-sm font-medium text-gray-800">
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-neutral-900 group-hover:text-neutral-700">
                       {activity.title}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-neutral-600 mt-1">
                       {activity.description}
                     </p>
-                    <p className="text-sm text-gray-500">
+                    <p className="text-xs text-neutral-500 mt-2">
                       Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-8">
-                <Typography variant="small" color="gray">
+              <div className="text-center py-12">
+                <p className="text-neutral-500">
                   No recent activities to display.
-                </Typography>
+                </p>
               </div>
             )}
           </div>
@@ -236,110 +237,132 @@ const Dashboard = () => {
     );
   }
 
-  // Manager, CompanyAdmin, and SuperAdmin dashboard (original layout)
-  // Prepare chart data
-  const taskStatusChartData = {
-    labels: taskStatusData.map(item => item.name),
-    datasets: [{
-      data: taskStatusData.map(item => item.value),
-      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40'],
-      hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40']
-    }]
-  };
-
-  const employeeDistributionChartData = {
-    labels: employeeDistributionData.map(item => item.name),
-    datasets: [{
-      data: employeeDistributionData.map(item => item.value),
-      backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-      hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
-    }]
-  };
-
+  // Manager, CompanyAdmin, and SuperAdmin dashboard (Linear-inspired layout)
   return (
-    <div className="p-4">
+    <div className="space-y-8">
       {/* Welcome Message */}
-      <div className="mb-6">
-        <Typography variant="h3" color="blue-gray" className="mb-2">
+      <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+        <h2 className="text-2xl font-semibold text-neutral-900 mb-2">
           Welcome back, {user?.name || 'User'}!
-        </Typography>
-        <Typography variant="small" color="gray">
+        </h2>
+        <p className="text-neutral-600">
           Here's what's happening with your workforce today.
-        </Typography>
+        </p>
       </div>
 
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray" className="mb-2">Total Employees</Typography>
-            <Typography variant="h3" color="blue">{kpis.total_employees}</Typography>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray" className="mb-2">Active Tasks</Typography>
-            <Typography variant="h3" color="green">{kpis.active_tasks}</Typography>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray" className="mb-2">Pending Leaves</Typography>
-            <Typography variant="h3" color="orange">{kpis.pending_leaves}</Typography>
-          </CardBody>
-        </Card>
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray" className="mb-2">Shifts Today</Typography>
-            <Typography variant="h3" color="purple">{kpis.shifts_today}</Typography>
-          </CardBody>
-        </Card>
+      {/* Manager KPI Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div
+          className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-accent-200 transition-all duration-200 group"
+          onClick={() => handleCardClick('total_employees')}
+        >
+          <div className="text-center">
+            <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Total Employees</h3>
+            <p className="text-3xl font-bold text-accent-600">{kpis.total_employees || 0}</p>
+          </div>
+        </div>
+        <div
+          className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-success-200 transition-all duration-200 group"
+          onClick={() => handleCardClick('active_tasks')}
+        >
+          <div className="text-center">
+            <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Active Tasks</h3>
+            <p className="text-3xl font-bold text-success-600">{kpis.active_tasks || 0}</p>
+          </div>
+        </div>
+        <div
+          className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-warning-200 transition-all duration-200 group"
+          onClick={() => handleCardClick('pending_approvals')}
+        >
+          <div className="text-center">
+            <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Pending Leaves</h3>
+            <p className="text-3xl font-bold text-warning-600">{kpis.pending_leaves || 0}</p>
+          </div>
+        </div>
+        <div
+          className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-primary-200 transition-all duration-200 group"
+          onClick={() => handleCardClick('team_performance')}
+        >
+          <div className="text-center">
+            <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Shifts Today</h3>
+            <p className="text-3xl font-bold text-primary-600">{kpis.shifts_today || 0}</p>
+          </div>
+        </div>
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-6">
-        <div className="bg-white p-6 rounded-lg shadow-md border">
-          <div className="mb-4">
-            <h5 className="text-lg font-semibold text-gray-700">Task Status Distribution</h5>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-neutral-900">Task Status Distribution</h3>
           </div>
           <div className="h-64">
-            <Doughnut data={taskStatusChartData} />
+            <Doughnut data={{
+              labels: taskStatusData.map(item => item.name),
+              datasets: [{
+                data: taskStatusData.map(item => item.value),
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40'],
+                hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40']
+              }]
+            }} />
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg shadow-md border">
-          <div className="mb-4">
-            <h5 className="text-lg font-semibold text-gray-700">Employee Role Distribution</h5>
+        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+          <div className="mb-6">
+            <h3 className="text-lg font-semibold text-neutral-900">Employee Role Distribution</h3>
           </div>
           <div className="h-64">
-            <Doughnut data={employeeDistributionChartData} />
+            <Doughnut data={{
+              labels: employeeDistributionData.map(item => item.name),
+              datasets: [{
+                data: employeeDistributionData.map(item => item.value),
+                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
+                hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+              }]
+            }} />
           </div>
         </div>
       </div>
 
       {/* Recent Activities */}
-      <div className="bg-white p-6 rounded-lg shadow-md border">
-        <div className="mb-4">
-          <h5 className="text-lg font-semibold text-gray-700">Recent Activities</h5>
+      <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+        <div className="mb-6">
+          <h3 className="text-lg font-semibold text-neutral-900">Recent Activities</h3>
         </div>
         <div className="space-y-4">
-          {recentActivities.map((activity, index) => (
-            <div key={index} className="flex items-start space-x-3 p-3 bg-gray-50 rounded-lg">
-              <div className={`w-3 h-3 rounded-full mt-1 ${activity.type === 'task' ? 'bg-blue-500' : 'bg-green-500'
+          {recentActivities.length > 0 ? (
+            recentActivities.map((activity, index) => (
+              <div
+                key={index}
+                className="flex items-start space-x-4 p-4 bg-neutral-50 rounded-linear cursor-pointer hover:bg-neutral-100 transition-colors duration-200 group"
+                onClick={() => handleActivityClick(activity)}
+              >
+                <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
+                  activity.type.includes('Task') ? 'bg-accent-500' :
+                  activity.type.includes('Approval') ? 'bg-success-500' :
+                  'bg-primary-500'
                 }`}></div>
-              <div className="flex-1">
-                <p className="text-sm font-medium text-gray-800">
-                  {activity.title}
-                </p>
-                <p className="text-sm text-gray-600">
-                  {activity.description}
-                </p>
-                <p className="text-sm text-gray-500">
-                  Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
-                </p>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-neutral-900 group-hover:text-neutral-700">
+                    {activity.title}
+                  </p>
+                  <p className="text-sm text-neutral-600 mt-1">
+                    {activity.description}
+                  </p>
+                  <p className="text-xs text-neutral-500 mt-2">
+                    Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
+                  </p>
+                </div>
               </div>
+            ))
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-neutral-500">
+                No recent activities to display.
+              </p>
             </div>
-          ))}
+          )}
         </div>
       </div>
     </div>

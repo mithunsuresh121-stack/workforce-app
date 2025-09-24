@@ -1,6 +1,16 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Formik, Form } from 'formik';
 import * as Yup from 'yup';
+import {
+  PlusIcon,
+  CalendarDaysIcon,
+  ClockIcon,
+  CheckCircleIcon,
+  XCircleIcon,
+  ExclamationTriangleIcon,
+  FunnelIcon,
+  XMarkIcon
+} from '@heroicons/react/24/outline';
 import { api } from '../contexts/AuthContext';
 
 const Leave = () => {
@@ -132,195 +142,234 @@ const Leave = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center h-64">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
+        <div className="text-center">
+          <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-neutral-600">Loading leave data...</p>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4">
-      <div className="flex justify-between items-center mb-6">
-        <h3 className="text-3xl font-bold text-gray-800">
-          Leave Management
-        </h3>
-        <button
-          onClick={() => setDialogOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500"
-        >
-          +
-          Request Leave
-        </button>
-      </div>
-
-      {error && (
-        <div className="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded mb-6">
-          {error}
-        </div>
-      )}
-
-      {/* Leave Balances */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
-        {Object.entries(leaveBalances).map(([type, balance]) => (
-          <div key={type} className="bg-white p-6 rounded-lg shadow-md border">
-            <h6 className="text-lg font-semibold text-gray-800 mb-2">
-              {type}
-            </h6>
-            <div className="flex justify-between items-center mb-2">
-              <p className="text-sm text-gray-600">
-                Used: {balance.used} days
-              </p>
-              <p className="text-sm text-gray-600">
-                Total: {balance.total} days
-              </p>
+    <div className="space-y-8">
+      {/* Header Section */}
+      <div className="bg-surface border-b border-border">
+        <div className="max-w-7xl mx-auto px-6 py-6">
+          <div className="flex justify-between items-center">
+            <div>
+              <h1 className="text-2xl font-semibold text-neutral-900">Leave Management</h1>
+              <p className="text-neutral-600 mt-1">Manage your leave requests and balances</p>
             </div>
-            <div className="h-2 bg-gray-200 rounded">
-              <div
-                className={`h-2 rounded ${
-                  balance.used / balance.total > 0.8 ? 'bg-red-600' : 'bg-blue-600'
-                }`}
-                style={{ width: `${(balance.used / balance.total) * 100}%` }}
-              />
-            </div>
-            <p className="text-sm text-gray-600 mt-1">
-              {balance.total - balance.used} days remaining
-            </p>
-          </div>
-        ))}
-      </div>
-
-      {/* Filters */}
-      <div className="bg-white p-6 rounded-lg shadow-md border mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div>
-            <select
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Statuses</option>
-              <option value="Pending">Pending</option>
-              <option value="Approved">Approved</option>
-              <option value="Rejected">Rejected</option>
-            </select>
-          </div>
-          <div>
-            <select
-              value={typeFilter}
-              onChange={(e) => setTypeFilter(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
-            >
-              <option value="">All Types</option>
-              <option value="Annual Leave">Annual Leave</option>
-              <option value="Sick Leave">Sick Leave</option>
-              <option value="Personal Leave">Personal Leave</option>
-            </select>
-          </div>
-          <div className="flex items-end">
             <button
-              onClick={() => {
-                setStatusFilter('');
-                setTypeFilter('');
-              }}
-              className="w-full px-4 py-2 border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              onClick={() => setDialogOpen(true)}
+              className="flex items-center gap-2 px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 font-medium"
             >
-              Clear Filters
+              <PlusIcon className="w-5 h-5" />
+              Request Leave
             </button>
           </div>
         </div>
       </div>
 
-      {/* Leave History */}
-      <div className="bg-white rounded-lg shadow-md border">
-        <div className="p-4 border-b border-gray-200">
-          <h5 className="text-lg font-semibold text-gray-800">Leave History</h5>
-        </div>
-        <div className="overflow-x-auto p-4">
-          <table className="w-full min-w-max table-auto text-left">
-            <thead>
-              <tr>
-                <th className="border-b border-gray-200 bg-gray-50 p-4">
-                  <p className="text-sm font-normal leading-none opacity-70">
-                    Type
-                  </p>
-                </th>
-                <th className="border-b border-gray-200 bg-gray-50 p-4">
-                  <p className="text-sm font-normal leading-none opacity-70">
-                    Dates
-                  </p>
-                </th>
-                <th className="border-b border-gray-200 bg-gray-50 p-4">
-                  <p className="text-sm font-normal leading-none opacity-70">
-                    Days
-                  </p>
-                </th>
-                <th className="border-b border-gray-200 bg-gray-50 p-4">
-                  <p className="text-sm font-normal leading-none opacity-70">
-                    Status
-                  </p>
-                </th>
-                <th className="border-b border-gray-200 bg-gray-50 p-4">
-                  <p className="text-sm font-normal leading-none opacity-70">
-                    Reason
-                  </p>
-                </th>
-              </tr>
-            </thead>
-            <tbody>
-              {filteredLeaves.map((leave) => (
-                <tr key={leave.id}>
-                  <td className="p-4 border-b border-gray-100">
-                    <p className="text-sm font-normal">
-                      {leave.type}
-                    </p>
-                  </td>
-                  <td className="p-4 border-b border-gray-100">
-                    <div className="flex items-center gap-2">
-                      <span className="text-gray-400">📅</span>
-                      <p className="text-sm font-normal">
-                        {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
-                      </p>
-                    </div>
-                  </td>
-                  <td className="p-4 border-b border-gray-100">
-                    <p className="text-sm font-normal">
-                      {leave.days || calculateDays(leave.startDate, leave.endDate)}
-                    </p>
-                  </td>
-                  <td className="p-4 border-b border-gray-100">
-                    <span className={`px-2 py-1 rounded-full text-xs font-medium border ${
-                      leave.status === 'Approved' ? 'bg-green-100 text-green-800 border-green-200' :
-                      leave.status === 'Pending' ? 'bg-orange-100 text-orange-800 border-orange-200' :
-                      leave.status === 'Rejected' ? 'bg-red-100 text-red-800 border-red-200' :
-                      'bg-gray-100 text-gray-800 border-gray-200'
-                    }`}>
-                      {getStatusIcon(leave.status)} {leave.status}
-                    </span>
-                  </td>
-                  <td className="p-4 border-b border-gray-100">
-                    <p className="text-sm font-normal">
-                      {leave.reason}
-                    </p>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {filteredLeaves.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-lg font-semibold text-gray-600">
-              No leave requests found matching your criteria.
-            </p>
+      {/* Main Content */}
+      <div className="max-w-7xl mx-auto px-6">
+        {error && (
+          <div className="mb-6 p-4 bg-danger-50 border border-danger-200 text-danger-800 rounded-lg">
+            <div className="flex items-start gap-3">
+              <ExclamationTriangleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+              <p>{error}</p>
+              <button
+                onClick={() => setError('')}
+                className="ml-auto text-current hover:opacity-70"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
           </div>
         )}
-      </div>
+
+        {/* Leave Balances */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {Object.entries(leaveBalances).map(([type, balance]) => (
+            <div key={type} className="bg-surface border border-border rounded-lg p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold text-neutral-900">{type}</h3>
+                <div className="flex items-center gap-2 text-neutral-500">
+                  <ClockIcon className="w-5 h-5" />
+                  <span className="text-sm font-medium">{balance.total - balance.used} left</span>
+                </div>
+              </div>
+              <div className="space-y-3">
+                <div className="flex justify-between text-sm">
+                  <span className="text-neutral-600">Used</span>
+                  <span className="font-medium text-neutral-900">{balance.used} days</span>
+                </div>
+                <div className="flex justify-between text-sm">
+                  <span className="text-neutral-600">Total</span>
+                  <span className="font-medium text-neutral-900">{balance.total} days</span>
+                </div>
+                <div className="w-full bg-neutral-200 rounded-full h-2">
+                  <div
+                    className={`h-2 rounded-full transition-all duration-300 ${
+                      balance.used / balance.total > 0.8 ? 'bg-danger-500' :
+                      balance.used / balance.total > 0.6 ? 'bg-warning-500' : 'bg-accent-500'
+                    }`}
+                    style={{ width: `${(balance.used / balance.total) * 100}%` }}
+                  />
+                </div>
+                <div className="text-xs text-neutral-500">
+                  {Math.round((balance.used / balance.total) * 100)}% utilized
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Filters */}
+        <div className="bg-surface border border-border rounded-lg p-6 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="relative">
+              <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
+              <select
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent appearance-none bg-white"
+              >
+                <option value="">All Statuses</option>
+                <option value="Pending">Pending</option>
+                <option value="Approved">Approved</option>
+                <option value="Rejected">Rejected</option>
+              </select>
+            </div>
+            <div className="relative">
+              <CalendarDaysIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
+              <select
+                value={typeFilter}
+                onChange={(e) => setTypeFilter(e.target.value)}
+                className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent appearance-none bg-white"
+              >
+                <option value="">All Types</option>
+                <option value="Annual Leave">Annual Leave</option>
+                <option value="Sick Leave">Sick Leave</option>
+                <option value="Personal Leave">Personal Leave</option>
+              </select>
+            </div>
+            <div className="flex items-end">
+              <button
+                onClick={() => {
+                  setStatusFilter('');
+                  setTypeFilter('');
+                }}
+                className="w-full px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
+              >
+                Clear Filters
+              </button>
+            </div>
+          </div>
+        </div>
+
+        {/* Leave History */}
+        <div className="bg-surface border border-border rounded-lg overflow-hidden">
+          <div className="px-6 py-4 border-b border-border bg-neutral-50">
+            <h2 className="text-lg font-semibold text-neutral-900">Leave History</h2>
+            <p className="text-sm text-neutral-600 mt-1">View and manage your leave requests</p>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="w-full">
+              <thead className="bg-neutral-50 border-b border-border">
+                <tr>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
+                    Type
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
+                    Dates
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
+                    Days
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
+                    Status
+                  </th>
+                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
+                    Reason
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-border">
+                {filteredLeaves.map((leave) => (
+                  <tr key={leave.id} className="hover:bg-neutral-50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="font-medium text-neutral-900">{leave.type}</div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-2">
+                        <CalendarDaysIcon className="w-4 h-4 text-neutral-400" />
+                        <span className="text-neutral-700">
+                          {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                        </span>
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="font-medium text-neutral-900">
+                        {leave.days || calculateDays(leave.startDate, leave.endDate)}
+                      </span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
+                        leave.status === 'Approved' ? 'bg-success-100 text-success-700' :
+                        leave.status === 'Pending' ? 'bg-warning-100 text-warning-700' :
+                        leave.status === 'Rejected' ? 'bg-danger-100 text-danger-700' :
+                        'bg-neutral-100 text-neutral-700'
+                      }`}>
+                        {leave.status === 'Approved' && <CheckCircleIcon className="w-4 h-4" />}
+                        {leave.status === 'Pending' && <ClockIcon className="w-4 h-4" />}
+                        {leave.status === 'Rejected' && <XCircleIcon className="w-4 h-4" />}
+                        {leave.status}
+                      </div>
+                    </td>
+                    <td className="px-6 py-4">
+                      <p className="text-neutral-600 max-w-xs truncate">{leave.reason}</p>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {filteredLeaves.length === 0 && (
+            <div className="text-center py-12">
+              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <CalendarDaysIcon className="w-8 h-8 text-neutral-400" />
+              </div>
+              <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+                No leave requests found
+              </h3>
+              <p className="text-neutral-600">
+                {statusFilter || typeFilter
+                  ? "No leave requests match your current filters. Try adjusting your search criteria."
+                  : "You haven't submitted any leave requests yet."
+                }
+              </p>
+            </div>
+          )}
+        </div>
 
       {/* Leave Request Dialog */}
       {dialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-          <div className="bg-white rounded-lg shadow-lg w-full max-w-lg p-6">
-            <h4 className="text-xl font-semibold mb-4">Request Leave</h4>
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
+          <div className="bg-surface rounded-lg shadow-linear-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between p-6 border-b border-border">
+              <div>
+                <h2 className="text-xl font-semibold text-neutral-900">Request Leave</h2>
+                <p className="text-sm text-neutral-600 mt-1">Submit a new leave request</p>
+              </div>
+              <button
+                onClick={() => setDialogOpen(false)}
+                className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
+              >
+                <XMarkIcon className="w-5 h-5" />
+              </button>
+            </div>
             <Formik
               initialValues={{
                 type: '',
@@ -332,14 +381,16 @@ const Leave = () => {
               onSubmit={handleSubmit}
             >
               {({ values, errors, touched, setFieldValue }) => (
-                <Form className="space-y-6">
+                <Form className="p-6 space-y-6">
                   <div>
-                    <label className="block mb-1 font-medium">Leave Type</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Leave Type *
+                    </label>
                     <select
                       value={values.type}
                       onChange={(e) => setFieldValue('type', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        touched.type && errors.type ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-white ${
+                        touched.type && errors.type ? 'border-danger-300' : 'border-neutral-200'
                       }`}
                     >
                       <option value="">Select leave type</option>
@@ -348,73 +399,84 @@ const Leave = () => {
                       <option value="Personal Leave">Personal Leave</option>
                     </select>
                     {touched.type && errors.type && (
-                      <p className="text-red-500 text-sm mt-1">{errors.type}</p>
+                      <p className="text-danger-600 text-sm mt-1">{errors.type}</p>
                     )}
                   </div>
 
-                  <div className="grid grid-cols-2 gap-4">
+                  <div className="grid grid-cols-2 gap-6">
                     <div>
-                      <label className="block mb-1 font-medium">Start Date</label>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        Start Date *
+                      </label>
                       <input
                         type="date"
                         value={values.startDate}
                         onChange={(e) => setFieldValue('startDate', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          touched.startDate && errors.startDate ? 'border-red-500' : 'border-gray-300'
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent ${
+                          touched.startDate && errors.startDate ? 'border-danger-300' : 'border-neutral-200'
                         }`}
                       />
                       {touched.startDate && errors.startDate && (
-                        <p className="text-red-500 text-sm mt-1">{errors.startDate}</p>
+                        <p className="text-danger-600 text-sm mt-1">{errors.startDate}</p>
                       )}
                     </div>
                     <div>
-                      <label className="block mb-1 font-medium">End Date</label>
+                      <label className="block text-sm font-medium text-neutral-700 mb-2">
+                        End Date *
+                      </label>
                       <input
                         type="date"
                         value={values.endDate}
                         onChange={(e) => setFieldValue('endDate', e.target.value)}
-                        className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                          touched.endDate && errors.endDate ? 'border-red-500' : 'border-gray-300'
+                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent ${
+                          touched.endDate && errors.endDate ? 'border-danger-300' : 'border-neutral-200'
                         }`}
                       />
                       {touched.endDate && errors.endDate && (
-                        <p className="text-red-500 text-sm mt-1">{errors.endDate}</p>
+                        <p className="text-danger-600 text-sm mt-1">{errors.endDate}</p>
                       )}
                     </div>
                   </div>
 
                   <div>
-                    <label className="block mb-1 font-medium">Reason</label>
+                    <label className="block text-sm font-medium text-neutral-700 mb-2">
+                      Reason *
+                    </label>
                     <textarea
                       value={values.reason}
                       onChange={(e) => setFieldValue('reason', e.target.value)}
-                      className={`w-full px-3 py-2 border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 ${
-                        touched.reason && errors.reason ? 'border-red-500' : 'border-gray-300'
+                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent resize-none ${
+                        touched.reason && errors.reason ? 'border-danger-300' : 'border-neutral-200'
                       }`}
+                      rows={4}
+                      placeholder="Please provide a reason for your leave request"
                     />
                     {touched.reason && errors.reason && (
-                      <p className="text-red-500 text-sm mt-1">{errors.reason}</p>
+                      <p className="text-danger-600 text-sm mt-1">{errors.reason}</p>
                     )}
                   </div>
 
                   {values.startDate && values.endDate && (
-                    <div className="bg-blue-100 text-blue-800 px-4 py-2 rounded">
-                      Total days: {calculateDays(values.startDate, values.endDate)}
+                    <div className="bg-accent-50 border border-accent-200 text-accent-800 px-4 py-3 rounded-lg">
+                      <div className="flex items-center gap-2">
+                        <CalendarDaysIcon className="w-5 h-5" />
+                        <span className="font-medium">Total days: {calculateDays(values.startDate, values.endDate)}</span>
+                      </div>
                     </div>
                   )}
 
-                  <div className="flex justify-end gap-4">
+                  <div className="flex justify-end gap-3 pt-4 border-t border-border">
                     <button
                       type="button"
                       onClick={() => setDialogOpen(false)}
-                      className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-red-500"
+                      className="px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
                       disabled={submitting}
-                      className={`px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 ${
+                      className={`px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 font-medium ${
                         submitting ? 'opacity-50 cursor-not-allowed' : ''
                       }`}
                     >
@@ -427,6 +489,7 @@ const Leave = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

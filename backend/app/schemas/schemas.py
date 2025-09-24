@@ -51,10 +51,11 @@ class CompanyOut(BaseModel):
     state: Optional[str]
     country: Optional[str]
     postal_code: Optional[str]
+    logo_url: Optional[str]
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
@@ -78,10 +79,11 @@ class UserOut(BaseModel):
     full_name: Optional[str]
     role: Role
     company_id: Optional[int] = None  # None for Super Admin users
+    company: Optional[CompanyOut] = None  # Include company details
     is_active: bool
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 
