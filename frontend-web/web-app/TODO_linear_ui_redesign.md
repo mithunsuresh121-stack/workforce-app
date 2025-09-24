@@ -9,6 +9,9 @@
 - [x] Apply Linear consistency to employee dashboard
 - [x] Update chart styling to match Linear aesthetic
 - [x] Ensure all clickable items work properly
+- [x] Apply Linear design system to Login page
+- [x] Apply Linear design system to Signup page
+- [x] Add "back to login" link in signup page
 
 ## 🔄 In Progress
 - [ ] Remove all Material Tailwind dependencies
