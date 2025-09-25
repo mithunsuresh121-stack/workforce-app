@@ -221,6 +221,36 @@ def delete_task(db: Session, task_id: int):
     db.commit()
     return True
 
+# Attachment CRUD functions
+from .models.attachment import Attachment
+
+def create_attachment(db: Session, task_id: int, file_path: str, file_type: str, file_size: float, uploaded_by: int):
+    attachment = Attachment(
+        task_id=task_id,
+        file_path=file_path,
+        file_type=file_type,
+        file_size=file_size,
+        uploaded_by=uploaded_by
+    )
+    db.add(attachment)
+    db.commit()
+    db.refresh(attachment)
+    return attachment
+
+def get_attachment_by_id(db: Session, attachment_id: int):
+    return db.query(Attachment).filter(Attachment.id == attachment_id).first()
+
+def list_attachments_by_task(db: Session, task_id: int):
+    return db.query(Attachment).filter(Attachment.task_id == task_id).all()
+
+def delete_attachment(db: Session, attachment_id: int):
+    attachment = get_attachment_by_id(db, attachment_id)
+    if not attachment:
+        return False
+    db.delete(attachment)
+    db.commit()
+    return True
+
 # Company CRUD functions
 def create_company(db: Session, name: str, domain: str = None, contact_email: str = None, contact_phone: str = None, address: str = None, city: str = None, state: str = None, country: str = None, postal_code: str = None):
     company = Company(
