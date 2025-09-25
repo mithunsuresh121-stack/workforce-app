@@ -14,7 +14,7 @@ import {
 import { useAuth, api } from '../contexts/AuthContext';
 import ProfileCard from '../components/ProfileCard_linear';
 import ProfileDetails from '../components/ProfileDetails_linear';
-import EditProfileForm from '../components/EditProfileForm_enhanced';
+import EditProfileForm from '../components/EditProfileForm_linear';
 
 const Profile = () => {
   const { user: authUser } = useAuth();

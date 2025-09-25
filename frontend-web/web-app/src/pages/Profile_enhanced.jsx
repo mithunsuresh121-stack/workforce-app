@@ -38,9 +38,9 @@ import {
   ChartBarIcon
 } from '@heroicons/react/24/outline';
 import { useAuth, api } from '../contexts/AuthContext';
-import ProfileCard from '../components/ProfileCard';
-import ProfileDetails from '../components/ProfileDetails';
-import EditProfileForm from '../components/EditProfileForm';
+import ProfileCard from '../components/ProfileCard_linear';
+import ProfileDetails from '../components/ProfileDetails_linear';
+import EditProfileForm from '../components/EditProfileForm_linear';
 
 const Profile = () => {
   const { user: authUser } = useAuth();
