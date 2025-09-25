@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LineChart, Line } from 'recharts';
 import { api } from '../contexts/AuthContext';
-import { Card, CardBody, Typography, Spinner, Alert } from '@material-tailwind/react';
+
 import { useNavigate } from 'react-router-dom';
 
 const DashboardCharts = () => {
@@ -91,8 +91,8 @@ const DashboardCharts = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Spinner className="h-8 w-8" />
-        <Typography variant="small" className="ml-2">Loading charts...</Typography>
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
+        <p className="text-sm text-gray-600 ml-2">Loading charts...</p>
       </div>
     );
   }
@@ -100,10 +100,10 @@ const DashboardCharts = () => {
   if (error) {
     return (
       <div className="p-4">
-        <Alert color="red" className="max-w-md">
-          <Typography variant="h5" className="mb-2">Error loading charts</Typography>
-          <Typography variant="small">{error}</Typography>
-        </Alert>
+        <div className="max-w-md bg-red-50 border border-red-200 rounded-lg p-4">
+          <h3 className="text-lg font-semibold text-red-800 mb-2">Error loading charts</h3>
+          <p className="text-sm text-red-700">{error}</p>
+        </div>
       </div>
     );
   }
@@ -176,11 +176,10 @@ const DashboardCharts = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Task Status Chart */}
-      <Card>
-        <CardBody>
-          <Typography variant="h5" color="blue-gray" className="mb-4">
-            Task Status Distribution
-          </Typography>
+      <div className="bg-white rounded-lg shadow p-6">
+        <h3 className="text-xl font-semibold text-gray-800 mb-4">
+          Task Status Distribution
+        </h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
@@ -207,21 +206,20 @@ const DashboardCharts = () => {
               </PieChart>
             </ResponsiveContainer>
           </div>
-          <Typography variant="small" color="gray" className="mt-2 text-center">
+          <p className="text-sm text-gray-600 mt-2 text-center">
             Click on segments to view tasks by status
-          </Typography>
-        </CardBody>
-      </Card>
+          </p>
+        </div>
+      </div>
 
       {/* Contribution Charts for Employees or Reports Chart for Others */}
       {userRole === 'Employee' ? (
         <>
           {/* Tasks Completed Over Time */}
-          <Card>
-            <CardBody>
-              <Typography variant="h5" color="blue-gray" className="mb-4">
-                Tasks Completed Over Time
-              </Typography>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Tasks Completed Over Time
+            </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={contributionData.tasksCompleted}>
@@ -238,18 +236,17 @@ const DashboardCharts = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <Typography variant="small" color="gray" className="mt-2 text-center">
+              <p className="text-sm text-gray-600 mt-2 text-center">
                 Click on bars to view completed tasks
-              </Typography>
-            </CardBody>
-          </Card>
+              </p>
+            </div>
+          </div>
 
           {/* Tasks Created */}
-          <Card>
-            <CardBody>
-              <Typography variant="h5" color="blue-gray" className="mb-4">
-                Tasks Created by Status
-              </Typography>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Tasks Created by Status
+            </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <PieChart>
@@ -276,18 +273,17 @@ const DashboardCharts = () => {
                   </PieChart>
                 </ResponsiveContainer>
               </div>
-              <Typography variant="small" color="gray" className="mt-2 text-center">
+              <p className="text-sm text-gray-600 mt-2 text-center">
                 Click on segments to view created tasks
-              </Typography>
-            </CardBody>
-          </Card>
+              </p>
+            </div>
+          </div>
 
           {/* Productivity Metrics */}
-          <Card>
-            <CardBody>
-              <Typography variant="h5" color="blue-gray" className="mb-4">
-                Productivity Overview
-              </Typography>
+          <div className="bg-white rounded-lg shadow p-6">
+            <h3 className="text-xl font-semibold text-gray-800 mb-4">
+              Productivity Overview
+            </h3>
               <div className="h-64">
                 <ResponsiveContainer width="100%" height="100%">
                   <BarChart data={contributionData.productivity}>
@@ -304,19 +300,18 @@ const DashboardCharts = () => {
                   </BarChart>
                 </ResponsiveContainer>
               </div>
-              <Typography variant="small" color="gray" className="mt-2 text-center">
+              <p className="text-sm text-gray-600 mt-2 text-center">
                 Click on bars to view all tasks
-              </Typography>
-            </CardBody>
-          </Card>
+              </p>
+            </div>
+          </div>
         </>
       ) : (
         /* Reports Chart for Managers/Admins */
-        <Card>
-          <CardBody>
-            <Typography variant="h5" color="blue-gray" className="mb-4">
-              Reports & Requests
-            </Typography>
+        <div className="bg-white rounded-lg shadow p-6">
+          <h3 className="text-xl font-semibold text-gray-800 mb-4">
+            Reports & Requests
+          </h3>
             <div className="h-64">
               <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={reportsData}>
@@ -334,11 +329,11 @@ const DashboardCharts = () => {
                 </BarChart>
               </ResponsiveContainer>
             </div>
-            <Typography variant="small" color="gray" className="mt-2 text-center">
+            <p className="text-sm text-gray-600 mt-2 text-center">
               Click on bars to view requests by status
-            </Typography>
-          </CardBody>
-        </Card>
+            </p>
+          </div>
+        </div>
       )}
     </div>
   );

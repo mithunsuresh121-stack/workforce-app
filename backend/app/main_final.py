@@ -53,3 +53,8 @@ def health_check():
 @app.get("/test")
 def test_endpoint():
     return {"test": "value", "number": 123, "boolean": True}
+
+# Only run the server when this file is executed directly
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run(app, host="0.0.0.0", port=8000)

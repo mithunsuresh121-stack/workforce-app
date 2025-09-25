@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from 'recharts';
 import { api } from '../contexts/AuthContext';
-import { Card, CardBody, Typography, Spinner, Alert } from '@material-tailwind/react';
 import { useNavigate } from 'react-router-dom';
 
 const DashboardCharts = () => {
@@ -54,8 +53,8 @@ const DashboardCharts = () => {
   if (loading) {
     return (
       <div className="flex items-center justify-center p-8">
-        <Spinner className="h-8 w-8" />
-        <Typography variant="small" className="ml-2">Loading charts...</Typography>
+        <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin"></div>
+        <span className="ml-2 text-sm text-neutral-600">Loading charts...</span>
       </div>
     );
   }
@@ -63,10 +62,10 @@ const DashboardCharts = () => {
   if (error) {
     return (
       <div className="p-4">
-        <Alert color="red" className="max-w-md">
-          <Typography variant="h5" className="mb-2">Error loading charts</Typography>
-          <Typography variant="small">{error}</Typography>
-        </Alert>
+        <div className="max-w-md bg-danger-50 border border-danger-200 rounded-lg p-4">
+          <h5 className="text-lg font-semibold text-danger-800 mb-2">Error loading charts</h5>
+          <p className="text-sm text-danger-700">{error}</p>
+        </div>
       </div>
     );
   }
@@ -106,11 +105,11 @@ const DashboardCharts = () => {
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
       {/* Task Status Chart */}
-      <Card>
-        <CardBody>
-          <Typography variant="h5" color="blue-gray" className="mb-4">
+      <div className="bg-surface border border-border rounded-lg shadow-linear-sm">
+        <div className="p-6">
+          <h5 className="text-xl font-semibold text-neutral-900 mb-4">
             Task Status Distribution
-          </Typography>
+          </h5>
           <div className="h-64">
             {taskStatusData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -139,24 +138,24 @@ const DashboardCharts = () => {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <Typography variant="small" color="gray">
+                <span className="text-sm text-gray-500">
                   No task data available
-                </Typography>
+                </span>
               </div>
             )}
           </div>
-          <Typography variant="small" color="gray" className="mt-2 text-center">
+          <p className="text-sm text-gray-500 mt-2 text-center">
             Click on segments to view tasks by status
-          </Typography>
-        </CardBody>
-      </Card>
+          </p>
+        </div>
+      </div>
 
       {/* Reports Chart */}
-      <Card>
-        <CardBody>
-          <Typography variant="h5" color="blue-gray" className="mb-4">
+      <div className="bg-surface border border-border rounded-lg shadow-linear-sm">
+        <div className="p-6">
+          <h5 className="text-xl font-semibold text-neutral-900 mb-4">
             Reports & Requests
-          </Typography>
+          </h5>
           <div className="h-64">
             {reportsData.length > 0 ? (
               <ResponsiveContainer width="100%" height="100%">
@@ -176,17 +175,17 @@ const DashboardCharts = () => {
               </ResponsiveContainer>
             ) : (
               <div className="flex items-center justify-center h-full">
-                <Typography variant="small" color="gray">
+                <span className="text-sm text-gray-500">
                   No reports data available
-                </Typography>
+                </span>
               </div>
             )}
           </div>
-          <Typography variant="small" color="gray" className="mt-2 text-center">
+          <p className="text-sm text-gray-500 mt-2 text-center">
             Click on bars to view requests by status
-          </Typography>
-        </CardBody>
-      </Card>
+          </p>
+        </div>
+      </div>
     </div>
   );
 };
