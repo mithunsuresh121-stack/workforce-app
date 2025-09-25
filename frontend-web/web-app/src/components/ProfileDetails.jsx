@@ -1,5 +1,4 @@
 import React from 'react';
-import { Typography } from '@material-tailwind/react';
 import {
   BuildingOfficeIcon,
   UserGroupIcon,
@@ -14,12 +13,12 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
   if (!profile) {
     return (
       <div className="text-center py-8">
-        <Typography variant="h6" color="gray">
+        <h2 className="text-xl font-semibold text-gray-600">
           Profile details not available
-        </Typography>
-        <Typography variant="small" color="gray" className="mt-2">
+        </h2>
+        <p className="text-sm text-gray-600 mt-2">
           Please complete your profile information
-        </Typography>
+        </p>
       </div>
     );
   }
@@ -119,12 +118,12 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
           <Icon className="h-5 w-5 text-blue-500 mt-0.5" />
         </div>
         <div className="flex-1 min-w-0">
-          <Typography variant="small" color="gray" className="font-medium mb-1">
+          <p className="text-sm text-gray-600 font-medium mb-1">
             {field.label}
-          </Typography>
-          <Typography variant="body2" color="blue-gray" className="break-words">
+          </p>
+          <p className="text-base text-gray-800 break-words">
             {field.value}
-          </Typography>
+          </p>
         </div>
       </div>
     );
@@ -135,55 +134,55 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
       {/* Quick Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
         <div className="text-center p-4 bg-blue-50 rounded-lg">
-          <Typography variant="h4" color="blue" className="font-bold">
+          <h4 className="text-2xl font-bold text-blue-600">
             {workFields.filter(field => field.value !== 'Not set').length}
-          </Typography>
-          <Typography variant="small" color="gray">
+          </h4>
+          <p className="text-sm text-gray-600">
             Work Details
-          </Typography>
+          </p>
         </div>
         <div className="text-center p-4 bg-green-50 rounded-lg">
-          <Typography variant="h4" color="green" className="font-bold">
+          <h4 className="text-2xl font-bold text-green-600">
             {contactFields.filter(field => field.value !== 'Not set').length}
-          </Typography>
-          <Typography variant="small" color="gray">
+          </h4>
+          <p className="text-sm text-gray-600">
             Contact Info
-          </Typography>
+          </p>
         </div>
         <div className="text-center p-4 bg-purple-50 rounded-lg">
-          <Typography variant="h4" color="purple" className="font-bold">
+          <h4 className="text-2xl font-bold text-purple-600">
             {personalFields.filter(field => field.value !== 'Not set').length}
-          </Typography>
-          <Typography variant="small" color="gray">
+          </h4>
+          <p className="text-sm text-gray-600">
             Personal Info
-          </Typography>
+          </p>
         </div>
         <div className="text-center p-4 bg-orange-50 rounded-lg">
-          <Typography variant="h4" color="orange" className="font-bold">
+          <h4 className="text-2xl font-bold text-orange-600">
             {profile.profile_picture_url ? '1' : '0'}
-          </Typography>
-          <Typography variant="small" color="gray">
+          </h4>
+          <p className="text-sm text-gray-600">
             Profile Picture
-          </Typography>
+          </p>
         </div>
       </div>
 
       {/* Key Information */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         <div>
-          <Typography variant="h6" color="blue-gray" className="mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <BuildingOfficeIcon className="h-5 w-5" />
             Work Information
-          </Typography>
+          </h2>
           <div className="space-y-2">
             {workFields.slice(0, 2).map(renderField)}
           </div>
         </div>
         <div>
-          <Typography variant="h6" color="blue-gray" className="mb-4 flex items-center gap-2">
+          <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
             <PhoneIcon className="h-5 w-5" />
             Contact Information
-          </Typography>
+          </h2>
           <div className="space-y-2">
             {contactFields.slice(0, 2).map(renderField)}
           </div>
@@ -194,10 +193,10 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
 
   const renderPersonal = () => (
     <div>
-      <Typography variant="h6" color="blue-gray" className="mb-4 flex items-center gap-2">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
         <UserIcon className="h-5 w-5" />
         Personal Information
-      </Typography>
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {personalFields.map(renderField)}
       </div>
@@ -206,10 +205,10 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
 
   const renderContact = () => (
     <div>
-      <Typography variant="h6" color="blue-gray" className="mb-4 flex items-center gap-2">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
         <PhoneIcon className="h-5 w-5" />
         Contact Details
-      </Typography>
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {contactFields.map(renderField)}
       </div>
@@ -218,10 +217,10 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
 
   const renderWork = () => (
     <div>
-      <Typography variant="h6" color="blue-gray" className="mb-4 flex items-center gap-2">
+      <h2 className="text-xl font-semibold text-gray-800 mb-4 flex items-center gap-2">
         <BuildingOfficeIcon className="h-5 w-5" />
         Work Information
-      </Typography>
+      </h2>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         {workFields.map(renderField)}
       </div>

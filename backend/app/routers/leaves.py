@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Dict, Any
 from ..deps import get_db, get_current_user
 from ..schemas import LeaveCreate, LeaveOut, LeaveStatus
 from ..crud import (
@@ -29,6 +29,37 @@ def get_leaves(
     else:
         leaves = list_leaves_by_tenant(db, str(current_user.company_id))
     return leaves
+
+@router.get("/balances", response_model=Dict[str, Dict[str, int]])
+def get_leave_balances(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get leave balances for the current user
+    """
+    # This is a simplified implementation - in a real app, you'd calculate
+    # actual balances based on approved leaves and company policies
+    balances = {
+        "Vacation": {"used": 0, "total": 25},
+        "Sick Leave": {"used": 0, "total": 10},
+        "Personal Leave": {"used": 0, "total": 5},
+        "Maternity Leave": {"used": 0, "total": 90},
+        "Paternity Leave": {"used": 0, "total": 10},
+        "Bereavement Leave": {"used": 0, "total": 5}
+    }
+
+    # Get actual used days from approved leaves
+    leaves = list_leaves_by_employee(db, current_user.id)
+    for leave in leaves:
+        if leave.status.value == "Approved" and leave.type in balances:
+            # Calculate days for this leave
+            start_date = leave.start_at.date()
+            end_date = leave.end_at.date()
+            days = (end_date - start_date).days + 1
+            balances[leave.type]["used"] += days
+
+    return balances
 
 @router.post("/", response_model=LeaveOut, status_code=status.HTTP_201_CREATED)
 def create_leave_request(

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Typography, Card, CardBody, Skeleton } from '@material-tailwind/react';
 import {
   BuildingOfficeIcon,
   PhoneIcon,
@@ -19,16 +18,16 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
     return (
       <div className="space-y-6">
         <div className="text-center py-8">
-          <Skeleton className="h-8 w-48 mx-auto mb-4" />
-          <Skeleton className="h-4 w-64 mx-auto mb-2" />
-          <Skeleton className="h-4 w-56 mx-auto" />
+          <div className="h-8 w-48 mx-auto mb-4 bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-4 w-64 mx-auto mb-2 bg-gray-200 animate-pulse rounded"></div>
+          <div className="h-4 w-56 mx-auto bg-gray-200 animate-pulse rounded"></div>
         </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[...Array(4)].map((_, i) => (
-            <Card key={i} className="p-4">
-              <Skeleton className="h-6 w-32 mb-2" />
-              <Skeleton className="h-4 w-24" />
-            </Card>
+            <div key={i} className="p-4 bg-white rounded-lg shadow">
+              <div className="h-6 w-32 mb-2 bg-gray-200 animate-pulse rounded"></div>
+              <div className="h-4 w-24 bg-gray-200 animate-pulse rounded"></div>
+            </div>
           ))}
         </div>
       </div>
@@ -157,17 +156,17 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
     const isSet = field.value !== 'Not set';
 
     return (
-      <Card key={field.label} className={`transition-all duration-300 hover:shadow-md ${field.bgColor} border-l-4 border-${field.color}-200`}>
-        <CardBody className="p-4">
+      <div key={field.label} className={`transition-all duration-300 hover:shadow-md ${field.bgColor} border-l-4 border-${field.color}-200 bg-white rounded-lg`}>
+        <div className="p-4">
           <div className="flex items-start gap-4">
             <div className={`p-2.5 rounded-full ${field.bgColor} flex-shrink-0 self-start mt-1`}>
               <Icon className={`h-5 w-5 ${field.iconColor}`} />
             </div>
             <div className="flex-1 min-w-0">
               <div className="flex items-center justify-between mb-2">
-                <Typography variant="small" color="gray" className="font-semibold text-sm">
+                <p className="font-semibold text-sm text-gray-600">
                   {field.label}
-                </Typography>
+                </p>
                 <div className="flex-shrink-0">
                   {isSet ? (
                     <CheckCircleIcon className="h-4 w-4 text-green-500" />
@@ -176,18 +175,18 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
                   )}
                 </div>
               </div>
-              <Typography variant="h6" color="blue-gray" className="break-words leading-relaxed mb-1">
+              <h2 className="text-xl font-semibold text-gray-800 break-words leading-relaxed mb-1">
                 {field.value}
-              </Typography>
+              </h2>
               {!isSet && (
-                <Typography variant="small" color="gray" className="italic text-xs">
+                <p className="italic text-xs text-gray-600">
                   Click "Edit Profile" to add this information
-                </Typography>
+                </p>
               )}
             </div>
           </div>
-        </CardBody>
-      </Card>
+        </div>
+      </div>
     );
   };
 
@@ -200,53 +199,53 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
       {/* Quick Stats - Only show categories with data */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
         {hasWorkData && (
-          <Card className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500">
-            <Typography variant="h4" color="blue" className="font-bold">
+          <div className="text-center p-4 bg-gradient-to-br from-blue-50 to-blue-100 border-l-4 border-blue-500 rounded-lg">
+            <h4 className="text-2xl font-bold text-blue-600">
               {workFields.filter(field => field.value !== 'Not set').length}
-            </Typography>
-            <Typography variant="small" color="gray" className="font-medium">
+            </h4>
+            <p className="text-sm text-gray-600 font-medium">
               Work Details
-            </Typography>
-          </Card>
+            </p>
+          </div>
         )}
         {hasContactData && (
-          <Card className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500">
-            <Typography variant="h4" color="green" className="font-bold">
+          <div className="text-center p-4 bg-gradient-to-br from-green-50 to-green-100 border-l-4 border-green-500 rounded-lg">
+            <h4 className="text-2xl font-bold text-green-600">
               {contactFields.filter(field => field.value !== 'Not set').length}
-            </Typography>
-            <Typography variant="small" color="gray" className="font-medium">
+            </h4>
+            <p className="text-sm text-gray-600 font-medium">
               Contact Info
-            </Typography>
-          </Card>
+            </p>
+          </div>
         )}
         {hasPersonalData && (
-          <Card className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500">
-            <Typography variant="h4" color="purple" className="font-bold">
+          <div className="text-center p-4 bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500 rounded-lg">
+            <h4 className="text-2xl font-bold text-purple-600">
               {personalFields.filter(field => field.value !== 'Not set').length}
-            </Typography>
-            <Typography variant="small" color="gray" className="font-medium">
+            </h4>
+            <p className="text-sm text-gray-600 font-medium">
               Personal Info
-            </Typography>
-          </Card>
+            </p>
+          </div>
         )}
-        <Card className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500">
-          <Typography variant="h4" color="orange" className="font-bold">
+        <div className="text-center p-4 bg-gradient-to-br from-orange-50 to-orange-100 border-l-4 border-orange-500 rounded-lg">
+          <h4 className="text-2xl font-bold text-orange-600">
             {profile.profile_picture_url ? '1' : '0'}
-          </Typography>
-          <Typography variant="small" color="gray" className="font-medium">
+          </h4>
+          <p className="text-sm text-gray-600 font-medium">
             Profile Picture
-          </Typography>
-        </Card>
+          </p>
+        </div>
       </div>
 
       {/* Key Information Sections - Only show sections with data */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {hasWorkData && (
           <div>
-            <Typography variant="h5" color="blue-gray" className="mb-4 flex items-center gap-3 font-bold text-left">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-3 text-left">
               <BriefcaseIcon className="h-5 w-5 text-blue-600 flex-shrink-0" />
               <span>Work Information</span>
-            </Typography>
+            </h3>
             <div className="space-y-3">
               {workFields.filter(field => field.value !== 'Not set').slice(0, 2).map(renderField)}
             </div>
@@ -254,10 +253,10 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
         )}
         {hasContactData && (
           <div>
-            <Typography variant="h5" color="blue-gray" className="mb-4 flex items-center gap-3 font-bold text-left">
+            <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-3 text-left">
               <PhoneIcon className="h-5 w-5 text-green-600 flex-shrink-0" />
               <span>Contact Information</span>
-            </Typography>
+            </h3>
             <div className="space-y-3">
               {contactFields.filter(field => field.value !== 'Not set').slice(0, 2).map(renderField)}
             </div>
@@ -270,10 +269,10 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
           {hasPersonalData && (
             <div>
-              <Typography variant="h5" color="blue-gray" className="mb-4 flex items-center gap-3 font-bold text-left">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-3 text-left">
                 <UserIcon className="h-5 w-5 text-purple-600 flex-shrink-0" />
                 <span>Personal Information</span>
-              </Typography>
+              </h3>
               <div className="space-y-3">
                 {personalFields.filter(field => field.value !== 'Not set').map(renderField)}
               </div>
@@ -281,10 +280,10 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
           )}
           {contactFields.filter(field => field.value !== 'Not set').slice(2).length > 0 && (
             <div>
-              <Typography variant="h5" color="blue-gray" className="mb-4 flex items-center gap-3 font-bold text-left">
+              <h3 className="text-lg font-bold text-gray-800 mb-4 flex items-center gap-3 text-left">
                 <MapPinIcon className="h-5 w-5 text-orange-600 flex-shrink-0" />
                 <span>Location & Emergency</span>
-              </Typography>
+              </h3>
               <div className="space-y-3">
                 {contactFields.filter(field => field.value !== 'Not set').slice(2).map(renderField)}
               </div>
@@ -295,14 +294,14 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
 
       {/* Show message if no data */}
       {!hasWorkData && !hasContactData && !hasPersonalData && (
-        <Card className="p-8 text-center bg-gray-50">
-          <Typography variant="h6" color="gray" className="mb-2">
+        <div className="p-8 text-center bg-gray-50 rounded-lg">
+          <h3 className="text-lg font-semibold text-gray-600 mb-2">
             No profile information available
-          </Typography>
-          <Typography variant="small" color="gray">
+          </h3>
+          <p className="text-sm text-gray-600">
             Click "Edit Profile" to add your information
-          </Typography>
-        </Card>
+          </p>
+        </div>
       )}
     </div>
   );
