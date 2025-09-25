@@ -1,13 +1,17 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Response, Query
+from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from ..deps import get_db, get_current_user
-from ..schemas import TaskCreate, TaskOut
-from ..crud import list_tasks, create_task, get_task_by_id, update_task, delete_task
+from ..schemas import TaskCreate, TaskOut, AttachmentOut
+from ..crud import list_tasks, create_task, get_task_by_id, update_task, delete_task, create_attachment, delete_attachment, list_attachments_by_task
 from ..crud_notifications import create_notification
 from ..models.user import User
 from ..models.task import Task, TaskStatus, TaskPriority
+from ..models.attachment import Attachment
 from ..models.notification import NotificationType
+import os
+import shutil
+from datetime import datetime
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 

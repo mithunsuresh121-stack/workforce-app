@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..db import Base
+from ..models.attachment import Attachment
 import enum
 
 class TaskStatus(str, enum.Enum):
@@ -22,6 +23,7 @@ class Task(Base):
     title = Column(String(255), nullable=False)
     description = Column(Text, nullable=True)
     assignee_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
+    # team_id = Column(Integer, ForeignKey("teams.id"), index=True, nullable=True)  # For future team assignments
     assigned_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     status = Column(
         String(50),
@@ -44,6 +46,7 @@ class Task(Base):
     company = relationship("Company")
     assignee = relationship("User", foreign_keys=[assignee_id])
     assigner = relationship("User", foreign_keys=[assigned_by])
+    attachments = relationship("Attachment", back_populates="task", cascade="all, delete-orphan")
 
     def __repr__(self):
         return (

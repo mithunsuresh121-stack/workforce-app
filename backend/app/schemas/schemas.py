@@ -131,7 +131,26 @@ class TaskOut(TaskBase):
     company_id: int
     created_at: datetime
     updated_at: datetime
-    
+    attachments: List["AttachmentOut"] = []
+
+    class Config:
+        from_attributes = True
+
+# Attachment Schemas
+class AttachmentBase(BaseModel):
+    file_path: str
+    file_type: str
+    file_size: float
+    uploaded_at: datetime
+
+class AttachmentCreate(BaseModel):
+    pass  # File upload handled separately
+
+class AttachmentOut(AttachmentBase):
+    id: int
+    task_id: int
+    uploaded_by: int
+
     class Config:
         from_attributes = True
 

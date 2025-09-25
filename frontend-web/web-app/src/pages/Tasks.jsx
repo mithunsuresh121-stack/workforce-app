@@ -12,10 +12,13 @@ import {
   UserIcon,
   FlagIcon
 } from '@heroicons/react/24/outline';
-import { api } from '../contexts/AuthContext';
+import { api, useAuth } from '../contexts/AuthContext';
+import TaskAttachments from '../components/TaskAttachments';
 
 const Tasks = () => {
+  const { user: currentUser } = useAuth();
   const [tasks, setTasks] = useState([]);
+  const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -24,64 +27,39 @@ const Tasks = () => {
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
+  const [taskAttachments, setTaskAttachments] = useState([]);
   const [formData, setFormData] = useState({
     title: '',
     description: '',
     status: 'Pending',
-    assignee: '',
+    assignee_id: '',
     priority: 'Medium',
-    dueDate: ''
+    due_at: ''
   });
 
   useEffect(() => {
-    const fetchTasks = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError('');
-        const response = await api.get('/tasks');
-        setTasks(response.data);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-        setError('Failed to load tasks. Using sample data.');
-        // Fallback sample data
-        setTasks([
-          {
-            id: 1,
-            title: 'Complete quarterly report',
-            description: 'Prepare and submit the Q4 financial report',
-            status: 'In Progress',
-            assignee: 'John Doe',
-            priority: 'High',
-            dueDate: '2024-01-15',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 2,
-            title: 'Review code changes',
-            description: 'Review pull request #123 for the new feature',
-            status: 'Pending',
-            assignee: 'Jane Smith',
-            priority: 'Medium',
-            dueDate: '2024-01-10',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 3,
-            title: 'Update documentation',
-            description: 'Update API documentation for version 2.0',
-            status: 'Completed',
-            assignee: 'Bob Johnson',
-            priority: 'Low',
-            dueDate: '2024-01-05',
-            createdAt: new Date().toISOString()
-          },
+
+        // Fetch tasks and users in parallel
+        const [tasksResponse, usersResponse] = await Promise.all([
+          api.get('/tasks'),
+          api.get('/users')
         ]);
+
+        setTasks(tasksResponse.data);
+        setUsers(usersResponse.data);
+      } catch (error) {
+        console.error('Error fetching data:', error);
+        setError('Failed to load tasks and users. Please try again.');
       } finally {
         setLoading(false);
       }
     };
 
-    fetchTasks();
+    fetchData();
   }, []);
 
   const filteredTasks = useMemo(() => {
@@ -104,36 +82,79 @@ const Tasks = () => {
     }
   };
 
+  const getUserNameById = (userId) => {
+    const user = users.find(u => u.id === userId);
+    return user ? user.full_name : 'Unknown User';
+  };
+
+  const canCreateTask = () => {
+    return currentUser && ['Manager', 'CompanyAdmin', 'SuperAdmin'].includes(currentUser.role);
+  };
+
+  const canEditTask = (task) => {
+    if (!currentUser) return false;
+    const allowedRoles = ['Manager', 'CompanyAdmin', 'SuperAdmin'];
+    return allowedRoles.includes(currentUser.role) || task.assignee_id === currentUser.id;
+  };
+
   const handleCreateTask = () => {
+    if (!canCreateTask()) {
+      setError('You do not have permission to create tasks.');
+      return;
+    }
+
     setIsEditing(false);
     setFormData({
       title: '',
       description: '',
       status: 'Pending',
-      assignee: '',
+      assignee_id: '',
       priority: 'Medium',
-      dueDate: ''
+      due_at: ''
     });
     setDialogOpen(true);
   };
 
-  const handleEditTask = (task) => {
+  const handleEditTask = async (task) => {
+    if (!canEditTask(task)) {
+      setError('You do not have permission to edit this task.');
+      return;
+    }
+
     setIsEditing(true);
     setSelectedTask(task);
     setFormData({
       title: task.title,
       description: task.description,
       status: task.status,
-      assignee: task.assignee,
+      assignee_id: task.assignee_id || '',
       priority: task.priority,
-      dueDate: task.dueDate
+      due_at: task.due_at ? new Date(task.due_at).toISOString().split('T')[0] : ''
     });
+
+    try {
+      const response = await api.get(`/tasks/${task.id}/attachments`);
+      setTaskAttachments(response.data);
+    } catch (error) {
+      console.error('Error fetching attachments:', error);
+      setTaskAttachments([]);
+    }
+
     setDialogOpen(true);
   };
 
-  const handleViewTask = (task) => {
+  const handleViewTask = async (task) => {
     setSelectedTask(task);
     setIsEditing(false);
+
+    try {
+      const response = await api.get(`/tasks/${task.id}/attachments`);
+      setTaskAttachments(response.data);
+    } catch (error) {
+      console.error('Error fetching attachments:', error);
+      setTaskAttachments([]);
+    }
+
     setDialogOpen(true);
   };
 
@@ -194,7 +215,7 @@ const Tasks = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-neutral-600">
           <UserIcon className="w-4 h-4" />
-          <span className="text-sm">{task.assignee}</span>
+          <span className="text-sm">{getUserNameById(task.assignee_id)}</span>
         </div>
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -206,15 +227,17 @@ const Tasks = () => {
           >
             <EyeIcon className="w-4 h-4" />
           </button>
-          <button
-            className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-colors"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleEditTask(task);
-            }}
-          >
-            <PencilIcon className="w-4 h-4" />
-          </button>
+          {canEditTask(task) && (
+            <button
+              className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-colors"
+              onClick={(e) => {
+                e.stopPropagation();
+                handleEditTask(task);
+              }}
+            >
+              <PencilIcon className="w-4 h-4" />
+            </button>
+          )}
         </div>
       </div>
     </div>
@@ -413,13 +436,13 @@ const Tasks = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <UserIcon className="w-4 h-4 text-neutral-400" />
-                          <span className="text-neutral-700">{task.assignee}</span>
+                          <span className="text-neutral-700">{getUserNameById(task.assignee_id)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2 text-neutral-600">
                           <CalendarDaysIcon className="w-4 h-4" />
-                          {new Date(task.dueDate).toLocaleDateString()}
+                          {task.due_at ? new Date(task.due_at).toLocaleDateString() : 'No due date'}
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -430,12 +453,14 @@ const Tasks = () => {
                           >
                             <EyeIcon className="w-4 h-4" />
                           </button>
-                          <button
-                            className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-colors"
-                            onClick={() => handleEditTask(task)}
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </button>
+                          {canEditTask(task) && (
+                            <button
+                              className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-colors"
+                              onClick={() => handleEditTask(task)}
+                            >
+                              <PencilIcon className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -534,7 +559,7 @@ const Tasks = () => {
                       </label>
                       <div className="flex items-center gap-2">
                         <UserIcon className="w-5 h-5 text-neutral-400" />
-                        <span className="text-neutral-700">{selectedTask.assignee}</span>
+                        <span className="text-neutral-700">{getUserNameById(selectedTask.assignee_id)}</span>
                       </div>
                     </div>
                     <div>
@@ -543,7 +568,9 @@ const Tasks = () => {
                       </label>
                       <div className="flex items-center gap-2">
                         <CalendarDaysIcon className="w-5 h-5 text-neutral-400" />
-                        <span className="text-neutral-700">{new Date(selectedTask.dueDate).toLocaleDateString()}</span>
+                        <span className="text-neutral-700">
+                          {selectedTask.due_at ? new Date(selectedTask.due_at).toLocaleDateString() : 'No due date'}
+                        </span>
                       </div>
                     </div>
                   </div>
@@ -612,13 +639,18 @@ const Tasks = () => {
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
                         Assignee
                       </label>
-                      <input
-                        type="text"
-                        value={formData.assignee}
-                        onChange={(e) => setFormData({...formData, assignee: e.target.value})}
-                        className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                        placeholder="Enter assignee name"
-                      />
+                      <select
+                        value={formData.assignee_id}
+                        onChange={(e) => setFormData({...formData, assignee_id: e.target.value})}
+                        className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-white"
+                      >
+                        <option value="">Select assignee</option>
+                        {users.map((user) => (
+                          <option key={user.id} value={user.id}>
+                            {user.full_name} ({user.role})
+                          </option>
+                        ))}
+                      </select>
                     </div>
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
@@ -626,12 +658,19 @@ const Tasks = () => {
                       </label>
                       <input
                         type="date"
-                        value={formData.dueDate}
-                        onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                        value={formData.due_at}
+                        onChange={(e) => setFormData({...formData, due_at: e.target.value})}
                         className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
                       />
                     </div>
                   </div>
+                  <TaskAttachments
+                    taskId={selectedTask.id}
+                    attachments={taskAttachments}
+                    onAttachmentsChange={setTaskAttachments}
+                    isEditing={false}
+                    currentUser={currentUser}
+                  />
                 </div>
               )}
             </div>
@@ -658,10 +697,19 @@ const Tasks = () => {
                   Edit Task
                 </button>
               )}
-            </div>
-          </div>
-        </div>
-      )}
+                    </div>
+                  </div>
+                  {selectedTask && (
+                    <TaskAttachments
+                      taskId={selectedTask.id}
+                      attachments={taskAttachments}
+                      onAttachmentsChange={setTaskAttachments}
+                      isEditing={isEditing}
+                      currentUser={currentUser}
+                    />
+                  )}
+                </div>
+              )}
     </div>
   );
 };
