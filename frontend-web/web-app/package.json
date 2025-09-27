@@ -5,7 +5,6 @@
   "dependencies": {
     "@heroicons/react": "^2.0.18",
     "@remix-run/router": "^1.23.0",
-    "@tailwindcss/forms": "^0.5.7",
     "@testing-library/react": "^16.3.0",
     "axios": "^1.6.7",
     "chart.js": "^4.4.2",
@@ -34,7 +33,7 @@
       "react-app/jest"
     ]
   },
-  "proxy": "http://127.0.0.1:8000",
+  "proxy": "http://localhost:8000",
   "browserslist": {
     "production": [
       ">0.2%",
@@ -53,10 +52,7 @@
     "@testing-library/jest-dom": "^6.8.0",
     "@testing-library/react": "^16.3.0",
     "@vitest/coverage-v8": "^3.2.4",
-    "autoprefixer": "^10.4.17",
-    "postcss": "^8.4.33",
     "react-refresh": "^0.17.0",
-    "tailwindcss": "^3.4.1",
     "vitest": "^3.2.4"
   }
 }

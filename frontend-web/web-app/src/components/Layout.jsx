@@ -34,10 +34,8 @@ const Layout = ({ children }) => {
         <Navbar onMenuClick={toggleSidebar} />
 
         {/* Main content */}
-        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-6 lg:p-8 animate-fade-in">
-          <div className="max-w-7xl mx-auto">
-            {children}
-          </div>
+        <main className="flex-1 overflow-x-hidden overflow-y-auto bg-background p-4 lg:p-6 animate-fade-in">
+          {children}
         </main>
       </div>
     </div>

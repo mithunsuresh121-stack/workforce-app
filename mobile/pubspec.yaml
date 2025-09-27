@@ -1,5 +1,5 @@
-name: workforce_app
-description: Multi-tenant workforce management (Flutter)
+name: music_app
+description: A comprehensive music streaming app (Flutter)
 publish_to: "none"
 version: 0.1.0+1
 
@@ -17,8 +17,8 @@ dependencies:
   shared_preferences: ^2.2.2
   connectivity_plus: ^6.1.5
   flutter_secure_storage: ^9.2.4
-  table_calendar: ^3.0.9
-  flutter_chat_ui: ^2.9.0
+  just_audio: ^0.9.40
+  cached_network_image: ^3.3.1
   flutter_svg: ^2.0.10
   provider: ^6.1.1
   equatable: ^2.0.5

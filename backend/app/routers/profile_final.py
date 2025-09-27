@@ -12,7 +12,7 @@ from ..crud import (
     create_employee_profile
 )
 from ..models.user import User
-from ..models.profile_update_request import RequestStatus
+from ..schemas.schemas import RequestStatus
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 

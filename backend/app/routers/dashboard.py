@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from datetime import datetime, date
 from ..deps import get_db, get_current_user
-from ..crud import list_users_by_company, list_tasks, list_leaves_by_tenant, list_shifts_by_tenant
+from ..crud import list_users_by_company, list_tasks, list_leaves_by_company, list_shifts_by_company
 from ..models.user import User
 from ..models.task import TaskStatus
 from ..schemas.schemas import LeaveStatus
@@ -10,12 +10,14 @@ from ..schemas.schemas import LeaveStatus
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
 
-def _require_company_id(user: User) -> int:
+def _require_company_id(user: User) -> int | None:
     """
-    Ensure the current user is associated with a company.
-    SuperAdmin or users without company cannot fetch company-scoped dashboards.
+    Get company_id for the user. Returns None for SuperAdmin (global access).
+    Raises 400 for users without company who are not SuperAdmin.
     """
     if user.company_id is None:
+        if getattr(user, "role", "").value == "SuperAdmin":
+            return None  # SuperAdmin can access all
         raise HTTPException(status_code=400, detail="User is not associated with a company")
     return user.company_id
 
@@ -33,6 +35,15 @@ def get_dashboard_kpis(
 
         # Check user role for role-based dashboard
         user_role = getattr(current_user, "role", "Employee").strip()
+
+        # SuperAdmin: return global stats or zeros for Phase 1
+        if company_id is None:
+            return {
+                "total_employees": 0,
+                "active_tasks": 0,
+                "pending_leaves": 0,
+                "shifts_today": 0,
+            }
 
         # Employee-specific KPIs
         if user_role == "Employee":
@@ -56,7 +67,7 @@ def get_dashboard_kpis(
 
             # Get pending approvals for this employee (if approval system exists)
             # For now, we'll use pending leaves as a proxy for pending approvals
-            leaves = list_leaves_by_tenant(db, str(company_id))
+            leaves = list_leaves_by_company(db, company_id)
             employee_leaves = [
                 leave for leave in leaves
                 if getattr(leave, "employee_id", None) == current_user.id
@@ -93,7 +104,7 @@ def get_dashboard_kpis(
             )
 
             # Get pending leave requests
-            leaves = list_leaves_by_tenant(db, str(company_id))
+            leaves = list_leaves_by_company(db, company_id)
             pending_leaves = sum(
                 1
                 for leave in leaves
@@ -102,7 +113,7 @@ def get_dashboard_kpis(
 
             # Get shifts for today
             today = date.today()
-            shifts = list_shifts_by_tenant(db, str(company_id))
+            shifts = list_shifts_by_company(db, company_id)
             shifts_today = 0
             for shift in shifts:
                 start = getattr(shift, "start_at", None)
@@ -135,6 +146,11 @@ def get_recent_activities(
     """
     try:
         company_id = _require_company_id(current_user)
+
+        # SuperAdmin: return empty for Phase 1
+        if company_id is None:
+            return []
+
         activities = []
 
         # Get recent tasks (last N)
@@ -168,7 +184,7 @@ def get_recent_activities(
             })
 
         # Get recent leaves (last N) - treat as approval requests
-        leaves = list_leaves_by_tenant(db, str(company_id))
+        leaves = list_leaves_by_company(db, company_id)
         recent_leaves = sorted(
             leaves,
             key=lambda x: getattr(x, "created_at", datetime.min),
@@ -233,6 +249,16 @@ def get_task_status_chart(
     """
     try:
         company_id = _require_company_id(current_user)
+
+        # SuperAdmin: stub for Phase 1
+        if company_id is None:
+            return [
+                {"name": "Pending", "value": 0},
+                {"name": "In Progress", "value": 0},
+                {"name": "Completed", "value": 0},
+                {"name": "Overdue", "value": 0},
+            ]
+
         user_role = getattr(current_user, "role", "Employee").strip()
 
         # Employee-specific: only show their own tasks
@@ -278,6 +304,16 @@ def get_reports_chart(
     """
     try:
         company_id = _require_company_id(current_user)
+
+        # SuperAdmin: stub for Phase 1
+        if company_id is None:
+            return [
+                {"name": "Submitted", "value": 0},
+                {"name": "Pending Review", "value": 0},
+                {"name": "Approved", "value": 0},
+                {"name": "Rejected", "value": 0},
+            ]
+
         user_role = getattr(current_user, "role", "Employee").strip()
 
         # Import the profile update request model
@@ -291,7 +327,7 @@ def get_reports_chart(
             ).all()
 
             # Get their own leave requests
-            leaves = list_leaves_by_tenant(db, str(company_id))
+            leaves = list_leaves_by_company(db, company_id)
             leaves = [
                 leave for leave in leaves
                 if getattr(leave, "employee_id", None) == current_user.id
@@ -305,7 +341,7 @@ def get_reports_chart(
             ).all()
 
             # Get all leave requests for the company
-            leaves = list_leaves_by_tenant(db, str(company_id))
+            leaves = list_leaves_by_company(db, company_id)
 
         # Count profile update requests by status
         profile_status_count = {"pending": 0, "approved": 0, "rejected": 0}
@@ -349,6 +385,16 @@ def get_employee_distribution_chart(
     """
     try:
         company_id = _require_company_id(current_user)
+
+        # SuperAdmin: stub for Phase 1
+        if company_id is None:
+            return [
+                {"name": "Super Admin", "value": 0},
+                {"name": "Company Admin", "value": 0},
+                {"name": "Manager", "value": 0},
+                {"name": "Employee", "value": 0},
+            ]
+
         employees = list_users_by_company(db, company_id)
 
         role_count = {

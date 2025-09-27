@@ -13,17 +13,50 @@ import {
 const ProfileCard = ({ user, profile, onEdit }) => {
   if (!user) {
     return (
-      <div className="w-full bg-surface border border-border rounded-linear shadow-linear p-6">
-        <div className="text-center">
-          <div className="animate-pulse">
-            <div className="h-20 w-20 bg-neutral-200 rounded-full mx-auto mb-4"></div>
-            <div className="h-6 bg-neutral-200 rounded w-3/4 mx-auto mb-2"></div>
-            <div className="h-4 bg-neutral-200 rounded w-1/2 mx-auto"></div>
+      <div style={{
+        width: '100%',
+        backgroundColor: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '0.75rem',
+        boxShadow: 'var(--shadow)',
+        padding: '1.5rem'
+      }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+            <div style={{
+              height: '5rem',
+              width: '5rem',
+              backgroundColor: '#e5e7eb',
+              borderRadius: '50%',
+              margin: '0 auto 1rem'
+            }}></div>
+            <div style={{
+              height: '1.5rem',
+              backgroundColor: '#e5e7eb',
+              borderRadius: '0.25rem',
+              width: '75%',
+              margin: '0 auto 0.5rem'
+            }}></div>
+            <div style={{
+              height: '1rem',
+              backgroundColor: '#e5e7eb',
+              borderRadius: '0.25rem',
+              width: '50%',
+              margin: '0 auto'
+            }}></div>
           </div>
-          <h3 className="text-lg font-semibold text-neutral-900 mt-4">
+          <h3 style={{
+            fontSize: '1.125rem',
+            fontWeight: '600',
+            color: 'var(--text-primary)',
+            marginTop: '1rem'
+          }}>
             Loading Profile...
           </h3>
-          <p className="text-neutral-600 mt-2">
+          <p style={{
+            color: 'var(--text-secondary)',
+            marginTop: '0.5rem'
+          }}>
             Please wait while we fetch your information
           </p>
         </div>
@@ -40,18 +73,7 @@ const ProfileCard = ({ user, profile, onEdit }) => {
       .slice(0, 2);
   };
 
-  const getRoleColor = (role) => {
-    switch (role?.toLowerCase()) {
-      case 'admin':
-        return 'danger';
-      case 'manager':
-        return 'accent';
-      case 'employee':
-        return 'success';
-      default:
-        return 'neutral';
-    }
-  };
+
 
   const getRoleIcon = (role) => {
     switch (role?.toLowerCase()) {
@@ -69,58 +91,109 @@ const ProfileCard = ({ user, profile, onEdit }) => {
   const getRoleColorClasses = (role) => {
     switch (role?.toLowerCase()) {
       case 'admin':
-        return 'bg-danger-100 text-danger-700 border-danger-200';
+        return { backgroundColor: '#fef2f2', color: '#b91c1c', borderColor: '#fecaca' };
       case 'manager':
-        return 'bg-accent-100 text-accent-700 border-accent-200';
+        return { backgroundColor: '#fef3c7', color: '#d97706', borderColor: '#fde68a' };
       case 'employee':
-        return 'bg-success-100 text-success-700 border-success-200';
+        return { backgroundColor: '#dcfce7', color: '#15803d', borderColor: '#bbf7d0' };
       default:
-        return 'bg-neutral-100 text-neutral-700 border-neutral-200';
+        return { backgroundColor: '#f3f4f6', color: '#374151', borderColor: '#d1d5db' };
     }
   };
 
   return (
-    <div className="w-full bg-surface border border-border rounded-linear shadow-linear hover:shadow-linear-lg transition-all duration-300 overflow-hidden">
+    <div style={{
+      width: '100%',
+      backgroundColor: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '0.75rem',
+      boxShadow: 'var(--shadow)',
+      transition: 'all 0.3s'
+    }} className="hover:shadow-lg overflow-hidden">
       {/* Profile Picture Section */}
-      <div className="text-center p-6 pb-4">
-        <div className="relative inline-block group">
-          <div className="absolute -inset-1 bg-gradient-to-r from-accent-500 to-accent-600 rounded-full blur opacity-25 group-hover:opacity-75 transition duration-300"></div>
-          <div className="relative w-20 h-20 bg-gradient-to-br from-accent-500 to-accent-600 rounded-full mx-auto mb-4 ring-4 ring-surface shadow-lg flex items-center justify-center">
+      <div style={{ textAlign: 'center', padding: '1.5rem', paddingBottom: '1rem' }}>
+        <div style={{ position: 'relative', display: 'inline-block' }}>
+          <div style={{
+            position: 'absolute',
+            inset: '-0.25rem',
+            background: 'linear-gradient(to right, var(--accent), var(--primary))',
+            borderRadius: '50%',
+            filter: 'blur(2px)',
+            opacity: 0.25,
+            transition: 'opacity 0.3s'
+          }} className="group-hover:opacity-75"></div>
+          <div style={{
+            position: 'relative',
+            width: '5rem',
+            height: '5rem',
+            background: 'linear-gradient(to bottom right, var(--accent), var(--primary))',
+            borderRadius: '50%',
+            margin: '0 auto 1rem',
+            border: '4px solid var(--surface)',
+            boxShadow: 'var(--shadow-lg)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
+          }}>
             {profile?.profile_picture_url || user.profile_picture_url ? (
               <img
                 src={profile?.profile_picture_url || user.profile_picture_url}
                 alt={user.full_name}
-                className="w-full h-full rounded-full object-cover"
+                style={{ width: '100%', height: '100%', borderRadius: '50%', objectFit: 'cover' }}
               />
             ) : (
-              <span className="text-2xl font-bold text-white">
+              <span style={{ fontSize: '1.5rem', fontWeight: '700', color: 'white' }}>
                 {getInitials(user.full_name)}
               </span>
             )}
           </div>
           <button
             onClick={onEdit}
-            className="absolute bottom-4 right-1/2 transform translate-x-10 bg-accent-500 hover:bg-accent-600 text-white p-2 rounded-full shadow-lg transition-all duration-300 transform hover:scale-110"
+            style={{
+              position: 'absolute',
+              bottom: '1rem',
+              right: '50%',
+              transform: 'translateX(2.5rem)',
+              backgroundColor: 'var(--accent)',
+              color: 'white',
+              padding: '0.5rem',
+              borderRadius: '50%',
+              boxShadow: 'var(--shadow-lg)',
+              border: 'none',
+              cursor: 'pointer',
+              transition: 'all 0.3s'
+            }}
+            className="hover:scale-110"
           >
-            <CameraIcon className="h-4 w-4" />
+            <CameraIcon style={{ width: '1rem', height: '1rem' }} />
           </button>
         </div>
 
         {/* User Info */}
-        <div className="space-y-2">
-          <h3 className="text-xl font-semibold text-neutral-900">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+          <h3 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-primary)' }}>
             {user.full_name}
           </h3>
-          <div className="flex items-center justify-center gap-2 text-neutral-600">
-            <EnvelopeIcon className="h-4 w-4" />
-            <span className="text-sm">{user.email}</span>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+            <EnvelopeIcon style={{ width: '1rem', height: '1rem' }} />
+            <span style={{ fontSize: '0.875rem' }}>{user.email}</span>
           </div>
 
           {/* Role Badge */}
-          <div className="flex justify-center mt-3">
-            <div className={`px-3 py-1 rounded-full text-sm font-medium border ${getRoleColorClasses(user.role)} flex items-center gap-1`}>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: '0.75rem' }}>
+            <div style={{
+              padding: '0 0.75rem 0.25rem',
+              borderRadius: '50rem',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              border: '1px solid',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.25rem',
+              ...getRoleColorClasses(user.role)
+            }}>
               {getRoleIcon(user.role)}
-              <span className="capitalize">{user.role || 'User'}</span>
+              <span style={{ textTransform: 'capitalize' }}>{user.role || 'User'}</span>
             </div>
           </div>
         </div>
@@ -128,26 +201,40 @@ const ProfileCard = ({ user, profile, onEdit }) => {
 
       {/* Profile Stats */}
       {profile && (
-        <div className="px-6 pb-4 space-y-4">
+        <div style={{ padding: '0 1.5rem 1rem', display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {/* Status Section */}
-          <div className="text-center">
-            <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wide mb-2">
+          <div style={{ textAlign: 'center' }}>
+            <h4 style={{
+              fontSize: '0.875rem',
+              fontWeight: '600',
+              color: 'var(--text-secondary)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: '0.5rem'
+            }}>
               Status
             </h4>
-            <div className="flex justify-center">
-              <div className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${
-                profile.is_active
-                  ? 'bg-success-100 text-success-700 border border-success-200'
-                  : 'bg-danger-100 text-danger-700 border border-danger-200'
-              }`}>
+            <div style={{ display: 'flex', justifyContent: 'center' }}>
+              <div style={{
+                padding: '0 0.75rem 0.25rem',
+                borderRadius: '50rem',
+                fontSize: '0.875rem',
+                fontWeight: '500',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.25rem',
+                backgroundColor: profile.is_active ? '#dcfce7' : '#fef2f2',
+                color: profile.is_active ? '#15803d' : '#dc2626',
+                border: `1px solid ${profile.is_active ? '#bbf7d0' : '#fecaca'}`
+              }}>
                 {profile.is_active ? (
                   <>
-                    <CheckCircleIcon className="h-4 w-4" />
+                    <CheckCircleIcon style={{ width: '1rem', height: '1rem' }} />
                     Active
                   </>
                 ) : (
                   <>
-                    <ClockIcon className="h-4 w-4" />
+                    <ClockIcon style={{ width: '1rem', height: '1rem' }} />
                     Inactive
                   </>
                 )}
@@ -157,25 +244,40 @@ const ProfileCard = ({ user, profile, onEdit }) => {
 
           {/* Quick Info - Only show if there's data */}
           {(profile.position || profile.department) && (
-            <div className="space-y-3">
-              <h4 className="text-sm font-semibold text-neutral-600 uppercase tracking-wide text-center">
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
+              <h4 style={{
+                fontSize: '0.875rem',
+                fontWeight: '600',
+                color: 'var(--text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.05em',
+                textAlign: 'center'
+              }}>
                 Quick Info
               </h4>
-              <div className="space-y-2 text-sm">
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', fontSize: '0.875rem' }}>
                 {profile.position && (
-                  <div className="flex items-center justify-center gap-2 text-neutral-700">
-                    <div className="bg-success-100 p-1.5 rounded-full">
-                      <UserIcon className="h-3 w-3 text-success-600" />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                    <div style={{
+                      backgroundColor: '#dcfce7',
+                      padding: '0.375rem',
+                      borderRadius: '50%'
+                    }}>
+                      <UserIcon style={{ width: '0.75rem', height: '0.75rem', color: '#15803d' }} />
                     </div>
-                    <span className="font-medium">{profile.position}</span>
+                    <span style={{ fontWeight: '500' }}>{profile.position}</span>
                   </div>
                 )}
                 {profile.department && (
-                  <div className="flex items-center justify-center gap-2 text-neutral-700">
-                    <div className="bg-accent-100 p-1.5 rounded-full">
-                      <BuildingOfficeIcon className="h-3 w-3 text-accent-600" />
+                  <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '0.5rem', color: 'var(--text-primary)' }}>
+                    <div style={{
+                      backgroundColor: '#fef3c7',
+                      padding: '0.375rem',
+                      borderRadius: '50%'
+                    }}>
+                      <BuildingOfficeIcon style={{ width: '0.75rem', height: '0.75rem', color: '#d97706' }} />
                     </div>
-                    <span className="font-medium">{profile.department}</span>
+                    <span style={{ fontWeight: '500' }}>{profile.department}</span>
                   </div>
                 )}
               </div>
@@ -185,25 +287,57 @@ const ProfileCard = ({ user, profile, onEdit }) => {
       )}
 
       {/* Action Buttons */}
-      <div className="px-6 pb-6 space-y-3">
+      <div style={{ padding: '0 1.5rem 1.5rem', display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
         <button
           onClick={onEdit}
-          className="w-full flex items-center justify-center gap-2 px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 font-medium"
+          className="btn"
+          style={{
+            width: '100%',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: '0.5rem',
+            backgroundColor: 'var(--accent)',
+            color: 'white',
+            fontWeight: '500'
+          }}
         >
-          <PencilIcon className="h-4 w-4" />
+          <PencilIcon style={{ width: '1rem', height: '1rem' }} />
           Edit Profile
         </button>
 
-        <button className="w-full flex items-center justify-center gap-2 px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 hover:border-neutral-300 transition-colors duration-200 font-medium">
-          <UserIcon className="h-4 w-4" />
+        <button style={{
+          width: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '0.5rem',
+          padding: '0.5rem 1rem',
+          color: 'var(--text-secondary)',
+          border: '1px solid #e5e7eb',
+          borderRadius: '0.5rem',
+          backgroundColor: 'transparent',
+          cursor: 'pointer',
+          fontWeight: '500',
+          transition: 'all 0.2s'
+        }} className="hover:bg-gray-50 hover:border-gray-300">
+          <UserIcon style={{ width: '1rem', height: '1rem' }} />
           View Full Profile
         </button>
       </div>
 
       {/* Last Updated - Only show if there's actual data */}
       {profile?.updated_at && (
-        <div className="px-6 pb-6 pt-0 border-t border-neutral-200">
-          <p className="text-xs text-neutral-500 text-center mt-4">
+        <div style={{
+          padding: '0 1.5rem 1.5rem',
+          borderTop: '1px solid #e5e7eb'
+        }}>
+          <p style={{
+            fontSize: '0.75rem',
+            color: 'var(--text-secondary)',
+            textAlign: 'center',
+            marginTop: '1rem'
+          }}>
             Last updated: {new Date(profile.updated_at).toLocaleDateString('en-US', {
               year: 'numeric',
               month: 'short',

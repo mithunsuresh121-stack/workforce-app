@@ -10,8 +10,9 @@ from ..crud import (
     update_profile_update_request_status,
     update_employee_profile
 )
-from ..models.user import User
-from ..models.profile_update_request import RequestStatus
+from ..models.user import User, Role
+from ..schemas.schemas import RequestStatus
+from ..permissions import require_permission
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
@@ -87,16 +88,20 @@ def get_profile_update_requests(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Get all profile update requests (Super Admin only)
+    Get all profile update requests (SuperAdmin sees all; CompanyAdmin sees own company)
     """
-    if current_user.role != "SuperAdmin":
+    requests = list_profile_update_requests(db)
+    if current_user.role == Role.SUPERADMIN:
+        pass  # See all
+    elif current_user.role == Role.COMPANYADMIN:
+        # Filter to own company
+        requests = [r for r in requests if r.user.company_id == current_user.company_id]
+    else:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Super Admin can view all requests"
+            detail="Insufficient permissions to view requests"
         )
 
-    # Fix: list_profile_update_requests takes only db argument, filter manually if needed
-    requests = list_profile_update_requests(db)
     if status_filter:
         requests = [r for r in requests if r.status == status_filter]
     return requests
@@ -109,14 +114,8 @@ def approve_profile_update_request(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Approve a profile update request (Super Admin only)
+    Approve a profile update request (SuperAdmin or CompanyAdmin for own company)
     """
-    if current_user.role != "SuperAdmin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Super Admin can approve requests"
-        )
-
     request = update_profile_update_request_status(
         db=db,
         request_id=request_id,
@@ -128,6 +127,13 @@ def approve_profile_update_request(
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Request not found"
+        )
+
+    # Check permissions
+    if current_user.role != Role.SUPERADMIN and (current_user.role != Role.COMPANYADMIN or request.user.company_id != current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to approve this request"
         )
 
     # If approved and it's an update, apply the changes
@@ -157,14 +163,8 @@ def reject_profile_update_request(
     current_user: User = Depends(get_current_user)
 ):
     """
-    Reject a profile update request (Super Admin only)
+    Reject a profile update request (SuperAdmin or CompanyAdmin for own company)
     """
-    if current_user.role != "SuperAdmin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Super Admin can reject requests"
-        )
-
     request = update_profile_update_request_status(
         db=db,
         request_id=request_id,
@@ -177,4 +177,12 @@ def reject_profile_update_request(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Request not found"
         )
+
+    # Check permissions
+    if current_user.role != Role.SUPERADMIN and (current_user.role != Role.COMPANYADMIN or request.user.company_id != current_user.company_id):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to reject this request"
+        )
+
     return request

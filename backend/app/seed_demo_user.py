@@ -9,7 +9,7 @@ from sqlalchemy.orm import sessionmaker
 sys.path.append(os.path.join(os.path.dirname(__file__), '..'))
 
 from app.crud import create_user, get_company_by_id, get_company_by_name, create_company
-from app.models.user import User
+from app.models.user import User, Role
 from app.models.company import Company
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
@@ -38,7 +38,7 @@ def seed_demo_user(db: Session):
     else:
         # Create Super Admin user (no company_id needed)
         create_user(db, super_admin_email, super_admin_password, 
-                   full_name="Super Administrator", role="SuperAdmin", company_id=None)
+                   full_name="Super Administrator", role=Role.SUPERADMIN, company_id=None)
         print("Super Admin user created successfully.")
     
     # Create demo company and user (optional, for backward compatibility)
@@ -66,12 +66,12 @@ def seed_demo_user(db: Session):
     if existing_user:
         print("Demo user already exists.")
         # Fix role if invalid
-        if existing_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager", "Employee"]:
-            existing_user.role = "Employee"
+        if existing_user.role not in [Role.SUPERADMIN, Role.COMPANYADMIN, Role.MANAGER, Role.EMPLOYEE]:
+            existing_user.role = Role.EMPLOYEE
             db.commit()
             print("Fixed demo user role to Employee.")
     else:
-        create_user(db, demo_email, demo_password, full_name="Demo User", role="Employee", company_id=company.id)
+        create_user(db, demo_email, demo_password, full_name="Demo User", role=Role.EMPLOYEE, company_id=company.id)
         print("Demo user created successfully.")
 
 if __name__ == "__main__":

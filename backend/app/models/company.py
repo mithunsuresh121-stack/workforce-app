@@ -24,6 +24,10 @@ class Company(Base):
     # Relationships
     users = relationship("User", back_populates="company")
     employee_profiles = relationship("EmployeeProfile", back_populates="company")
+    tasks = relationship("Task", back_populates="company")
+    leaves = relationship("Leave", back_populates="company")
+    shifts = relationship("Shift", back_populates="company")
+    documents = relationship("Document", back_populates="company")
     
     def __repr__(self):
         return f"<Company {self.name}>"

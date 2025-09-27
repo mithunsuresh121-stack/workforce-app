@@ -1,4 +1,4 @@
-import React, { useEffect, useState, useMemo } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import {
   PlusIcon,
   MagnifyingGlassIcon,
@@ -12,10 +12,12 @@ import {
   UserIcon,
   FlagIcon
 } from '@heroicons/react/24/outline';
-import { api } from '../contexts/AuthContext';
+import { api, useAuth } from '../contexts/AuthContext';
 
 const Tasks = () => {
+  const { user } = useAuth();
   const [tasks, setTasks] = useState([]);
+  const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
@@ -28,10 +30,34 @@ const Tasks = () => {
     title: '',
     description: '',
     status: 'Pending',
-    assignee: '',
+    assignee_id: '',
     priority: 'Medium',
     dueDate: ''
   });
+
+  const isManager = user && ['Manager', 'CompanyAdmin', 'SuperAdmin'].includes(user.role);
+
+  const fetchEmployees = async () => {
+    if (!isManager) return;
+    try {
+      const response = await api.get('/users/employees');
+      setEmployees(response.data);
+    } catch (error) {
+      console.error('Error fetching employees:', error);
+    }
+  };
+
+  useEffect(() => {
+    if (user && isManager) {
+      fetchEmployees();
+    }
+  }, [user, isManager]);
+
+  const getName = useCallback((id) => {
+    if (!id) return 'Unassigned';
+    const emp = employees.find(e => e.id === id);
+    return emp ? emp.name : `Employee ${id}`;
+  }, [employees]);
 
   useEffect(() => {
     const fetchTasks = async () => {
@@ -50,7 +76,7 @@ const Tasks = () => {
             title: 'Complete quarterly report',
             description: 'Prepare and submit the Q4 financial report',
             status: 'In Progress',
-            assignee: 'John Doe',
+            assignee_id: 1,
             priority: 'High',
             dueDate: '2024-01-15',
             createdAt: new Date().toISOString()
@@ -60,7 +86,7 @@ const Tasks = () => {
             title: 'Review code changes',
             description: 'Review pull request #123 for the new feature',
             status: 'Pending',
-            assignee: 'Jane Smith',
+            assignee_id: 2,
             priority: 'Medium',
             dueDate: '2024-01-10',
             createdAt: new Date().toISOString()
@@ -70,7 +96,7 @@ const Tasks = () => {
             title: 'Update documentation',
             description: 'Update API documentation for version 2.0',
             status: 'Completed',
-            assignee: 'Bob Johnson',
+            assignee_id: 3,
             priority: 'Low',
             dueDate: '2024-01-05',
             createdAt: new Date().toISOString()
@@ -84,25 +110,22 @@ const Tasks = () => {
     fetchTasks();
   }, []);
 
+  useEffect(() => {
+    fetchEmployees();
+  }, []);
+
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
+      const assigneeName = getName(task.assignee_id);
       const matchesSearch = task.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
                            task.description.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                           task.assignee.toLowerCase().includes(searchTerm.toLowerCase());
+                           assigneeName.toLowerCase().includes(searchTerm.toLowerCase());
       const matchesStatus = !statusFilter || task.status === statusFilter;
       return matchesSearch && matchesStatus;
     });
-  }, [tasks, searchTerm, statusFilter]);
+  }, [tasks, searchTerm, statusFilter, getName]);
 
-  const getStatusColor = (status) => {
-    switch (status) {
-      case 'Completed': return 'green';
-      case 'In Progress': return 'blue';
-      case 'Pending': return 'orange';
-      case 'Overdue': return 'red';
-      default: return 'gray';
-    }
-  };
+
 
   const handleCreateTask = () => {
     setIsEditing(false);
@@ -110,7 +133,7 @@ const Tasks = () => {
       title: '',
       description: '',
       status: 'Pending',
-      assignee: '',
+      assignee_id: '',
       priority: 'Medium',
       dueDate: ''
     });
@@ -124,7 +147,7 @@ const Tasks = () => {
       title: task.title,
       description: task.description,
       status: task.status,
-      assignee: task.assignee,
+      assignee_id: task.assignee_id || '',
       priority: task.priority,
       dueDate: task.dueDate
     });
@@ -138,6 +161,11 @@ const Tasks = () => {
   };
 
   const handleSaveTask = async () => {
+    if (isManager && !formData.assignee_id) {
+      setError('Please select an assignee.');
+      return;
+    }
+
     try {
       if (isEditing) {
         // Update existing task
@@ -194,7 +222,7 @@ const Tasks = () => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-neutral-600">
           <UserIcon className="w-4 h-4" />
-          <span className="text-sm">{task.assignee}</span>
+          <span className="text-sm">{getName(task.assignee_id)}</span>
         </div>
         <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
           <button
@@ -413,7 +441,7 @@ const Tasks = () => {
                       <td className="px-6 py-4">
                         <div className="flex items-center gap-2">
                           <UserIcon className="w-4 h-4 text-neutral-400" />
-                          <span className="text-neutral-700">{task.assignee}</span>
+                          <span className="text-neutral-700">{getName(task.assignee_id)}</span>
                         </div>
                       </td>
                       <td className="px-6 py-4">
@@ -534,7 +562,7 @@ const Tasks = () => {
                       </label>
                       <div className="flex items-center gap-2">
                         <UserIcon className="w-5 h-5 text-neutral-400" />
-                        <span className="text-neutral-700">{selectedTask.assignee}</span>
+                        <span className="text-neutral-700">{getName(selectedTask.assignee_id)}</span>
                       </div>
                     </div>
                     <div>
@@ -607,19 +635,26 @@ const Tasks = () => {
                       </select>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Assignee
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.assignee}
-                        onChange={(e) => setFormData({...formData, assignee: e.target.value})}
-                        className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                        placeholder="Enter assignee name"
-                      />
-                    </div>
+                  <div className={isManager ? "grid grid-cols-2 gap-6" : "grid grid-cols-1 gap-6"}>
+                    {isManager && (
+                      <div>
+                        <label className="block text-sm font-medium text-neutral-700 mb-2">
+                          Assignee *
+                        </label>
+                        <select
+                          value={formData.assignee_id}
+                          onChange={(e) => setFormData({...formData, assignee_id: e.target.value})}
+                          className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-white"
+                        >
+                          <option value="">Select Employee</option>
+                          {employees.map(emp => (
+                            <option key={emp.id} value={emp.id}>
+                              {emp.name}
+                            </option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
                     <div>
                       <label className="block text-sm font-medium text-neutral-700 mb-2">
                         Due Date

@@ -3,12 +3,8 @@ from pydantic import BaseModel, EmailStr, Field, validator
 from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from ..models.user import Role
 
-class Role(str, Enum):
-    SuperAdmin = "SuperAdmin"
-    CompanyAdmin = "CompanyAdmin"
-    Manager = "Manager"
-    Employee = "Employee"
 
 class TaskStatus(str, Enum):
     PENDING = "Pending"
@@ -63,7 +59,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6)
     full_name: Optional[str] = Field(None, max_length=100)
-    role: Role = Role.Employee
+    role: Role = Role.EMPLOYEE
     company_id: Optional[int] = None  # Added optional company_id for employees
 
 class UserUpdate(BaseModel):
@@ -83,6 +79,14 @@ class UserOut(BaseModel):
     is_active: bool
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class EmployeeUserOut(BaseModel):
+    id: int
+    name: str
+    email: str
 
     class Config:
         from_attributes = True
@@ -170,7 +174,7 @@ class NotificationOut(NotificationBase):
 
 # New Schemas for Leaves
 class LeaveBase(BaseModel):
-    tenant_id: str
+    company_id: int
     employee_id: int
     type: str
     start_at: datetime
@@ -195,12 +199,13 @@ class LeaveCreate(LeaveBase):
 
 class LeaveOut(BaseModel):
     id: int
-    tenant_id: str
+    company_id: int
     employee_id: int
     type: str
     start_at: datetime
     end_at: datetime
     status: LeaveStatus
+    approver_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
 
@@ -209,7 +214,7 @@ class LeaveOut(BaseModel):
 
 # New Schemas for Shifts
 class ShiftBase(BaseModel):
-    tenant_id: str
+    company_id: int
     employee_id: int
     start_at: datetime
     end_at: datetime
@@ -220,6 +225,8 @@ class ShiftCreate(ShiftBase):
 
 class ShiftOut(ShiftBase):
     id: int
+    status: str = "Pending"
+    approver_id: Optional[int] = None
     created_at: datetime
     updated_at: datetime
     
@@ -460,3 +467,28 @@ class ProfileUpdateRequestOut(BaseModel):
 class ProfileUpdateRequestReview(BaseModel):
     status: RequestStatus
     review_comment: Optional[str] = None
+
+# Document Schemas
+class DocumentBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=255)
+    file_url: str = Field(..., min_length=1, max_length=500)
+    description: Optional[str] = Field(None, max_length=1000)
+    is_public: bool = False
+
+class DocumentCreate(DocumentBase):
+    company_id: int
+
+class DocumentUpdate(BaseModel):
+    name: Optional[str] = Field(None, min_length=1, max_length=255)
+    description: Optional[str] = Field(None, max_length=1000)
+    is_public: Optional[bool] = None
+
+class DocumentOut(DocumentBase):
+    id: int
+    company_id: int
+    user_id: Optional[int]
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

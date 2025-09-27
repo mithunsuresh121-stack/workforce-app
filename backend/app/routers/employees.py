@@ -11,14 +11,15 @@ from ..crud import (
     update_employee_profile,
     delete_employee_profile
 )
-from ..models.user import User
+from ..models.user import User, Role
+from ..permissions import has_permission, require_permission, requires_role
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
 @router.get("/", response_model=List[EmployeeProfileOut])
 def get_employee_profiles(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("profile.read"))
 ):
     """
     Get all employee profiles for the current user's company
@@ -30,21 +31,14 @@ def get_employee_profiles(
 def create_employee_profile_endpoint(
     payload: EmployeeProfileCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_permission("profile.create"))
 ):
     """
     Create a new employee profile for the current user's company
     """
-    print(f"DEBUG: create_employee_profile_endpoint called with user_id={payload.user_id}, company_id={payload.company_id}")
-    # Role-based access control
-    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Insufficient permissions to create employee profiles"
-        )
 
     # Ensure the profile is created for the user's company (SuperAdmin can create for any)
-    if current_user.role != "SuperAdmin" and payload.company_id != current_user.company_id:
+    if current_user.role != Role.SUPERADMIN and payload.company_id != current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot create employee profile for another company"
@@ -53,13 +47,11 @@ def create_employee_profile_endpoint(
     # Pre-insert check to avoid DB constraint violation
     existing_profile = get_employee_profile_by_user_id(db, payload.user_id, payload.company_id)
     if existing_profile:
-        print(f"DEBUG: Found existing profile for user_id={payload.user_id}, company_id={payload.company_id}")
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Employee profile already exists for this user"
         )
 
-    print(f"DEBUG: No existing profile found, proceeding with creation for user_id={payload.user_id}")
     try:
         profile = create_employee_profile(
             db=db,
@@ -71,13 +63,8 @@ def create_employee_profile_endpoint(
             hire_date=payload.hire_date,
             manager_id=payload.manager_id
         )
-        print(f"DEBUG: Successfully created profile for user_id={payload.user_id}")
         return profile
     except IntegrityError as e:
-        import traceback
-        print(f"DEBUG: IntegrityError caught: {e}")
-        print(f"DEBUG: Exception orig: {e.orig}")
-        traceback.print_exc()
         if "duplicate key value violates unique constraint" in str(e.orig):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -85,10 +72,10 @@ def create_employee_profile_endpoint(
             )
         raise
     except Exception as e:
-        import traceback
-        print(f"DEBUG: Unexpected exception: {type(e).__name__}: {e}")
-        traceback.print_exc()
-        raise
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to create employee profile"
+        )
 
 @router.get("/{user_id}", response_model=EmployeeProfileOut)
 def get_employee_profile(
@@ -117,8 +104,8 @@ def update_employee_profile_endpoint(
     """
     Update an employee profile
     """
-    # Role-based access control
-    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+    # Role-based access control - allow self-update for employees
+    if current_user.id != user_id and not has_permission(current_user, "profile.update"):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to update employee profiles"
@@ -152,7 +139,7 @@ def delete_employee_profile_endpoint(
     Delete an employee profile (soft delete)
     """
     # Role-based access control
-    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+    if current_user.role not in [Role.SUPERADMIN, Role.COMPANYADMIN, Role.MANAGER]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to delete employee profiles"

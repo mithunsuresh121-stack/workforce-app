@@ -4,12 +4,10 @@ import {
   PhoneIcon,
   CalendarIcon,
   PencilIcon,
-  ShareIcon,
   CheckCircleIcon,
   ClockIcon,
   ExclamationTriangleIcon,
-  ArrowDownTrayIcon,
-  EyeIcon
+  ArrowDownTrayIcon
 } from '@heroicons/react/24/outline';
 import { useAuth, api } from '../contexts/AuthContext';
 import ProfileCard from '../components/ProfileCard_linear';
@@ -95,13 +93,41 @@ const Profile = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-surface flex justify-center items-center">
-        <div className="text-center bg-surface border border-border rounded-lg p-8 shadow-linear-lg">
-          <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+      <div style={{
+        minHeight: '100vh',
+        backgroundColor: 'var(--surface)',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center'
+      }}>
+        <div style={{
+          textAlign: 'center',
+          backgroundColor: 'var(--surface)',
+          border: '1px solid var(--border)',
+          borderRadius: '0.5rem',
+          padding: '2rem',
+          boxShadow: 'var(--shadow)'
+        }}>
+          <div style={{
+            width: '2rem',
+            height: '2rem',
+            border: '2px solid var(--accent)',
+            borderTop: '2px solid transparent',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite',
+            margin: '0 auto 1rem'
+          }}></div>
+          <h3 style={{
+            fontSize: '1.125rem',
+            fontWeight: '600',
+            color: 'var(--text-primary)',
+            marginBottom: '0.5rem'
+          }}>
             Loading Profile...
           </h3>
-          <p className="text-neutral-600">
+          <p style={{
+            color: 'var(--text-secondary)'
+          }}>
             Please wait while we fetch your information
           </p>
         </div>
@@ -112,33 +138,58 @@ const Profile = () => {
   const profileCompletion = calculateProfileCompletion(profile);
 
   return (
-    <div className="min-h-screen bg-surface">
+    <div style={{ minHeight: '100vh', backgroundColor: 'var(--surface)' }}>
       {/* Modern Header Section */}
-      <div className="bg-surface border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-6">
+      <div style={{ backgroundColor: 'var(--surface)', borderBottom: '1px solid var(--border)' }}>
+        <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 1.5rem 0 1.5rem', paddingTop: '1.5rem', paddingBottom: '1.5rem' }}>
           {/* Header Content */}
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-6">
-            <div className="flex-1 min-w-0">
-              <h1 className="text-2xl font-semibold text-neutral-900 mb-2">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }} className="lg:flex-row lg:items-center lg:justify-between">
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <h1 style={{ fontSize: '1.5rem', fontWeight: '600', color: 'var(--text-primary)', marginBottom: '0.5rem' }}>
                 Employee Profile
               </h1>
-              <div className="flex items-center gap-2 text-neutral-600">
-                <UserIcon className="w-5 h-5 flex-shrink-0" />
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', color: 'var(--text-secondary)' }}>
+                <UserIcon style={{ width: '1.25rem', height: '1.25rem', flexShrink: 0 }} />
                 <span>Manage your personal and professional information</span>
               </div>
             </div>
 
             {/* Action Buttons */}
-            <div className="flex flex-col sm:flex-row gap-3 lg:flex-shrink-0">
-              <button className="flex items-center justify-center gap-2 px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 hover:border-neutral-300 transition-colors duration-200 min-w-[120px]">
-                <ArrowDownTrayIcon className="w-5 h-5" />
-                <span className="hidden sm:inline font-medium">Export</span>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }} className="sm:flex-row lg:flex-shrink-0">
+              <button style={{
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: '0.5rem',
+                padding: '0.5rem 1rem',
+                color: 'var(--text-secondary)',
+                border: '1px solid #e5e7eb',
+                borderRadius: '0.5rem',
+                backgroundColor: 'transparent',
+                cursor: 'pointer',
+                fontWeight: '500',
+                transition: 'all 0.2s',
+                minWidth: '7.5rem'
+              }} className="hover:bg-gray-50 hover:border-gray-300">
+                <ArrowDownTrayIcon style={{ width: '1.25rem', height: '1.25rem' }} />
+                <span className="hidden sm:inline">Export</span>
               </button>
               <button
                 onClick={() => setEditing(true)}
-                className="flex items-center justify-center gap-2 px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 min-w-[140px] font-medium"
+                className="btn"
+                style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: '0.5rem',
+                  padding: '0.5rem 1rem',
+                  backgroundColor: 'var(--accent)',
+                  color: 'white',
+                  fontWeight: '500',
+                  minWidth: '8.75rem'
+                }}
               >
-                <PencilIcon className="w-5 h-5" />
+                <PencilIcon style={{ width: '1.25rem', height: '1.25rem' }} />
                 <span>Edit Profile</span>
               </button>
             </div>
@@ -147,33 +198,39 @@ const Profile = () => {
       </div>
 
       {/* Main Content Container */}
-      <div className="max-w-7xl mx-auto px-6 py-8">
+      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: '0 1.5rem 0 1.5rem', paddingTop: '2rem', paddingBottom: '2rem' }}>
         {/* Profile Completion Status */}
-        <div className="mb-8 bg-surface border border-border rounded-lg p-6">
-          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-            <div className="flex-1">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-neutral-900 flex items-center gap-2">
-                  <CheckCircleIcon className="w-6 h-6 text-success-500" />
+        <div style={{ marginBottom: '2rem', backgroundColor: 'var(--surface)', border: '1px solid var(--border)', borderRadius: '0.5rem', padding: '1.5rem' }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }} className="lg:flex-row lg:items-center lg:justify-between">
+            <div style={{ flex: 1 }}>
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
+                <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)', display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                  <CheckCircleIcon style={{ width: '1.5rem', height: '1.5rem', color: '#10b981' }} />
                   Profile Completion
                 </h3>
-                <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                  profileCompletion === 100 ? 'bg-success-100 text-success-700' :
-                  profileCompletion >= 75 ? 'bg-accent-100 text-accent-700' :
-                  'bg-warning-100 text-warning-700'
-                }`}>
+                <div style={{
+                  padding: '0.25rem 0.75rem',
+                  borderRadius: '50rem',
+                  fontSize: '0.875rem',
+                  fontWeight: '500',
+                  backgroundColor: profileCompletion === 100 ? '#dcfce7' : profileCompletion >= 75 ? '#fef3c7' : '#fef2f2',
+                  color: profileCompletion === 100 ? '#15803d' : profileCompletion >= 75 ? '#d97706' : '#dc2626'
+                }}>
                   {profileCompletion}% Complete
                 </div>
               </div>
-              <div className="w-full bg-neutral-200 rounded-full h-3 mb-3">
+              <div style={{ width: '100%', backgroundColor: '#e5e7eb', borderRadius: '0.25rem', height: '0.75rem', marginBottom: '0.75rem' }}>
                 <div
-                  className={`h-3 rounded-full transition-all duration-300 ${
-                    profileCompletion === 100 ? 'bg-success-500' : 'bg-accent-500'
-                  }`}
-                  style={{ width: `${profileCompletion}%` }}
+                  style={{
+                    height: '0.75rem',
+                    borderRadius: '0.25rem',
+                    transition: 'all 0.3s',
+                    width: `${profileCompletion}%`,
+                    backgroundColor: profileCompletion === 100 ? '#10b981' : 'var(--accent)'
+                  }}
                 ></div>
               </div>
-              <p className="text-neutral-600">
+              <p style={{ color: 'var(--text-secondary)' }}>
                 {profileCompletion === 100
                   ? '🎉 Your profile is complete! Great job maintaining your information.'
                   : `📝 ${100 - profileCompletion}% of fields need to be filled to complete your profile.`
@@ -181,12 +238,25 @@ const Profile = () => {
               </p>
             </div>
             {profileCompletion < 100 && (
-              <div className="flex-shrink-0">
+              <div style={{ flexShrink: 0 }}>
                 <button
                   onClick={() => setEditing(true)}
-                  className="flex items-center gap-2 px-4 py-2 text-accent-600 border border-accent-200 rounded-lg hover:bg-accent-50 transition-colors duration-200"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    color: 'var(--accent)',
+                    border: '1px solid var(--accent-light)',
+                    borderRadius: '0.5rem',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    fontWeight: '500',
+                    transition: 'all 0.2s'
+                  }}
+                  className="hover:bg-accent-50"
                 >
-                  <PencilIcon className="w-4 h-4" />
+                  <PencilIcon style={{ width: '1rem', height: '1rem' }} />
                   Complete Profile
                 </button>
               </div>
@@ -195,23 +265,31 @@ const Profile = () => {
         </div>
 
         {alert.show && (
-          <div className={`mb-6 p-4 rounded-lg border ${
-            alert.type === 'success'
-              ? 'bg-success-50 border-success-200 text-success-800'
-              : 'bg-danger-50 border-danger-200 text-danger-800'
-          }`}>
-            <div className="flex items-start gap-3">
+          <div style={{
+            marginBottom: '1.5rem',
+            padding: '1rem',
+            borderRadius: '0.5rem',
+            border: `1px solid ${alert.type === 'success' ? '#bbf7d0' : '#fecaca'}`,
+            backgroundColor: alert.type === 'success' ? '#dcfce7' : '#fef2f2',
+            color: alert.type === 'success' ? '#166534' : '#991b1b'
+          }}>
+            <div style={{ display: 'flex', alignItems: 'flex-start', gap: '0.75rem' }}>
               {alert.type === 'success' ? (
-                <CheckCircleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <CheckCircleIcon style={{ width: '1.25rem', height: '1.25rem', marginTop: '0.125rem', flexShrink: 0 }} />
               ) : (
-                <ExclamationTriangleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
+                <ExclamationTriangleIcon style={{ width: '1.25rem', height: '1.25rem', marginTop: '0.125rem', flexShrink: 0 }} />
               )}
               <p>{alert.message}</p>
               <button
                 onClick={() => setAlert({ show: false })}
-                className="ml-auto text-current hover:opacity-70"
+                style={{
+                  marginLeft: 'auto',
+                  color: 'currentColor',
+                  cursor: 'pointer'
+                }}
+                className="hover:opacity-70"
               >
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <svg style={{ width: '1.25rem', height: '1.25rem' }} fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M6 18L18 6M6 6l12 12" />
                 </svg>
               </button>
@@ -220,10 +298,14 @@ const Profile = () => {
         )}
 
         {/* Main Content Grid */}
-        <div className="grid grid-cols-1 xl:grid-cols-4 gap-8">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr',
+          gap: '2rem'
+        }} className="xl:grid-cols-4">
           {/* Profile Card - Left Sidebar */}
           <div className="xl:col-span-1">
-            <div className="sticky top-8">
+            <div style={{ position: 'sticky', top: '2rem' }}>
               <ProfileCard
                 user={user}
                 profile={profile}
@@ -234,26 +316,40 @@ const Profile = () => {
 
           {/* Profile Details - Main Content */}
           <div className="xl:col-span-3">
-            <div className="bg-surface border border-border rounded-lg overflow-hidden">
-              <div className="border-b border-border">
-                <div className="flex">
+            <div style={{
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '0.5rem',
+              overflow: 'hidden'
+            }}>
+              <div style={{ borderBottom: '1px solid var(--border)' }}>
+                <div style={{ display: 'flex' }}>
                   {tabs.map(({ label, value, icon: Icon }) => (
                     <button
                       key={value}
                       onClick={() => setActiveTab(value)}
-                      className={`flex items-center gap-2 px-6 py-4 text-sm font-medium transition-colors duration-200 ${
-                        activeTab === value
-                          ? 'text-accent-600 border-b-2 border-accent-500 bg-accent-50'
-                          : 'text-neutral-600 hover:text-neutral-900 hover:bg-neutral-50'
-                      }`}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.5rem',
+                        padding: '1rem 1.5rem',
+                        fontSize: '0.875rem',
+                        fontWeight: '500',
+                        transition: 'all 0.2s',
+                        borderBottom: activeTab === value ? '2px solid var(--accent)' : 'none',
+                        backgroundColor: activeTab === value ? '#fef3c7' : 'transparent',
+                        color: activeTab === value ? 'var(--accent)' : 'var(--text-secondary)',
+                        cursor: 'pointer'
+                      }}
+                      className={activeTab !== value ? 'hover:bg-gray-50 hover:text-gray-900' : ''}
                     >
-                      <Icon className="w-5 h-5" />
+                      <Icon style={{ width: '1.25rem', height: '1.25rem' }} />
                       <span>{label}</span>
                     </button>
                   ))}
                 </div>
               </div>
-              <div className="p-6">
+              <div style={{ padding: '1.5rem' }}>
                 {activeTab === 'overview' && <ProfileDetails profile={profile} view="overview" />}
                 {activeTab === 'personal' && <ProfileDetails profile={profile} view="personal" />}
                 {activeTab === 'contact' && <ProfileDetails profile={profile} view="contact" />}
@@ -266,33 +362,82 @@ const Profile = () => {
 
       {/* Edit Profile Dialog */}
       {editing && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-          <div className="bg-surface rounded-lg shadow-linear-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-border">
+        <div style={{
+          position: 'fixed',
+          inset: 0,
+          backgroundColor: 'rgba(0, 0, 0, 0.5)',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          zIndex: 50,
+          padding: '1rem'
+        }}>
+          <div style={{
+            backgroundColor: 'var(--surface)',
+            borderRadius: '0.5rem',
+            boxShadow: 'var(--shadow)',
+            maxWidth: '56rem',
+            width: '100%',
+            maxHeight: '90vh',
+            overflowY: 'auto'
+          }}>
+            <div style={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              padding: '1.5rem',
+              borderBottom: '1px solid var(--border)'
+            }}>
               <div>
-                <h2 className="text-xl font-semibold text-neutral-900">
+                <h2 style={{ fontSize: '1.25rem', fontWeight: '600', color: 'var(--text-primary)' }}>
                   Edit Profile
                 </h2>
-                <p className="text-neutral-600 mt-1">
+                <p style={{ color: 'var(--text-secondary)', marginTop: '0.25rem' }}>
                   Request changes to your profile information
                 </p>
               </div>
-              <div className="flex items-center gap-2 px-3 py-1 bg-warning-100 text-warning-700 rounded-full text-sm font-medium">
-                <ClockIcon className="w-4 h-4" />
+              <div style={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.25rem 0.75rem',
+                backgroundColor: '#fef3c7',
+                color: '#d97706',
+                borderRadius: '50rem',
+                fontSize: '0.875rem',
+                fontWeight: '500'
+              }}>
+                <ClockIcon style={{ width: '1rem', height: '1rem' }} />
                 Pending Admin Review
               </div>
             </div>
-            <div className="p-6">
+            <div style={{ padding: '1.5rem' }}>
               <EditProfileForm
                 profile={profile}
                 onClose={() => setEditing(false)}
                 onSuccess={handleEditSuccess}
               />
             </div>
-            <div className="flex justify-end gap-3 p-6 border-t border-border bg-neutral-50">
+            <div style={{
+              display: 'flex',
+              justifyContent: 'flex-end',
+              gap: '0.75rem',
+              padding: '1.5rem',
+              borderTop: '1px solid var(--border)',
+              backgroundColor: '#f9fafb'
+            }}>
               <button
                 onClick={() => setEditing(false)}
-                className="px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
+                style={{
+                  padding: '0.5rem 1rem',
+                  color: 'var(--text-secondary)',
+                  border: '1px solid #e5e7eb',
+                  borderRadius: '0.5rem',
+                  backgroundColor: 'transparent',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                className="hover:bg-gray-50"
               >
                 Cancel
               </button>

@@ -24,16 +24,16 @@ class Task(Base):
     assignee_id = Column(Integer, ForeignKey("users.id"), index=True, nullable=True)
     assigned_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     status = Column(
-        String(50),
-        default="Pending",
-        server_default="Pending",
+        Enum(TaskStatus),
+        default=TaskStatus.PENDING,
+        server_default=TaskStatus.PENDING.value,
         index=True,
         nullable=False,
     )
     priority = Column(
-        String(50),
-        default="Medium",
-        server_default="Medium",
+        Enum(TaskPriority),
+        default=TaskPriority.MEDIUM,
+        server_default=TaskPriority.MEDIUM.value,
         nullable=False,
     )
     due_at = Column(DateTime, nullable=True)
@@ -41,9 +41,9 @@ class Task(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    company = relationship("Company")
-    assignee = relationship("User", foreign_keys=[assignee_id])
-    assigner = relationship("User", foreign_keys=[assigned_by])
+    company = relationship("Company", back_populates="tasks")
+    assignee = relationship("User", foreign_keys=[assignee_id], backref="assigned_tasks")
+    assigner = relationship("User", foreign_keys=[assigned_by], backref="created_tasks")
 
     def __repr__(self):
         return (

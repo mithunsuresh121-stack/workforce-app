@@ -3,9 +3,7 @@ import { useAuth, api } from '../contexts/AuthContext';
 import {
   UserIcon,
   PhoneIcon,
-  MapPinIcon,
   BuildingOfficeIcon,
-  CalendarDaysIcon,
   CheckCircleIcon,
   ExclamationTriangleIcon,
   ArrowRightIcon,
@@ -196,69 +194,120 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
   };
 
   const renderStepIndicator = () => (
-    <div className="mb-8">
-      <div className="flex items-center justify-between mb-4">
+    <div style={{ marginBottom: '2rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '1rem' }}>
         {steps.map((step) => (
-          <div key={step.number} className="flex flex-col items-center">
-            <div className={`w-12 h-12 rounded-linear flex items-center justify-center border-2 transition-all duration-300 ${
-              step.number === currentStep
-                ? 'bg-accent-500 border-accent-500 text-white'
-                : step.number < currentStep
-                ? 'bg-success-500 border-success-500 text-white'
-                : 'bg-neutral-200 border-neutral-300 text-neutral-500'
-            }`}>
+          <div key={step.number} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+            <div style={{
+              width: '3rem',
+              height: '3rem',
+              borderRadius: '0.75rem',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              border: '2px solid',
+              transition: 'all 0.3s',
+              backgroundColor: step.number === currentStep ? 'var(--accent)' : step.number < currentStep ? '#10b981' : '#e5e7eb',
+              borderColor: step.number === currentStep ? 'var(--accent)' : step.number < currentStep ? '#10b981' : '#d1d5db',
+              color: step.number === currentStep || step.number < currentStep ? 'white' : '#6b7280'
+            }}>
               {step.number < currentStep ? (
-                <CheckCircleIcon className="h-6 w-6" />
+                <CheckCircleIcon style={{ width: '1.5rem', height: '1.5rem' }} />
               ) : (
-                <step.icon className="h-6 w-6" />
+                <step.icon style={{ width: '1.5rem', height: '1.5rem' }} />
               )}
             </div>
-            <div className="text-center mt-2">
-              <p className={`font-medium text-sm ${
-                step.number <= currentStep ? 'text-accent-600' : 'text-neutral-500'
-              }`}>
+            <div style={{ textAlign: 'center', marginTop: '0.5rem' }}>
+              <p style={{
+                fontWeight: '500',
+                fontSize: '0.875rem',
+                color: step.number <= currentStep ? 'var(--accent)' : 'var(--text-secondary)'
+              }}>
                 {step.title}
               </p>
-              <p className="text-xs text-neutral-500 hidden sm:block">
+              <p style={{
+                fontSize: '0.75rem',
+                color: 'var(--text-secondary)',
+                display: 'none'
+              }} className="sm:block">
                 {step.description}
               </p>
             </div>
           </div>
         ))}
       </div>
-      <div className="w-full bg-neutral-200 rounded-linear h-2">
+      <div style={{
+        width: '100%',
+        backgroundColor: '#e5e7eb',
+        borderRadius: '0.75rem',
+        height: '0.5rem'
+      }}>
         <div
-          className="bg-accent-500 h-2 rounded-linear transition-all duration-300"
-          style={{ width: `${(currentStep / totalSteps) * 100}%` }}
+          style={{
+            backgroundColor: 'var(--accent)',
+            height: '0.5rem',
+            borderRadius: '0.75rem',
+            transition: 'all 0.3s',
+            width: `${(currentStep / totalSteps) * 100}%`
+          }}
         />
       </div>
     </div>
   );
 
   const renderProfilePictureStep = () => (
-    <div className="space-y-6">
-      <div className="text-center">
-        <div className="mb-6">
-          <div className="relative inline-block">
-            <div className="w-32 h-32 rounded-linear border-4 border-neutral-200 bg-neutral-100 mx-auto overflow-hidden">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{ textAlign: 'center' }}>
+        <div style={{ marginBottom: '1.5rem' }}>
+          <div style={{ position: 'relative', display: 'inline-block' }}>
+            <div style={{
+              width: '8rem',
+              height: '8rem',
+              borderRadius: '0.75rem',
+              border: '4px solid #e5e7eb',
+              backgroundColor: '#f9fafb',
+              margin: '0 auto',
+              overflow: 'hidden'
+            }}>
               {profilePicturePreview ? (
                 <img
                   src={profilePicturePreview}
                   alt="Profile preview"
-                  className="w-full h-full object-cover"
+                  style={{ width: '100%', height: '100%', objectFit: 'cover' }}
                 />
               ) : (
-                <div className="w-full h-full flex items-center justify-center">
-                  <CameraIcon className="h-12 w-12 text-neutral-400" />
+                <div style={{
+                  width: '100%',
+                  height: '100%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center'
+                }}>
+                  <CameraIcon style={{ width: '3rem', height: '3rem', color: '#9ca3af' }} />
                 </div>
               )}
             </div>
             {profilePicturePreview && (
               <button
                 onClick={removeProfilePicture}
-                className="absolute -top-2 -right-2 w-8 h-8 bg-danger-500 hover:bg-danger-600 text-white rounded-full flex items-center justify-center transition-colors duration-200"
+                style={{
+                  position: 'absolute',
+                  top: '-0.5rem',
+                  right: '-0.5rem',
+                  width: '2rem',
+                  height: '2rem',
+                  backgroundColor: '#dc2626',
+                  color: 'white',
+                  borderRadius: '50%',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                className="hover:bg-red-600"
               >
-                <XMarkIcon className="h-4 w-4" />
+                <XMarkIcon style={{ width: '1rem', height: '1rem' }} />
               </button>
             )}
           </div>
@@ -267,20 +316,37 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
             type="file"
             accept="image/*"
             onChange={handleFileSelect}
-            className="hidden"
+            style={{ display: 'none' }}
           />
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
-            className="mt-4 bg-accent-500 hover:bg-accent-600 text-white font-medium py-2 px-4 rounded-linear transition-colors duration-200"
+            style={{
+              marginTop: '1rem',
+              backgroundColor: 'var(--accent)',
+              color: 'white',
+              fontWeight: '500',
+              padding: '0.5rem 1rem',
+              borderRadius: '0.75rem',
+              cursor: 'pointer',
+              transition: 'all 0.2s'
+            }}
+            className="hover:bg-accent-dark"
           >
             {profilePicturePreview ? 'Change Picture' : 'Upload Picture'}
           </button>
         </div>
         {errors.profile_picture && (
-          <p className="text-danger-600 text-sm font-medium">{errors.profile_picture}</p>
+          <p style={{
+            color: '#dc2626',
+            fontSize: '0.875rem',
+            fontWeight: '500'
+          }}>{errors.profile_picture}</p>
         )}
-        <p className="text-neutral-600 text-sm">
+        <p style={{
+          color: 'var(--text-secondary)',
+          fontSize: '0.875rem'
+        }}>
           Upload a professional headshot. Max file size: 5MB
         </p>
       </div>
@@ -288,32 +354,71 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
   );
 
   const renderPersonalInfoStep = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: '1.5rem'
+      }} className="md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem'
+          }}>
             Full Name
           </label>
           <input
             type="text"
             value={formData.full_name}
             onChange={(e) => handleInputChange('full_name', e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            className="focus:ring-2 focus:ring-accent focus:border-accent"
             placeholder="Enter your full name"
           />
           {errors.full_name && (
-            <p className="text-danger-600 text-sm font-medium mt-1">{errors.full_name}</p>
+            <p style={{
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginTop: '0.25rem'
+            }}>{errors.full_name}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem'
+          }}>
             Gender
           </label>
           <select
             value={formData.gender}
             onChange={(e) => handleInputChange('gender', e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            className="focus:ring-2 focus:ring-accent focus:border-accent"
           >
             <option value="">Select gender</option>
             <option value="male">Male</option>
@@ -322,92 +427,201 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
             <option value="prefer_not_to_say">Prefer not to say</option>
           </select>
           {errors.gender && (
-            <p className="text-danger-600 text-sm font-medium mt-1">{errors.gender}</p>
+            <p style={{
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginTop: '0.25rem'
+            }}>{errors.gender}</p>
           )}
         </div>
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-2">
+        <label style={{
+          display: 'block',
+          fontSize: '0.875rem',
+          fontWeight: '500',
+          color: 'var(--text-secondary)',
+          marginBottom: '0.5rem'
+        }}>
           Date of Birth
         </label>
         <input
           type="date"
           value={formData.date_of_birth}
           onChange={(e) => handleInputChange('date_of_birth', e.target.value)}
-          className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+          style={{
+            width: '100%',
+            padding: '0.75rem 1rem',
+            border: '1px solid var(--border)',
+            borderRadius: '0.75rem',
+            backgroundColor: 'var(--surface)',
+            color: 'var(--text-primary)',
+            transition: 'all 0.2s'
+          }}
+          className="focus:ring-2 focus:ring-accent focus:border-accent"
         />
         {errors.date_of_birth && (
-          <p className="text-danger-600 text-sm font-medium mt-1">{errors.date_of_birth}</p>
+          <p style={{
+            color: '#dc2626',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            marginTop: '0.25rem'
+          }}>{errors.date_of_birth}</p>
         )}
       </div>
     </div>
   );
 
   const renderContactStep = () => (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-2">
+        <label style={{
+          display: 'block',
+          fontSize: '0.875rem',
+          fontWeight: '500',
+          color: 'var(--text-secondary)',
+          marginBottom: '0.5rem'
+        }}>
           Phone Number
         </label>
         <input
           type="tel"
           value={formData.phone}
           onChange={(e) => handleInputChange('phone', e.target.value)}
-          className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+          style={{
+            width: '100%',
+            padding: '0.75rem 1rem',
+            border: '1px solid var(--border)',
+            borderRadius: '0.75rem',
+            backgroundColor: 'var(--surface)',
+            color: 'var(--text-primary)',
+            transition: 'all 0.2s'
+          }}
+          className="focus:ring-2 focus:ring-accent focus:border-accent"
           placeholder="(555) 123-4567"
         />
         {errors.phone && (
-          <p className="text-danger-600 text-sm font-medium mt-1">{errors.phone}</p>
+          <p style={{
+            color: '#dc2626',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            marginTop: '0.25rem'
+          }}>{errors.phone}</p>
         )}
       </div>
 
       <div>
-        <label className="block text-sm font-medium text-neutral-700 mb-2">
+        <label style={{
+          display: 'block',
+          fontSize: '0.875rem',
+          fontWeight: '500',
+          color: 'var(--text-secondary)',
+          marginBottom: '0.5rem'
+        }}>
           Address
         </label>
         <textarea
           value={formData.address}
           onChange={(e) => handleInputChange('address', e.target.value)}
           rows={3}
-          className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+          style={{
+            width: '100%',
+            padding: '0.75rem 1rem',
+            border: '1px solid var(--border)',
+            borderRadius: '0.75rem',
+            backgroundColor: 'var(--surface)',
+            color: 'var(--text-primary)',
+            transition: 'all 0.2s'
+          }}
+          className="focus:ring-2 focus:ring-accent focus:border-accent"
           placeholder="Enter your full address"
         />
         {errors.address && (
-          <p className="text-danger-600 text-sm font-medium mt-1">{errors.address}</p>
+          <p style={{
+            color: '#dc2626',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            marginTop: '0.25rem'
+          }}>{errors.address}</p>
         )}
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: '1.5rem'
+      }} className="md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem'
+          }}>
             City
           </label>
           <input
             type="text"
             value={formData.city}
             onChange={(e) => handleInputChange('city', e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            className="focus:ring-2 focus:ring-accent focus:border-accent"
             placeholder="Enter your city"
           />
           {errors.city && (
-            <p className="text-danger-600 text-sm font-medium mt-1">{errors.city}</p>
+            <p style={{
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginTop: '0.25rem'
+            }}>{errors.city}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem'
+          }}>
             Emergency Contact
           </label>
           <input
             type="text"
             value={formData.emergency_contact}
             onChange={(e) => handleInputChange('emergency_contact', e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            className="focus:ring-2 focus:ring-accent focus:border-accent"
             placeholder="Name & Phone Number"
           />
           {errors.emergency_contact && (
-            <p className="text-danger-600 text-sm font-medium mt-1">{errors.emergency_contact}</p>
+            <p style={{
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginTop: '0.25rem'
+            }}>{errors.emergency_contact}</p>
           )}
         </div>
       </div>
@@ -415,70 +629,158 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
   );
 
   const renderWorkStep = () => (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: '1.5rem'
+      }} className="md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem'
+          }}>
             Department
           </label>
           <input
             type="text"
             value={formData.department}
             onChange={(e) => handleInputChange('department', e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            className="focus:ring-2 focus:ring-accent focus:border-accent"
             placeholder="Enter your department"
           />
           {errors.department && (
-            <p className="text-danger-600 text-sm font-medium mt-1">{errors.department}</p>
+            <p style={{
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginTop: '0.25rem'
+            }}>{errors.department}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem'
+          }}>
             Position
           </label>
           <input
             type="text"
             value={formData.position}
             onChange={(e) => handleInputChange('position', e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            className="focus:ring-2 focus:ring-accent focus:border-accent"
             placeholder="Enter your position"
           />
           {errors.position && (
-            <p className="text-danger-600 text-sm font-medium mt-1">{errors.position}</p>
+            <p style={{
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginTop: '0.25rem'
+            }}>{errors.position}</p>
           )}
         </div>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      <div style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr',
+        gap: '1.5rem'
+      }} className="md:grid-cols-2">
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem'
+          }}>
             Employee ID
           </label>
           <input
             type="text"
             value={formData.employee_id}
             onChange={(e) => handleInputChange('employee_id', e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 placeholder-neutral-500 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            className="focus:ring-2 focus:ring-accent focus:border-accent"
             placeholder="Enter your employee ID"
           />
           {errors.employee_id && (
-            <p className="text-danger-600 text-sm font-medium mt-1">{errors.employee_id}</p>
+            <p style={{
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginTop: '0.25rem'
+            }}>{errors.employee_id}</p>
           )}
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-2">
+          <label style={{
+            display: 'block',
+            fontSize: '0.875rem',
+            fontWeight: '500',
+            color: 'var(--text-secondary)',
+            marginBottom: '0.5rem'
+          }}>
             Hire Date
           </label>
           <input
             type="date"
             value={formData.hire_date}
             onChange={(e) => handleInputChange('hire_date', e.target.value)}
-            className="w-full px-4 py-3 border border-border rounded-linear bg-surface text-neutral-900 focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-accent-500 transition-colors duration-200"
+            style={{
+              width: '100%',
+              padding: '0.75rem 1rem',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              backgroundColor: 'var(--surface)',
+              color: 'var(--text-primary)',
+              transition: 'all 0.2s'
+            }}
+            className="focus:ring-2 focus:ring-accent focus:border-accent"
           />
           {errors.hire_date && (
-            <p className="text-danger-600 text-sm font-medium mt-1">{errors.hire_date}</p>
+            <p style={{
+              color: '#dc2626',
+              fontSize: '0.875rem',
+              fontWeight: '500',
+              marginTop: '0.25rem'
+            }}>{errors.hire_date}</p>
           )}
         </div>
       </div>
@@ -502,20 +804,44 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
 
   if (showSuccess) {
     return (
-      <div className="text-center py-12">
-        <div className="mx-auto w-24 h-24 bg-success-100 rounded-linear flex items-center justify-center mb-6">
-          <CheckCircleIcon className="h-12 w-12 text-success-600" />
+      <div style={{ textAlign: 'center', paddingTop: '3rem', paddingBottom: '3rem' }}>
+        <div style={{
+          margin: '0 auto',
+          width: '6rem',
+          height: '6rem',
+          backgroundColor: '#dcfce7',
+          borderRadius: '0.75rem',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          marginBottom: '1.5rem'
+        }}>
+          <CheckCircleIcon style={{ width: '3rem', height: '3rem', color: '#10b981' }} />
         </div>
-        <h3 className="text-xl font-semibold text-neutral-900 mb-4">
+        <h3 style={{
+          fontSize: '1.25rem',
+          fontWeight: '600',
+          color: 'var(--text-primary)',
+          marginBottom: '1rem'
+        }}>
           Profile Update Submitted!
         </h3>
-        <p className="text-neutral-600 mb-6">
+        <p style={{
+          color: 'var(--text-secondary)',
+          marginBottom: '1.5rem'
+        }}>
           Your profile update request has been submitted successfully. An administrator will review your changes shortly.
         </p>
-        <div className="bg-success-50 border border-success-200 rounded-linear p-4 mb-6">
-          <div className="flex items-center justify-center">
-            <InformationCircleIcon className="h-5 w-5 text-success-600 mr-2" />
-            <p className="text-success-700 font-medium">
+        <div style={{
+          backgroundColor: '#dcfce7',
+          border: '1px solid #bbf7d0',
+          borderRadius: '0.75rem',
+          padding: '1rem',
+          marginBottom: '1.5rem'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+            <InformationCircleIcon style={{ width: '1.25rem', height: '1.25rem', color: '#10b981', marginRight: '0.5rem' }} />
+            <p style={{ color: '#166534', fontWeight: '500' }}>
               You will receive a notification once your changes are approved.
             </p>
           </div>
@@ -525,32 +851,56 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
   }
 
   return (
-    <div className="max-w-4xl mx-auto">
+    <div style={{ maxWidth: '56rem', margin: '0 auto' }}>
       {renderStepIndicator()}
 
-      <div className="bg-surface rounded-linear border border-border shadow-linear">
-        <div className="bg-accent-500 text-white p-6 rounded-t-linear">
-          <div className="flex items-center gap-4">
-            <div className="p-3 bg-white/20 rounded-linear">
-              {React.createElement(steps[currentStep - 1].icon, { className: "h-8 w-8" })}
+      <div style={{
+        backgroundColor: 'var(--surface)',
+        borderRadius: '0.75rem',
+        border: '1px solid var(--border)',
+        boxShadow: 'var(--shadow)'
+      }}>
+        <div style={{
+          backgroundColor: 'var(--accent)',
+          color: 'white',
+          padding: '1.5rem',
+          borderRadius: '0.75rem 0.75rem 0 0'
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+            <div style={{
+              padding: '0.75rem',
+              backgroundColor: 'rgba(255, 255, 255, 0.2)',
+              borderRadius: '0.75rem'
+            }}>
+              {React.createElement(steps[currentStep - 1].icon, { style: { width: '2rem', height: '2rem' } })}
             </div>
             <div>
-              <h2 className="text-xl font-semibold text-white">
+              <h2 style={{
+                fontSize: '1.25rem',
+                fontWeight: '600',
+                color: 'white'
+              }}>
                 Step {currentStep}: {steps[currentStep - 1].title}
               </h2>
-              <p className="text-accent-100">
+              <p style={{ color: 'rgba(255, 255, 255, 0.8)' }}>
                 {steps[currentStep - 1].description}
               </p>
             </div>
           </div>
         </div>
 
-        <div className="p-6">
+        <div style={{ padding: '1.5rem' }}>
           {errors.submit && (
-            <div className="mb-6 bg-danger-50 border border-danger-200 rounded-linear p-4">
-              <div className="flex items-center">
-                <ExclamationTriangleIcon className="h-5 w-5 text-danger-600 mr-2" />
-                <p className="text-danger-700 font-medium">{errors.submit}</p>
+            <div style={{
+              marginBottom: '1.5rem',
+              backgroundColor: '#fef2f2',
+              border: '1px solid #fecaca',
+              borderRadius: '0.75rem',
+              padding: '1rem'
+            }}>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <ExclamationTriangleIcon style={{ width: '1.25rem', height: '1.25rem', color: '#dc2626', marginRight: '0.5rem' }} />
+                <p style={{ color: '#991b1b', fontWeight: '500' }}>{errors.submit}</p>
               </div>
             </div>
           )}
@@ -558,23 +908,47 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
           {renderCurrentStep()}
 
           {/* Navigation Buttons */}
-          <div className="flex justify-between mt-8 pt-6 border-t border-border">
+          <div style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            marginTop: '2rem',
+            paddingTop: '1.5rem',
+            borderTop: '1px solid var(--border)'
+          }}>
             <div>
               {currentStep > 1 && (
                 <button
                   onClick={handlePrevious}
-                  className="flex items-center gap-2 px-4 py-2 border border-border rounded-linear text-neutral-700 hover:bg-neutral-50 transition-colors duration-200"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    padding: '0.5rem 1rem',
+                    border: '1px solid var(--border)',
+                    borderRadius: '0.75rem',
+                    color: 'var(--text-secondary)',
+                    backgroundColor: 'transparent',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  className="hover:bg-gray-50"
                 >
-                  <ArrowLeftIcon className="h-4 w-4" />
+                  <ArrowLeftIcon style={{ width: '1rem', height: '1rem' }} />
                   Previous
                 </button>
               )}
             </div>
 
-            <div className="flex gap-3">
+            <div style={{ display: 'flex', gap: '0.75rem' }}>
               <button
                 onClick={onClose}
-                className="px-4 py-2 text-neutral-600 hover:text-neutral-800 transition-colors duration-200"
+                style={{
+                  padding: '0.5rem 1rem',
+                  color: 'var(--text-secondary)',
+                  cursor: 'pointer',
+                  transition: 'all 0.2s'
+                }}
+                className="hover:text-gray-800"
               >
                 Cancel
               </button>
@@ -582,18 +956,42 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
               {currentStep < totalSteps ? (
                 <button
                   onClick={handleNext}
-                  className="flex items-center gap-2 bg-accent-500 hover:bg-accent-600 text-white font-medium py-2 px-4 rounded-linear transition-colors duration-200"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    backgroundColor: 'var(--accent)',
+                    color: 'white',
+                    fontWeight: '500',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.75rem',
+                    cursor: 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  className="hover:bg-accent-dark"
                 >
                   Next
-                  <ArrowRightIcon className="h-4 w-4" />
+                  <ArrowRightIcon style={{ width: '1rem', height: '1rem' }} />
                 </button>
               ) : (
                 <button
                   onClick={handleSubmit}
                   disabled={loading}
-                  className="flex items-center gap-2 bg-success-500 hover:bg-success-600 disabled:bg-success-300 text-white font-medium py-2 px-4 rounded-linear transition-colors duration-200 disabled:cursor-not-allowed"
+                  style={{
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '0.5rem',
+                    backgroundColor: '#10b981',
+                    color: 'white',
+                    fontWeight: '500',
+                    padding: '0.5rem 1rem',
+                    borderRadius: '0.75rem',
+                    cursor: loading ? 'not-allowed' : 'pointer',
+                    transition: 'all 0.2s'
+                  }}
+                  className={loading ? 'opacity-50' : 'hover:bg-green-600'}
                 >
-                  <CheckCircleIcon className="h-4 w-4" />
+                  <CheckCircleIcon style={{ width: '1rem', height: '1rem' }} />
                   {loading ? 'Submitting...' : 'Submit Request'}
                 </button>
               )}
@@ -603,10 +1001,10 @@ const EditProfileFormLinear = ({ profile, onClose, onSuccess }) => {
       </div>
 
       {/* Help Text */}
-      <div className="mt-4 text-center">
-        <div className="flex items-center justify-center text-neutral-600">
-          <InformationCircleIcon className="h-4 w-4 mr-1" />
-          <p className="text-sm">
+      <div style={{ marginTop: '1rem', textAlign: 'center' }}>
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--text-secondary)' }}>
+          <InformationCircleIcon style={{ width: '1rem', height: '1rem', marginRight: '0.25rem' }} />
+          <p style={{ fontSize: '0.875rem' }}>
             All changes require administrator approval before taking effect
           </p>
         </div>

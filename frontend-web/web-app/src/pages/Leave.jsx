@@ -122,14 +122,7 @@ const Leave = () => {
 
 
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case 'Approved': return '✓';
-      case 'Pending': return '⏳';
-      case 'Rejected': return '✗';
-      default: return '⚠';
-    }
-  };
+
 
   const calculateDays = (startDate, endDate) => {
     const start = new Date(startDate);

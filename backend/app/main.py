@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings, engine, Base
-from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications, notification_preferences, profile
+from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications, notification_preferences, profile, users_router
 from .custom_json_response import CustomJSONResponse
 
 # Only create tables when running the app directly, not when imported for testing
@@ -24,6 +24,7 @@ app.include_router(auth.router, prefix="/api")
 app.include_router(tasks.router, prefix="/api")
 app.include_router(companies.router, prefix="/api")
 app.include_router(employees.router, prefix="/api")
+app.include_router(users_router, prefix="/api")
 app.include_router(leaves.router, prefix="/api")
 app.include_router(shifts.router, prefix="/api")
 app.include_router(payroll.router, prefix="/api")
@@ -37,8 +38,10 @@ from .deps import get_db
 
 @app.on_event("startup")
 async def startup_event():
-    db = next(get_db())
-    seed_demo_user(db)
+    # Temporarily commented to fix enum compatibility during startup; data is seeded via seed_data.py
+    # db = next(get_db())
+    # seed_demo_user(db)
+    pass
 
 app.include_router(dashboard.router, prefix="/api")
 @app.get("/")

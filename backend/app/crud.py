@@ -2,10 +2,11 @@ import json
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from typing import Optional
-from .models.user import User
+from .models.user import User, Role
 from .models.company import Company
 from .models.employee_profile import EmployeeProfile
-from .models.profile_update_request import ProfileUpdateRequest, RequestStatus
+from .models.profile_update_request import ProfileUpdateRequest
+from .schemas.schemas import RequestStatus
 from .models.task import Task
 from .models.leave import Leave
 from .models.shift import Shift
@@ -13,6 +14,19 @@ from .schemas import EmployeeProfileUpdate
 from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+# RBAC Helpers
+def is_superadmin(user) -> bool:
+    return user.role == Role.SUPERADMIN
+
+def is_company_admin_or_higher(user) -> bool:
+    return user.role in [Role.SUPERADMIN, Role.COMPANYADMIN]
+
+def is_manager_or_higher(user) -> bool:
+    return user.role in [Role.SUPERADMIN, Role.COMPANYADMIN, Role.MANAGER]
+
+def get_current_company_id(user) -> Optional[int]:
+    return user.company_id
 
 def get_user_by_email(db: Session, email: str, company_id: Optional[int] = None) -> Optional[User]:
     query = db.query(User).filter(User.email == email)
@@ -35,7 +49,7 @@ def list_users_by_company(db: Session, company_id: int):
 def get_users_by_email(db: Session, email: str):
     return db.query(User).filter(User.email == email).all()
 
-def create_user(db: Session, email: str, password: str, full_name: str, role: str, company_id: Optional[int] = None):
+def create_user(db: Session, email: str, password: str, full_name: str, role: Role, company_id: Optional[int] = None):
     hashed_password = pwd_context.hash(password)
     user = User(
         email=email,
@@ -60,7 +74,7 @@ def authenticate_user(db: Session, email: str, password: str) -> Optional[User]:
 def authenticate_user_by_email(db: Session, email: str, password: str) -> Optional[User]:
     return authenticate_user(db, email, password)
 
-def update_user(db: Session, user_id: int, email: Optional[str] = None, password: Optional[str] = None, full_name: Optional[str] = None, role: Optional[str] = None, company_id: Optional[int] = None):
+def update_user(db: Session, user_id: int, email: Optional[str] = None, password: Optional[str] = None, full_name: Optional[str] = None, role: Optional[Role] = None, company_id: Optional[int] = None):
     user = get_user_by_id(db, user_id)
     if not user:
         return None
@@ -254,14 +268,15 @@ def delete_company(db: Session, company_id: int):
     return True
 
 # Leave CRUD functions
-def create_leave(db: Session, tenant_id: str, employee_id: int, type: str, start_at, end_at, status: str = "Pending"):
+def create_leave(db: Session, company_id: int, employee_id: int, leave_type: str, start_at, end_at, status: str = "Pending", approver_id: int = None):
     leave = Leave(
-        tenant_id=tenant_id,
+        company_id=company_id,
         employee_id=employee_id,
-        type=type,
+        type=leave_type,
         start_at=start_at,
         end_at=end_at,
-        status=status
+        status=status,
+        approver_id=approver_id
     )
     db.add(leave)
     db.commit()
@@ -274,11 +289,16 @@ def get_leave_by_id(db: Session, leave_id: int):
 def list_leaves_by_employee(db: Session, employee_id: int):
     return db.query(Leave).filter(Leave.employee_id == employee_id).all()
 
-def update_leave_status(db: Session, leave_id: int, status: str):
+def list_leaves_by_company(db: Session, company_id: int):
+    return db.query(Leave).filter(Leave.company_id == company_id).all()
+
+def update_leave_status(db: Session, leave_id: int, status: str, approver_id: int = None):
     leave = db.query(Leave).filter(Leave.id == leave_id).first()
     if not leave:
         return None
     leave.status = status
+    if approver_id:
+        leave.approver_id = approver_id
     db.commit()
     db.refresh(leave)
     return leave
@@ -291,17 +311,16 @@ def delete_leave(db: Session, leave_id: int):
     db.commit()
     return True
 
-def list_leaves_by_tenant(db: Session, tenant_id: str):
-    return db.query(Leave).filter(Leave.tenant_id == tenant_id).all()
-
 # Shift CRUD functions
-def create_shift(db: Session, tenant_id: str, employee_id: int, start_at, end_at, type: str = None):
+def create_shift(db: Session, company_id: int, employee_id: int, start_at, end_at, location: str = None, status: str = "Pending", approver_id: int = None):
     shift = Shift(
-        tenant_id=tenant_id,
+        company_id=company_id,
         employee_id=employee_id,
         start_at=start_at,
         end_at=end_at,
-        type=type
+        location=location,
+        status=status,
+        approver_id=approver_id
     )
     db.add(shift)
     db.commit()
@@ -313,6 +332,20 @@ def get_shift_by_id(db: Session, shift_id: int):
 
 def list_shifts_by_employee(db: Session, employee_id: int):
     return db.query(Shift).filter(Shift.employee_id == employee_id).all()
+
+def list_shifts_by_company(db: Session, company_id: int):
+    return db.query(Shift).filter(Shift.company_id == company_id).all()
+
+def update_shift_status(db: Session, shift_id: int, status: str, approver_id: int = None):
+    shift = db.query(Shift).filter(Shift.id == shift_id).first()
+    if not shift:
+        return None
+    shift.status = status
+    if approver_id:
+        shift.approver_id = approver_id
+    db.commit()
+    db.refresh(shift)
+    return shift
 
 def update_shift(db: Session, shift_id: int, **kwargs):
     shift = db.query(Shift).filter(Shift.id == shift_id).first()
@@ -332,11 +365,9 @@ def delete_shift(db: Session, shift_id: int):
     db.delete(shift)
     db.commit()
     return True
-
-def list_shifts_by_tenant(db: Session, tenant_id: str):
-    return db.query(Shift).filter(Shift.tenant_id == tenant_id).all()
 from .models.payroll import Employee as PayrollEmployee, Salary, Allowance, Deduction, Bonus, PayrollRun, PayrollEntry
 from .models.attendance import Attendance, Break
+from .models.document import Document
 
 # Payroll CRUD functions
 def create_payroll_employee(db: Session, tenant_id: str, user_id: int, employee_id: str, department: str = None, position: str = None, hire_date = None, base_salary: float = 0.0, status: str = "Active"):
@@ -697,3 +728,47 @@ def end_break(db: Session, break_id: int):
     db.commit()
     db.refresh(break_record)
     return break_record
+
+# Document CRUD functions
+def create_document(db: Session, company_id: int, user_id: int, name: str, file_url: str, description: str = None, is_public: bool = False):
+    document = Document(
+        company_id=company_id,
+        user_id=user_id,
+        name=name,
+        file_url=file_url,
+        description=description,
+        is_public=is_public
+    )
+    db.add(document)
+    db.commit()
+    db.refresh(document)
+    return document
+
+def get_document_by_id(db: Session, document_id: int):
+    return db.query(Document).filter(Document.id == document_id).first()
+
+def list_documents_by_company(db: Session, company_id: int, user_id: int = None):
+    query = db.query(Document).filter(Document.company_id == company_id)
+    if user_id:
+        # Show public docs or user's own docs
+        query = query.filter((Document.is_public == True) | (Document.user_id == user_id))
+    return query.all()
+
+def update_document(db: Session, document_id: int, **kwargs):
+    document = get_document_by_id(db, document_id)
+    if not document:
+        return None
+    for key, value in kwargs.items():
+        if hasattr(document, key) and value is not None:
+            setattr(document, key, value)
+    db.commit()
+    db.refresh(document)
+    return document
+
+def delete_document(db: Session, document_id: int):
+    document = get_document_by_id(db, document_id)
+    if not document:
+        return False
+    db.delete(document)
+    db.commit()
+    return True

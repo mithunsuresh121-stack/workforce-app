@@ -1,102 +1,125 @@
-import React, { createContext, useContext, useState, useEffect } from "react";
-import axios from "axios";
+import React, { createContext, useContext, useState, useEffect } from 'react';
+import axios from 'axios';
 
-const api = axios.create({
-  baseURL: "http://localhost:8000/api",
-  withCredentials: true,
+const AuthContext = createContext();
+
+export const api = axios.create({
+  baseURL: '/api',
 });
-
-api.interceptors.request.use((config) => {
-  const token = localStorage.getItem("token");
-  if (token) {
-    config.headers.Authorization = `Bearer ${token}`;
-  }
-  return config;
-});
-
-const AuthContext = createContext(null);
-
-export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    const token = localStorage.getItem("token");
-    if (token) {
-      // Validate token or fetch user data
-      api
-        .get("/auth/me")
-        .then((response) => {
-          setUser(response.data);
-        })
-        .catch(() => {
-          localStorage.removeItem("token");
-          setUser(null);
-        })
-        .finally(() => {
-          setLoading(false);
-        });
-    } else {
-      setLoading(false);
-    }
-  }, []);
-
-  const login = async (email, password) => {
-    try {
-      const response = await api.post("/auth/login", { email, password });
-      const { access_token } = response.data;
-      localStorage.setItem("token", access_token);
-      // Fetch user data after login
-      const userResponse = await api.get("/auth/me");
-      const userData = userResponse.data;
-      setUser(userData);
-      return { success: true, user: userData };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || "Login failed",
-      };
-    }
-  };
-
-  const signup = async (email, password, fullName, role = "Employee", companyId = null) => {
-    try {
-      await api.post("/auth/signup", {
-        email,
-        password,
-        full_name: fullName,
-        role,
-        company_id: companyId
-      });
-      // After successful signup, automatically log the user in
-      const loginResult = await login(email, password);
-      return loginResult;
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.detail || "Signup failed",
-      };
-    }
-  };
-
-  const logout = () => {
-    localStorage.removeItem("token");
-    setUser(null);
-  };
-
-  return (
-    <AuthContext.Provider value={{ user, login, signup, logout, loading }}>
-      {children}
-    </AuthContext.Provider>
-  );
-};
 
 export const useAuth = () => {
   const context = useContext(AuthContext);
-  if (context === null) {
-    throw new Error("useAuth must be used within an AuthProvider");
+  if (!context) {
+    throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
 };
 
-export { api };
+export const AuthProvider = ({ children }) => {
+  const [user, setUser] = useState(null);
+  const [token, setToken] = useState(localStorage.getItem('token'));
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Set axios defaults
+  useEffect(() => {
+    if (token) {
+      axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      api.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    } else {
+      delete axios.defaults.headers.common['Authorization'];
+      delete api.defaults.headers.common['Authorization'];
+    }
+  }, [token]);
+
+  // Load user on mount
+  useEffect(() => {
+    const loadUser = async () => {
+      if (token) {
+        try {
+          const response = await api.get('/auth/me');
+          setUser(response.data);
+          setError(null);
+        } catch (error) {
+          console.error('Failed to load user:', error);
+          if (error.response?.status === 401 || error.response?.status === 500) {
+            setError(error.response?.data?.detail || 'Session expired. Please login again.');
+            logout();
+          } else {
+            setError('Failed to load user profile');
+          }
+        }
+      }
+      setLoading(false);
+    };
+    loadUser();
+  }, [token]);
+
+  const login = async (email, password) => {
+    try {
+      const response = await api.post('/auth/login', { email, password });
+      const { access_token } = response.data;
+      setToken(access_token);
+      localStorage.setItem('token', access_token);
+      setError(null);
+      // Reload user
+      const userResponse = await api.get('/auth/me');
+      setUser(userResponse.data);
+      return { success: true };
+    } catch (error) {
+      const errMsg = error.response?.data?.detail || 'Login failed';
+      setError(errMsg);
+      return { success: false, error: errMsg };
+    }
+  };
+
+  const signup = async (userData) => {
+    try {
+      await api.post('/auth/signup', userData);
+      setError(null);
+      // Auto login after signup
+      return await login(userData.email, userData.password);
+    } catch (error) {
+      const errMsg = error.response?.data?.detail || 'Signup failed';
+      setError(errMsg);
+      return { success: false, error: errMsg };
+    }
+  };
+
+  const logout = () => {
+    setUser(null);
+    setToken(null);
+    setError(null);
+    localStorage.removeItem('token');
+    delete axios.defaults.headers.common['Authorization'];
+    delete api.defaults.headers.common['Authorization'];
+  };
+
+  const isAuthenticated = () => !!user;
+
+  const hasRole = (role) => user?.role === role;
+
+  const isSuperAdmin = () => user?.role === 'SuperAdmin';
+
+  const isCompanyAdmin = () => ['SuperAdmin', 'CompanyAdmin'].includes(user?.role);
+
+  const isManager = () => ['SuperAdmin', 'CompanyAdmin', 'Manager'].includes(user?.role);
+
+  const value = {
+    user,
+    token,
+    loading,
+    error,
+    setError,
+    login,
+    signup,
+    logout,
+    isAuthenticated,
+    hasRole,
+    isSuperAdmin,
+    isCompanyAdmin,
+    isManager,
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

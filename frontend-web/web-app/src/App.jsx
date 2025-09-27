@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 import Login from './pages/Login';
@@ -57,15 +58,17 @@ function App() {
     </Routes>
   );
 
-  // If we're in a test environment, don't wrap with Router
+  // If we're in a test environment, don't wrap with Router or AuthProvider
   if (process.env.NODE_ENV === 'test') {
     return <AppRoutes />;
   }
 
   return (
-    <Router>
-      <AppRoutes />
-    </Router>
+    <AuthProvider>
+      <Router>
+        <AppRoutes />
+      </Router>
+    </AuthProvider>
   );
 }
 

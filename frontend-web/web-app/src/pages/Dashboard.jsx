@@ -4,6 +4,7 @@ import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Toolti
 import { useAuth, api } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import DashboardCharts from '../components/DashboardCharts';
+import { theme } from '../theme';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -100,12 +101,101 @@ const Dashboard = () => {
     }
   };
 
+  const cardStyle = {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    border: `1px solid ${theme.colors.border}`,
+    boxShadow: theme.components.card,
+    padding: theme.spacing.xl,
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+    marginBottom: theme.spacing.md,
+  };
+
+  const cardHoverStyle = {
+    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
+    borderColor: theme.colors.primary,
+  };
+
+  const textCenterStyle = {
+    textAlign: 'center',
+  };
+
+  const titleStyle = {
+    fontSize: '1.875rem',
+    fontWeight: '700',
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.md,
+  };
+
+  const subtitleStyle = {
+    color: theme.colors.textSecondary,
+  };
+
+  const kpiTitleStyle = {
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    color: theme.colors.textSecondary,
+    marginBottom: '0.5rem',
+  };
+
+  const kpiValueStyle = {
+    fontSize: '2.25rem',
+    fontWeight: '700',
+    color: theme.colors.primary,
+  };
+
+  const activityItemStyle = {
+    display: 'flex',
+    alignItems: 'flex-start',
+    gap: theme.spacing.md,
+    padding: theme.spacing.lg,
+    backgroundColor: theme.colors.background,
+    borderRadius: theme.borderRadius.md,
+    cursor: 'pointer',
+    transition: 'background-color 0.2s ease',
+  };
+
+  const activityTitleStyle = {
+    fontSize: '0.875rem',
+    fontWeight: '500',
+    color: theme.colors.textPrimary,
+  };
+
+  const activityDescriptionStyle = {
+    fontSize: '0.875rem',
+    color: theme.colors.textSecondary,
+    marginTop: '0.25rem',
+  };
+
+  const activityMetaStyle = {
+    fontSize: '0.75rem',
+    color: theme.colors.neutral,
+    marginTop: '0.5rem',
+  };
+
+  const chartContainerStyle = {
+    backgroundColor: theme.colors.surface,
+    borderRadius: theme.borderRadius.lg,
+    border: `1px solid ${theme.colors.border}`,
+    boxShadow: theme.components.card,
+    padding: theme.spacing.xl,
+    height: '16rem',
+  };
+
+  const chartTitleStyle = {
+    fontSize: '1.125rem',
+    fontWeight: '600',
+    color: theme.colors.textPrimary,
+    marginBottom: theme.spacing.lg,
+  };
+
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="flex items-center space-x-3">
-          <div className="w-6 h-6 border-2 border-accent-500 border-t-transparent rounded-full animate-spin"></div>
-          <p className="text-neutral-600 font-medium">Loading dashboard...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
+          <div style={{ width: '1.5rem', height: '1.5rem', border: `2px solid ${theme.colors.primary}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+          <p style={{ color: theme.colors.textSecondary, fontWeight: '500' }}>Loading dashboard...</p>
         </div>
       </div>
     );
@@ -113,10 +203,10 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <div className="bg-danger-50 border border-danger-200 rounded-linear shadow-linear p-6 max-w-md">
-          <h3 className="text-lg font-semibold text-danger-800 mb-2">Error loading dashboard</h3>
-          <p className="text-danger-600">{error}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
+        <div style={{ backgroundColor: '#FEF2F2', border: `1px solid ${theme.colors.danger}`, borderRadius: theme.borderRadius.lg, boxShadow: theme.components.card, padding: theme.spacing.xl, maxWidth: '28rem' }}>
+          <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: theme.colors.danger, marginBottom: '0.5rem' }}>Error loading dashboard</h3>
+          <p style={{ color: theme.colors.danger }}>{error}</p>
         </div>
       </div>
     );
@@ -128,62 +218,72 @@ const Dashboard = () => {
   // Employee-specific dashboard
   if (userRole === 'Employee') {
     return (
-      <div className="space-y-8">
+      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.xl }}>
         {/* Welcome Message */}
-        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
-          <h2 className="text-2xl font-semibold text-neutral-900 mb-2">
+        <div style={cardStyle}>
+          <h2 style={titleStyle}>
             Welcome back, {user?.name || 'User'}!
           </h2>
-          <p className="text-neutral-600">
+          <p style={subtitleStyle}>
             Here's what's happening with your tasks today.
           </p>
         </div>
 
         {/* Employee KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-6">
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(15rem, 1fr))', gap: theme.spacing.lg }}>
           <div
-            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-accent-200 transition-all duration-200 group"
+            style={{ ...cardStyle, ':hover': cardHoverStyle }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
             onClick={() => handleCardClick('total_tasks')}
           >
-            <div className="text-center">
-              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Total Tasks</h3>
-              <p className="text-3xl font-bold text-accent-600">{kpis.total_tasks || 0}</p>
+            <div style={textCenterStyle}>
+              <h3 style={kpiTitleStyle}>Total Tasks</h3>
+              <p style={{ ...kpiValueStyle, color: theme.colors.accent }}>{kpis.total_tasks || 0}</p>
             </div>
           </div>
           <div
-            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-success-200 transition-all duration-200 group"
+            style={{ ...cardStyle, ':hover': cardHoverStyle }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
             onClick={() => handleCardClick('active_tasks')}
           >
-            <div className="text-center">
-              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Active Tasks</h3>
-              <p className="text-3xl font-bold text-success-600">{kpis.active_tasks || 0}</p>
+            <div style={textCenterStyle}>
+              <h3 style={kpiTitleStyle}>Active Tasks</h3>
+              <p style={{ ...kpiValueStyle, color: theme.colors.success }}>{kpis.active_tasks || 0}</p>
             </div>
           </div>
           <div
-            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-primary-200 transition-all duration-200 group"
+            style={{ ...cardStyle, ':hover': cardHoverStyle }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
             onClick={() => handleCardClick('completed_tasks')}
           >
-            <div className="text-center">
-              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Completed Tasks</h3>
-              <p className="text-3xl font-bold text-primary-600">{kpis.completed_tasks || 0}</p>
+            <div style={textCenterStyle}>
+              <h3 style={kpiTitleStyle}>Completed Tasks</h3>
+              <p style={{ ...kpiValueStyle, color: theme.colors.primary }}>{kpis.completed_tasks || 0}</p>
             </div>
           </div>
           <div
-            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-warning-200 transition-all duration-200 group"
+            style={{ ...cardStyle, ':hover': cardHoverStyle }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
             onClick={() => handleCardClick('pending_approvals')}
           >
-            <div className="text-center">
-              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Pending Approvals</h3>
-              <p className="text-3xl font-bold text-warning-600">{kpis.pending_approvals || 0}</p>
+            <div style={textCenterStyle}>
+              <h3 style={kpiTitleStyle}>Pending Approvals</h3>
+              <p style={{ ...kpiValueStyle, color: '#F59E0B' }}>{kpis.pending_approvals || 0}</p>
             </div>
           </div>
           <div
-            className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-accent-200 transition-all duration-200 group"
+            style={{ ...cardStyle, ':hover': cardHoverStyle }}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
             onClick={() => handleCardClick('active_teams')}
           >
-            <div className="text-center">
-              <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Active Teams</h3>
-              <p className="text-3xl font-bold text-accent-600">{kpis.active_teams || 0}</p>
+            <div style={textCenterStyle}>
+              <h3 style={kpiTitleStyle}>Active Teams</h3>
+              <p style={{ ...kpiValueStyle, color: theme.colors.accent }}>{kpis.active_teams || 0}</p>
             </div>
           </div>
         </div>
@@ -194,39 +294,44 @@ const Dashboard = () => {
         </div>
 
         {/* Recent Activities */}
-        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-neutral-900">Recent Activities</h3>
+        <div style={cardStyle}>
+          <div style={{ marginBottom: theme.spacing.lg }}>
+            <h3 style={chartTitleStyle}>Recent Activities</h3>
           </div>
-          <div className="space-y-4">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.md }}>
             {recentActivities.length > 0 ? (
               recentActivities.map((activity, index) => (
                 <div
                   key={index}
-                  className="flex items-start space-x-4 p-4 bg-neutral-50 rounded-linear cursor-pointer hover:bg-neutral-100 transition-colors duration-200 group"
+                  style={activityItemStyle}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F3F4F6'; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.background; }}
                   onClick={() => handleActivityClick(activity)}
                 >
-                  <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
-                    activity.type.includes('Task') ? 'bg-accent-500' :
-                    activity.type.includes('Approval') ? 'bg-success-500' :
-                    'bg-primary-500'
-                  }`}></div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-neutral-900 group-hover:text-neutral-700">
+                  <div style={{
+                    width: '0.75rem',
+                    height: '0.75rem',
+                    borderRadius: '50%',
+                    marginTop: '0.5rem',
+                    flexShrink: '0',
+                    backgroundColor: activity.type.includes('Task') ? theme.colors.accent : activity.type.includes('Approval') ? theme.colors.success : theme.colors.primary
+                  }}></div>
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <p style={activityTitleStyle}>
                       {activity.title}
                     </p>
-                    <p className="text-sm text-neutral-600 mt-1">
+                    <p style={activityDescriptionStyle}>
                       {activity.description}
                     </p>
-                    <p className="text-xs text-neutral-500 mt-2">
+                    <p style={activityMetaStyle}>
                       Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div className="text-center py-12">
-                <p className="text-neutral-500">
+              <div style={{ textAlign: 'center', padding: theme.spacing.xl }}>
+                <p style={{ color: theme.colors.neutral }}>
                   No recent activities to display.
                 </p>
               </div>
@@ -239,64 +344,72 @@ const Dashboard = () => {
 
   // Manager, CompanyAdmin, and SuperAdmin dashboard (Linear-inspired layout)
   return (
-    <div className="space-y-8">
+    <div style={{ maxWidth: '80rem', margin: '0 auto', padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.xl }}>
       {/* Welcome Message */}
-      <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
-        <h2 className="text-2xl font-semibold text-neutral-900 mb-2">
+      <div style={cardStyle}>
+        <h2 style={titleStyle}>
           Welcome back, {user?.name || 'User'}!
         </h2>
-        <p className="text-neutral-600">
+        <p style={subtitleStyle}>
           Here's what's happening with your workforce today.
         </p>
       </div>
 
       {/* Manager KPI Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(15rem, 1fr))', gap: theme.spacing.lg }}>
         <div
-          className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-accent-200 transition-all duration-200 group"
+          style={{ ...cardStyle, ':hover': cardHoverStyle }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
           onClick={() => handleCardClick('total_employees')}
         >
-          <div className="text-center">
-            <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Total Employees</h3>
-            <p className="text-3xl font-bold text-accent-600">{kpis.total_employees || 0}</p>
+          <div style={textCenterStyle}>
+            <h3 style={kpiTitleStyle}>Total Employees</h3>
+            <p style={{ ...kpiValueStyle, color: theme.colors.accent }}>{kpis.total_employees || 0}</p>
           </div>
         </div>
         <div
-          className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-success-200 transition-all duration-200 group"
+          style={{ ...cardStyle, ':hover': cardHoverStyle }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
           onClick={() => handleCardClick('active_tasks')}
         >
-          <div className="text-center">
-            <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Active Tasks</h3>
-            <p className="text-3xl font-bold text-success-600">{kpis.active_tasks || 0}</p>
+          <div style={textCenterStyle}>
+            <h3 style={kpiTitleStyle}>Active Tasks</h3>
+            <p style={{ ...kpiValueStyle, color: theme.colors.success }}>{kpis.active_tasks || 0}</p>
           </div>
         </div>
         <div
-          className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-warning-200 transition-all duration-200 group"
+          style={{ ...cardStyle, ':hover': cardHoverStyle }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
           onClick={() => handleCardClick('pending_approvals')}
         >
-          <div className="text-center">
-            <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Pending Leaves</h3>
-            <p className="text-3xl font-bold text-warning-600">{kpis.pending_leaves || 0}</p>
+          <div style={textCenterStyle}>
+            <h3 style={kpiTitleStyle}>Pending Leaves</h3>
+            <p style={{ ...kpiValueStyle, color: '#F59E0B' }}>{kpis.pending_leaves || 0}</p>
           </div>
         </div>
         <div
-          className="bg-surface rounded-linear border border-border shadow-linear p-6 cursor-pointer hover:shadow-linear-lg hover:border-primary-200 transition-all duration-200 group"
+          style={{ ...cardStyle, ':hover': cardHoverStyle }}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
           onClick={() => handleCardClick('team_performance')}
         >
-          <div className="text-center">
-            <h3 className="text-sm font-medium text-neutral-600 mb-2 group-hover:text-neutral-700">Shifts Today</h3>
-            <p className="text-3xl font-bold text-primary-600">{kpis.shifts_today || 0}</p>
+          <div style={textCenterStyle}>
+            <h3 style={kpiTitleStyle}>Shifts Today</h3>
+            <p style={{ ...kpiValueStyle, color: theme.colors.primary }}>{kpis.shifts_today || 0}</p>
           </div>
         </div>
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-neutral-900">Task Status Distribution</h3>
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: theme.spacing.lg }}>
+        <div style={chartContainerStyle}>
+          <div style={{ marginBottom: theme.spacing.lg }}>
+            <h3 style={chartTitleStyle}>Task Status Distribution</h3>
           </div>
-          <div className="h-64">
+          <div style={{ height: '16rem' }}>
             <Doughnut data={{
               labels: taskStatusData.map(item => item.name),
               datasets: [{
@@ -308,11 +421,11 @@ const Dashboard = () => {
           </div>
         </div>
 
-        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
-          <div className="mb-6">
-            <h3 className="text-lg font-semibold text-neutral-900">Employee Role Distribution</h3>
+        <div style={chartContainerStyle}>
+          <div style={{ marginBottom: theme.spacing.lg }}>
+            <h3 style={chartTitleStyle}>Employee Role Distribution</h3>
           </div>
-          <div className="h-64">
+          <div style={{ height: '16rem' }}>
             <Doughnut data={{
               labels: employeeDistributionData.map(item => item.name),
               datasets: [{
@@ -326,39 +439,44 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Activities */}
-      <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
-        <div className="mb-6">
-          <h3 className="text-lg font-semibold text-neutral-900">Recent Activities</h3>
+      <div style={cardStyle}>
+        <div style={{ marginBottom: theme.spacing.lg }}>
+          <h3 style={chartTitleStyle}>Recent Activities</h3>
         </div>
-        <div className="space-y-4">
+        <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.md }}>
           {recentActivities.length > 0 ? (
             recentActivities.map((activity, index) => (
               <div
                 key={index}
-                className="flex items-start space-x-4 p-4 bg-neutral-50 rounded-linear cursor-pointer hover:bg-neutral-100 transition-colors duration-200 group"
+                style={activityItemStyle}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F3F4F6'; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.background; }}
                 onClick={() => handleActivityClick(activity)}
               >
-                <div className={`w-3 h-3 rounded-full mt-2 flex-shrink-0 ${
-                  activity.type.includes('Task') ? 'bg-accent-500' :
-                  activity.type.includes('Approval') ? 'bg-success-500' :
-                  'bg-primary-500'
-                }`}></div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-neutral-900 group-hover:text-neutral-700">
+                <div style={{
+                  width: '0.75rem',
+                  height: '0.75rem',
+                  borderRadius: '50%',
+                  marginTop: '0.5rem',
+                  flexShrink: '0',
+                  backgroundColor: activity.type.includes('Task') ? theme.colors.accent : activity.type.includes('Approval') ? theme.colors.success : theme.colors.primary
+                }}></div>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <p style={activityTitleStyle}>
                     {activity.title}
                   </p>
-                  <p className="text-sm text-neutral-600 mt-1">
+                  <p style={activityDescriptionStyle}>
                     {activity.description}
                   </p>
-                  <p className="text-xs text-neutral-500 mt-2">
+                  <p style={activityMetaStyle}>
                     Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
                   </p>
                 </div>
               </div>
             ))
           ) : (
-            <div className="text-center py-12">
-              <p className="text-neutral-500">
+            <div style={{ textAlign: 'center', padding: theme.spacing.xl }}>
+              <p style={{ color: theme.colors.neutral }}>
                 No recent activities to display.
               </p>
             </div>

@@ -1,23 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from typing import List, Optional
+from typing import List
 from sqlalchemy.orm import Session
 from datetime import datetime
 from pydantic import BaseModel
 from ..deps import get_db, get_current_user
 from ..schemas import UserCreate, UserUpdate, LoginPayload, Token, UserOut
-from ..crud import create_user, authenticate_user, get_user_by_email, get_company_by_id, list_users_by_company, get_users_by_email, authenticate_user_by_email, get_user_by_email_only
+from ..crud import create_user, authenticate_user_by_email, get_user_by_email_only, get_user_by_id, get_company_by_id
 from ..auth import create_access_token
-
-class Notification(BaseModel):
-    id: int
-    title: str
-    message: str
-    type: str
-    read: bool
-    created_at: datetime
-    
-    class Config:
-        from_attributes = True
+from ..models.user import User
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
 
@@ -57,103 +47,26 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
-@router.get("/users/{company_id}", response_model=List[UserOut])
-def get_users(company_id: int, db: Session = Depends(get_db)):
-    return list_users_by_company(db, company_id)
-
-from fastapi import Response
-
 @router.get("/me", response_model=UserOut)
-def get_current_user_profile(response: Response, current_user: UserOut = Depends(get_current_user)):
+def get_current_user_profile(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
     """Get current authenticated user profile"""
-    # Fix role value if invalid (e.g., 'user' instead of enum)
+    # Fetch full user from db to ensure latest data
+    user = get_user_by_id(db, current_user.id)
+    if not user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Map role if invalid (fallback to Employee)
     valid_roles = {"SuperAdmin", "CompanyAdmin", "Manager", "Employee"}
-    if current_user.role not in valid_roles:
-        # Map invalid role to Employee as fallback
-        current_user.role = "Employee"
+    if user.role not in valid_roles:
+        user.role = "Employee"
 
-    # Include company information if user has a company_id
-    if current_user.company_id:
-        from ..crud import get_company_by_id
-        from ..deps import get_db
-        from sqlalchemy.orm import Session
+    # Fetch company if exists
+    if user.company_id:
+        company = get_company_by_id(db, user.company_id)
+        if company:
+            user.company = company
 
-        # Create a new session to get company data
-        db = next(get_db())
-        try:
-            company = get_company_by_id(db, current_user.company_id)
-            if company:
-                current_user.company = company
-        except Exception:
-            # If there's an error getting company data, continue without it
-            pass
-
-    return current_user
-
-@router.get("/notifications", response_model=List[Notification])
-def get_notifications(current_user: UserOut = Depends(get_current_user)):
-    """Get user notifications"""
-    # Mock notifications for now - will be replaced with real data later
-    notifications = [
-        {
-            "id": 1,
-            "title": "Welcome to Workforce App",
-            "message": "Your account has been successfully created",
-            "type": "info",
-            "read": True,
-            "created_at": datetime.now()
-        },
-        {
-            "id": 2,
-            "title": "New Task Assigned",
-            "message": "You have been assigned a new task: 'Review quarterly reports'",
-            "type": "task",
-            "read": False,
-            "created_at": datetime.now()
-        },
-        {
-            "id": 3,
-            "title": "System Update",
-            "message": "Scheduled maintenance will occur tomorrow at 2:00 AM",
-            "type": "system",
-            "read": False,
-            "created_at": datetime.now()
-        }
-    ]
-    return notifications
-
-@router.put("/users/{user_id}", response_model=UserOut)
-def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db), current_user: UserOut = Depends(get_current_user)):
-    """Update user information"""
-    from ..crud import get_user_by_id, update_user
-
-    # Check if user exists
-    user = get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Update user with partial data
-    updated_user = update_user(
-        db,
-        user_id,
-        payload.email,
-        payload.password,
-        payload.full_name,
-        payload.role.value if payload.role else None,
-        payload.company_id
-    )
-    return updated_user
-
-@router.delete("/users/{user_id}")
-def delete_user(user_id: int, db: Session = Depends(get_db), current_user: UserOut = Depends(get_current_user)):
-    """Delete user"""
-    from ..crud import get_user_by_id, delete_user
-
-    # Check if user exists
-    user = get_user_by_id(db, user_id)
-    if not user:
-        raise HTTPException(status_code=404, detail="User not found")
-
-    # Delete user
-    delete_user(db, user_id)
-    return {"message": "User deleted successfully"}
+    return user

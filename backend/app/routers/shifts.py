@@ -7,9 +7,10 @@ from ..crud import (
     create_shift,
     get_shift_by_id,
     list_shifts_by_employee,
-    list_shifts_by_tenant,
+    list_shifts_by_company,
     update_shift,
-    delete_shift
+    delete_shift,
+    update_shift_status
 )
 from ..crud_notifications import create_notification
 from ..models.user import User
@@ -26,10 +27,11 @@ def get_shifts(
     Get all shifts for the current user's company
     """
     # For SuperAdmin, get all shifts; for others, get shifts for their company
-    if current_user.role == "SuperAdmin":
-        shifts = list_shifts_by_tenant(db, current_user.company_id or "default")
+    company_id = current_user.company_id
+    if company_id is None:
+        shifts = []
     else:
-        shifts = list_shifts_by_tenant(db, str(current_user.company_id))
+        shifts = list_shifts_by_company(db, company_id)
     return shifts
 
 @router.post("/", response_model=ShiftOut, status_code=status.HTTP_201_CREATED)
@@ -42,14 +44,14 @@ def create_shift_schedule(
     Create a new shift schedule
     """
     # Role-based access control - managers and admins can create shifts
-    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+    if current_user.role.value not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to create shift schedules"
         )
 
     # Ensure the shift is created for the user's company
-    if current_user.role != "SuperAdmin" and payload.tenant_id != str(current_user.company_id):
+    if current_user.role.value != "SuperAdmin" and payload.company_id != current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot create shift schedule for another company"
@@ -57,11 +59,13 @@ def create_shift_schedule(
 
     shift = create_shift(
         db=db,
-        tenant_id=payload.tenant_id,
+        company_id=payload.company_id,
         employee_id=payload.employee_id,
         start_at=payload.start_at,
         end_at=payload.end_at,
-        location=payload.location
+        location=payload.location,
+        status="Pending",
+        approver_id=current_user.id
     )
 
     # Create notification for shift assignment
@@ -69,7 +73,7 @@ def create_shift_schedule(
         create_notification(
             db=db,
             user_id=payload.employee_id,
-            company_id=int(payload.tenant_id),
+            company_id=payload.company_id,
             title="New Shift Scheduled",
             message=f"You have been scheduled for a shift from {payload.start_at.strftime('%Y-%m-%d %H:%M')} to {payload.end_at.strftime('%Y-%m-%d %H:%M')}",
             type=NotificationType.SHIFT_SCHEDULED
@@ -97,14 +101,14 @@ def get_shift(
         )
 
     # Ensure user can only access shifts from their company
-    if current_user.role != "SuperAdmin" and shift.tenant_id != str(current_user.company_id):
+    if current_user.role.value != "SuperAdmin" and shift.company_id != current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot access shift from another company"
         )
 
     # Employees can only view their own shifts
-    if current_user.role == "Employee" and shift.employee_id != current_user.id:
+    if current_user.role.value == "Employee" and shift.employee_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Employees can only view their own shifts"
@@ -123,7 +127,7 @@ def update_shift_schedule(
     Update a shift schedule
     """
     # Role-based access control - managers and admins can update shifts
-    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+    if current_user.role.value not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to update shift schedules"
@@ -137,7 +141,7 @@ def update_shift_schedule(
         )
 
     # Ensure user can only update shifts from their company
-    if current_user.role != "SuperAdmin" and shift.tenant_id != str(current_user.company_id):
+    if current_user.role.value != "SuperAdmin" and shift.company_id != current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot update shift from another company"
@@ -167,7 +171,7 @@ def delete_shift_schedule(
     Delete a shift schedule
     """
     # Role-based access control - managers and admins can delete shifts
-    if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+    if current_user.role.value not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to delete shift schedules"
@@ -181,7 +185,7 @@ def delete_shift_schedule(
         )
 
     # Ensure user can only delete shifts from their company
-    if current_user.role != "SuperAdmin" and shift.tenant_id != str(current_user.company_id):
+    if current_user.role.value != "SuperAdmin" and shift.company_id != current_user.company_id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot delete shift from another company"

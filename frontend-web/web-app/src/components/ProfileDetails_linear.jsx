@@ -12,9 +12,7 @@ import {
   BriefcaseIcon,
   HomeIcon,
   ChevronDownIcon,
-  ChevronRightIcon,
-  EyeIcon,
-  EyeSlashIcon
+  ChevronRightIcon
 } from '@heroicons/react/24/outline';
 
 const ProfileDetails = ({ profile, view = 'overview' }) => {
@@ -27,20 +25,59 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
 
   if (!profile) {
     return (
-      <div className="space-y-6">
-        <div className="text-center py-8">
-          <div className="animate-pulse">
-            <div className="h-8 w-48 bg-neutral-200 rounded mx-auto mb-4"></div>
-            <div className="h-4 w-64 bg-neutral-200 rounded mx-auto mb-2"></div>
-            <div className="h-4 w-56 bg-neutral-200 rounded mx-auto"></div>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+        <div style={{ textAlign: 'center', padding: '2rem 0' }}>
+          <div style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+            <div style={{
+              height: '2rem',
+              width: '12rem',
+              backgroundColor: '#e5e7eb',
+              borderRadius: '0.25rem',
+              margin: '0 auto 1rem'
+            }}></div>
+            <div style={{
+              height: '1rem',
+              width: '16rem',
+              backgroundColor: '#e5e7eb',
+              borderRadius: '0.25rem',
+              margin: '0 auto 0.5rem'
+            }}></div>
+            <div style={{
+              height: '1rem',
+              width: '14rem',
+              backgroundColor: '#e5e7eb',
+              borderRadius: '0.25rem',
+              margin: '0 auto'
+            }}></div>
           </div>
         </div>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+          gap: '1rem'
+        }}>
           {[...Array(4)].map((_, i) => (
-            <div key={i} className="bg-surface border border-border rounded-linear shadow-linear p-4">
-              <div className="animate-pulse">
-                <div className="h-6 w-32 bg-neutral-200 rounded mb-2"></div>
-                <div className="h-4 w-24 bg-neutral-200 rounded"></div>
+            <div key={i} style={{
+              backgroundColor: 'var(--surface)',
+              border: '1px solid var(--border)',
+              borderRadius: '0.75rem',
+              boxShadow: 'var(--shadow)',
+              padding: '1rem'
+            }}>
+              <div style={{ animation: 'pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite' }}>
+                <div style={{
+                  height: '1.5rem',
+                  width: '8rem',
+                  backgroundColor: '#e5e7eb',
+                  borderRadius: '0.25rem',
+                  marginBottom: '0.5rem'
+                }}></div>
+                <div style={{
+                  height: '1rem',
+                  width: '6rem',
+                  backgroundColor: '#e5e7eb',
+                  borderRadius: '0.25rem'
+                }}></div>
               </div>
             </div>
           ))}
@@ -177,29 +214,54 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
     const isSet = field.value !== 'Not set';
 
     return (
-      <div key={field.label} className={`bg-surface border border-border rounded-linear shadow-linear p-4 transition-all duration-300 hover:shadow-linear-lg hover:border-neutral-300`}>
-        <div className="flex items-start gap-4">
-          <div className={`p-2.5 rounded-full ${field.bgColor} flex-shrink-0 self-start mt-1`}>
-            <Icon className={`h-5 w-5 ${field.iconColor}`} />
+      <div key={field.label} style={{
+        backgroundColor: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '0.75rem',
+        boxShadow: 'var(--shadow)',
+        padding: '1rem',
+        transition: 'all 0.3s',
+        cursor: 'pointer'
+      }} className="hover:shadow-lg">
+        <div style={{ display: 'flex', alignItems: 'flex-start', gap: '1rem' }}>
+          <div style={{
+            padding: '0.625rem',
+            borderRadius: '50%',
+            backgroundColor: field.bgColor,
+            flexShrink: 0,
+            alignSelf: 'flex-start',
+            marginTop: '0.25rem'
+          }}>
+            <Icon style={{ width: '1.25rem', height: '1.25rem', color: field.iconColor }} />
           </div>
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center justify-between mb-2">
-              <h4 className="text-sm font-semibold text-neutral-700">
+          <div style={{ flex: 1, minWidth: 0 }}>
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '0.5rem' }}>
+              <h4 style={{ fontSize: '0.875rem', fontWeight: '600', color: 'var(--text-secondary)' }}>
                 {field.label}
               </h4>
-              <div className="flex-shrink-0">
+              <div style={{ flexShrink: 0 }}>
                 {isSet ? (
-                  <CheckCircleIcon className="h-4 w-4 text-success-600" />
+                  <CheckCircleIcon style={{ width: '1rem', height: '1rem', color: '#15803d' }} />
                 ) : (
-                  <ExclamationTriangleIcon className="h-4 w-4 text-warning-600" />
+                  <ExclamationTriangleIcon style={{ width: '1rem', height: '1rem', color: '#d97706' }} />
                 )}
               </div>
             </div>
-            <p className="text-neutral-900 break-words leading-relaxed mb-1 font-medium">
+            <p style={{
+              color: 'var(--text-primary)',
+              wordBreak: 'break-word',
+              lineHeight: '1.625',
+              marginBottom: '0.25rem',
+              fontWeight: '500'
+            }}>
               {field.value}
             </p>
             {!isSet && (
-              <p className="text-neutral-500 italic text-xs">
+              <p style={{
+                color: 'var(--text-secondary)',
+                fontStyle: 'italic',
+                fontSize: '0.75rem'
+              }}>
                 Click "Edit Profile" to add this information
               </p>
             )}
@@ -223,90 +285,192 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
     const completionPercentage = Math.round((filledFields / totalFields) * 100);
 
     return (
-      <div className="bg-surface border border-border rounded-linear shadow-linear overflow-hidden">
+      <div style={{
+        backgroundColor: 'var(--surface)',
+        border: '1px solid var(--border)',
+        borderRadius: '0.75rem',
+        boxShadow: 'var(--shadow)',
+        overflow: 'hidden'
+      }}>
         <div
-          className="flex items-center justify-between p-6 cursor-pointer hover:bg-neutral-50 transition-colors duration-200"
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            padding: '1.5rem',
+            cursor: 'pointer',
+            transition: 'background-color 0.2s'
+          }}
           onClick={() => toggleCard('overview')}
+          className="hover:bg-gray-50"
         >
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-accent-100 rounded-lg">
-              <UserIcon className="h-5 w-5 text-accent-600" />
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{
+              padding: '0.5rem',
+              backgroundColor: '#fef3c7',
+              borderRadius: '0.5rem'
+            }}>
+              <UserIcon style={{ width: '1.25rem', height: '1.25rem', color: '#d97706' }} />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-neutral-900">Overview</h3>
-              <p className="text-neutral-600 text-sm">Profile summary and quick stats</p>
+              <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}>Overview</h3>
+              <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Profile summary and quick stats</p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
-            <div className="text-right">
-              <div className="text-sm font-medium text-neutral-600">Completion</div>
-              <div className="text-lg font-bold text-accent-600">{completionPercentage}%</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+            <div style={{ textAlign: 'right' }}>
+              <div style={{ fontSize: '0.875rem', fontWeight: '500', color: 'var(--text-secondary)' }}>Completion</div>
+              <div style={{ fontSize: '1.125rem', fontWeight: '700', color: 'var(--accent)' }}>{completionPercentage}%</div>
             </div>
             {expandedCards.overview ? (
-              <ChevronDownIcon className="h-5 w-5 text-neutral-500" />
+              <ChevronDownIcon style={{ width: '1.25rem', height: '1.25rem', color: '#6b7280' }} />
             ) : (
-              <ChevronRightIcon className="h-5 w-5 text-neutral-500" />
+              <ChevronRightIcon style={{ width: '1.25rem', height: '1.25rem', color: '#6b7280' }} />
             )}
           </div>
         </div>
 
         {expandedCards.overview && (
-          <div className="px-6 pb-6 border-t border-border">
-            <div className="pt-6">
+          <div style={{
+            padding: '0 1.5rem 1.5rem',
+            borderTop: '1px solid var(--border)'
+          }}>
+            <div style={{ paddingTop: '1.5rem' }}>
               {/* Quick Stats */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-8">
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+                gap: '1rem',
+                marginBottom: '2rem'
+              }}>
                 {hasWorkData && (
-                  <div className="text-center p-4 bg-accent-50 rounded-linear border border-accent-200">
-                    <div className="text-2xl font-bold text-accent-600">
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '1rem',
+                    backgroundColor: '#fef3c7',
+                    borderRadius: '0.75rem',
+                    border: '1px solid #fde68a'
+                  }}>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: '700',
+                      color: '#d97706'
+                    }}>
                       {workFields.filter(field => field.value !== 'Not set').length}
                     </div>
-                    <div className="text-sm font-medium text-neutral-700">Work Details</div>
+                    <div style={{
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      color: 'var(--text-secondary)'
+                    }}>Work Details</div>
                   </div>
                 )}
                 {hasContactData && (
-                  <div className="text-center p-4 bg-success-50 rounded-linear border border-success-200">
-                    <div className="text-2xl font-bold text-success-600">
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '1rem',
+                    backgroundColor: '#dcfce7',
+                    borderRadius: '0.75rem',
+                    border: '1px solid #bbf7d0'
+                  }}>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: '700',
+                      color: '#15803d'
+                    }}>
                       {contactFields.filter(field => field.value !== 'Not set').length}
                     </div>
-                    <div className="text-sm font-medium text-neutral-700">Contact Info</div>
+                    <div style={{
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      color: 'var(--text-secondary)'
+                    }}>Contact Info</div>
                   </div>
                 )}
                 {hasPersonalData && (
-                  <div className="text-center p-4 bg-purple-50 rounded-linear border border-purple-200">
-                    <div className="text-2xl font-bold text-purple-600">
+                  <div style={{
+                    textAlign: 'center',
+                    padding: '1rem',
+                    backgroundColor: '#f3e8ff',
+                    borderRadius: '0.75rem',
+                    border: '1px solid #e9d5ff'
+                  }}>
+                    <div style={{
+                      fontSize: '1.5rem',
+                      fontWeight: '700',
+                      color: '#7c3aed'
+                    }}>
                       {personalFields.filter(field => field.value !== 'Not set').length}
                     </div>
-                    <div className="text-sm font-medium text-neutral-700">Personal Info</div>
+                    <div style={{
+                      fontSize: '0.875rem',
+                      fontWeight: '500',
+                      color: 'var(--text-secondary)'
+                    }}>Personal Info</div>
                   </div>
                 )}
-                <div className="text-center p-4 bg-warning-50 rounded-linear border border-warning-200">
-                  <div className="text-2xl font-bold text-warning-600">
+                <div style={{
+                  textAlign: 'center',
+                  padding: '1rem',
+                  backgroundColor: '#fef3c7',
+                  borderRadius: '0.75rem',
+                  border: '1px solid #fde68a'
+                }}>
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontWeight: '700',
+                    color: '#d97706'
+                  }}>
                     {profile.profile_picture_url ? '1' : '0'}
                   </div>
-                  <div className="text-sm font-medium text-neutral-700">Profile Picture</div>
+                  <div style={{
+                    fontSize: '0.875rem',
+                    fontWeight: '500',
+                    color: 'var(--text-secondary)'
+                  }}>Profile Picture</div>
                 </div>
               </div>
 
               {/* Key Information Sections */}
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: '1fr',
+                gap: '2rem'
+              }} className="lg:grid-cols-2">
                 {hasWorkData && (
                   <div>
-                    <h4 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-                      <BriefcaseIcon className="h-5 w-5 text-accent-600" />
+                    <h4 style={{
+                      fontSize: '1.125rem',
+                      fontWeight: '600',
+                      color: 'var(--text-primary)',
+                      marginBottom: '1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <BriefcaseIcon style={{ width: '1.25rem', height: '1.25rem', color: '#d97706' }} />
                       Work Information
                     </h4>
-                    <div className="space-y-3">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {workFields.filter(field => field.value !== 'Not set').slice(0, 2).map(renderField)}
                     </div>
                   </div>
                 )}
                 {hasContactData && (
                   <div>
-                    <h4 className="text-lg font-semibold text-neutral-900 mb-4 flex items-center gap-2">
-                      <PhoneIcon className="h-5 w-5 text-success-600" />
+                    <h4 style={{
+                      fontSize: '1.125rem',
+                      fontWeight: '600',
+                      color: 'var(--text-primary)',
+                      marginBottom: '1rem',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '0.5rem'
+                    }}>
+                      <PhoneIcon style={{ width: '1.25rem', height: '1.25rem', color: '#15803d' }} />
                       Contact Information
                     </h4>
-                    <div className="space-y-3">
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
                       {contactFields.filter(field => field.value !== 'Not set').slice(0, 2).map(renderField)}
                     </div>
                   </div>
@@ -320,31 +484,56 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
   };
 
   const renderPersonalCard = () => (
-    <div className="bg-surface border border-border rounded-linear shadow-linear overflow-hidden">
+    <div style={{
+      backgroundColor: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '0.75rem',
+      boxShadow: 'var(--shadow)',
+      overflow: 'hidden'
+    }}>
       <div
-        className="flex items-center justify-between p-6 cursor-pointer hover:bg-neutral-50 transition-colors duration-200"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '1.5rem',
+          cursor: 'pointer',
+          transition: 'background-color 0.2s'
+        }}
         onClick={() => toggleCard('personal')}
+        className="hover:bg-gray-50"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-purple-100 rounded-lg">
-            <UserIcon className="h-5 w-5 text-purple-600" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            padding: '0.5rem',
+            backgroundColor: '#f3e8ff',
+            borderRadius: '0.5rem'
+          }}>
+            <UserIcon style={{ width: '1.25rem', height: '1.25rem', color: '#7c3aed' }} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-neutral-900">Personal Information</h3>
-            <p className="text-neutral-600 text-sm">Personal details and demographics</p>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}>Personal Information</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Personal details and demographics</p>
           </div>
         </div>
         {expandedCards.personal ? (
-          <ChevronDownIcon className="h-5 w-5 text-neutral-500" />
+          <ChevronDownIcon style={{ width: '1.25rem', height: '1.25rem', color: '#6b7280' }} />
         ) : (
-          <ChevronRightIcon className="h-5 w-5 text-neutral-500" />
+          <ChevronRightIcon style={{ width: '1.25rem', height: '1.25rem', color: '#6b7280' }} />
         )}
       </div>
 
       {expandedCards.personal && (
-        <div className="px-6 pb-6 border-t border-border">
-          <div className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{
+          padding: '0 1.5rem 1.5rem',
+          borderTop: '1px solid var(--border)'
+        }}>
+          <div style={{ paddingTop: '1.5rem' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '1rem'
+            }}>
               {personalFields.map(renderField)}
             </div>
           </div>
@@ -354,31 +543,56 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
   );
 
   const renderContactCard = () => (
-    <div className="bg-surface border border-border rounded-linear shadow-linear overflow-hidden">
+    <div style={{
+      backgroundColor: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '0.75rem',
+      boxShadow: 'var(--shadow)',
+      overflow: 'hidden'
+    }}>
       <div
-        className="flex items-center justify-between p-6 cursor-pointer hover:bg-neutral-50 transition-colors duration-200"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '1.5rem',
+          cursor: 'pointer',
+          transition: 'background-color 0.2s'
+        }}
         onClick={() => toggleCard('contact')}
+        className="hover:bg-gray-50"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-success-100 rounded-lg">
-            <PhoneIcon className="h-5 w-5 text-success-600" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            padding: '0.5rem',
+            backgroundColor: '#dcfce7',
+            borderRadius: '0.5rem'
+          }}>
+            <PhoneIcon style={{ width: '1.25rem', height: '1.25rem', color: '#15803d' }} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-neutral-900">Contact Details</h3>
-            <p className="text-neutral-600 text-sm">Phone, address, and emergency contact</p>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}>Contact Details</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Phone, address, and emergency contact</p>
           </div>
         </div>
         {expandedCards.contact ? (
-          <ChevronDownIcon className="h-5 w-5 text-neutral-500" />
+          <ChevronDownIcon style={{ width: '1.25rem', height: '1.25rem', color: '#6b7280' }} />
         ) : (
-          <ChevronRightIcon className="h-5 w-5 text-neutral-500" />
+          <ChevronRightIcon style={{ width: '1.25rem', height: '1.25rem', color: '#6b7280' }} />
         )}
       </div>
 
       {expandedCards.contact && (
-        <div className="px-6 pb-6 border-t border-border">
-          <div className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{
+          padding: '0 1.5rem 1.5rem',
+          borderTop: '1px solid var(--border)'
+        }}>
+          <div style={{ paddingTop: '1.5rem' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '1rem'
+            }}>
               {contactFields.map(renderField)}
             </div>
           </div>
@@ -388,31 +602,56 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
   );
 
   const renderWorkCard = () => (
-    <div className="bg-surface border border-border rounded-linear shadow-linear overflow-hidden">
+    <div style={{
+      backgroundColor: 'var(--surface)',
+      border: '1px solid var(--border)',
+      borderRadius: '0.75rem',
+      boxShadow: 'var(--shadow)',
+      overflow: 'hidden'
+    }}>
       <div
-        className="flex items-center justify-between p-6 cursor-pointer hover:bg-neutral-50 transition-colors duration-200"
+        style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'space-between',
+          padding: '1.5rem',
+          cursor: 'pointer',
+          transition: 'background-color 0.2s'
+        }}
         onClick={() => toggleCard('work')}
+        className="hover:bg-gray-50"
       >
-        <div className="flex items-center gap-3">
-          <div className="p-2 bg-accent-100 rounded-lg">
-            <BriefcaseIcon className="h-5 w-5 text-accent-600" />
+        <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+          <div style={{
+            padding: '0.5rem',
+            backgroundColor: '#fef3c7',
+            borderRadius: '0.5rem'
+          }}>
+            <BriefcaseIcon style={{ width: '1.25rem', height: '1.25rem', color: '#d97706' }} />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-neutral-900">Work Information</h3>
-            <p className="text-neutral-600 text-sm">Department, position, and employment details</p>
+            <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: 'var(--text-primary)' }}>Work Information</h3>
+            <p style={{ color: 'var(--text-secondary)', fontSize: '0.875rem' }}>Department, position, and employment details</p>
           </div>
         </div>
         {expandedCards.work ? (
-          <ChevronDownIcon className="h-5 w-5 text-neutral-500" />
+          <ChevronDownIcon style={{ width: '1.25rem', height: '1.25rem', color: '#6b7280' }} />
         ) : (
-          <ChevronRightIcon className="h-5 w-5 text-neutral-500" />
+          <ChevronRightIcon style={{ width: '1.25rem', height: '1.25rem', color: '#6b7280' }} />
         )}
       </div>
 
       {expandedCards.work && (
-        <div className="px-6 pb-6 border-t border-border">
-          <div className="pt-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div style={{
+          padding: '0 1.5rem 1.5rem',
+          borderTop: '1px solid var(--border)'
+        }}>
+          <div style={{ paddingTop: '1.5rem' }}>
+            <div style={{
+              display: 'grid',
+              gridTemplateColumns: 'repeat(auto-fit, minmax(300px, 1fr))',
+              gap: '1rem'
+            }}>
               {workFields.map(renderField)}
             </div>
           </div>
@@ -425,25 +664,25 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
     switch (view) {
       case 'personal':
         return (
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {renderPersonalCard()}
           </div>
         );
       case 'contact':
         return (
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {renderContactCard()}
           </div>
         );
       case 'work':
         return (
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {renderWorkCard()}
           </div>
         );
       default:
         return (
-          <div className="space-y-6">
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
             {renderOverviewCard()}
             {renderPersonalCard()}
             {renderContactCard()}
@@ -454,7 +693,7 @@ const ProfileDetails = ({ profile, view = 'overview' }) => {
   };
 
   return (
-    <div className="space-y-6">
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
       {renderContent()}
     </div>
   );

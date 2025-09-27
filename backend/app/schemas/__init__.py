@@ -12,6 +12,7 @@ from .schemas import (
     LoginPayload,
     Token,
     UserOut,
+    EmployeeUserOut,
 
     # Company schemas
     CompanyCreate,
