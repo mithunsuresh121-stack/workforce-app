@@ -43,7 +43,7 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
     access_token = create_access_token(
         sub=user.email, 
         company_id=user.company_id,  # May be None for Super Admin
-        role=user.role
+        role=user.role.value
     )
     return {"access_token": access_token, "token_type": "bearer"}
 
@@ -60,8 +60,8 @@ def get_current_user_profile(
 
     # Map role if invalid (fallback to Employee)
     valid_roles = {"SuperAdmin", "CompanyAdmin", "Manager", "Employee"}
-    if user.role not in valid_roles:
-        user.role = "Employee"
+    if user.role.value not in valid_roles:
+        user.role = Role.EMPLOYEE
 
     # Fetch company if exists
     if user.company_id:

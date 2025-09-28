@@ -4,7 +4,7 @@ import axios from 'axios';
 const AuthContext = createContext();
 
 export const api = axios.create({
-  baseURL: '/api',
+  baseURL: 'http://localhost:8000/api',
 });
 
 export const useAuth = () => {
@@ -61,9 +61,11 @@ export const AuthProvider = ({ children }) => {
       const { access_token } = response.data;
       setToken(access_token);
       localStorage.setItem('token', access_token);
+      // Set header immediately for the following /me call
+      api.defaults.headers.common['Authorization'] = `Bearer ${access_token}`;
       setError(null);
       // Reload user
-      const userResponse = await api.get('/auth/me');
+      const userResponse = await api.get('/auth/me', { headers: { Authorization: `Bearer ${access_token}` } });
       setUser(userResponse.data);
       return { success: true };
     } catch (error) {

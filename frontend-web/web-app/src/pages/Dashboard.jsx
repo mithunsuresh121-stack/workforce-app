@@ -101,20 +101,21 @@ const Dashboard = () => {
     }
   };
 
-  const cardStyle = {
+const cardStyle = {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    border: `1px solid ${theme.colors.border}`,
-    boxShadow: theme.components.card,
-    padding: theme.spacing.xl,
+    borderRadius: theme.borderRadius.md,
+    border: `1px solid ${theme.colors.borderLight}`,
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+    padding: theme.spacing.lg,
     cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    marginBottom: theme.spacing.md,
+    transition: 'all 0.15s ease-in-out',
+    marginBottom: theme.spacing.sm,
   };
 
   const cardHoverStyle = {
-    boxShadow: '0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1)',
-    borderColor: theme.colors.primary,
+    boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+    borderColor: theme.colors.primaryLight,
+    transform: 'translateY(-1px)',
   };
 
   const textCenterStyle = {
@@ -122,27 +123,33 @@ const Dashboard = () => {
   };
 
   const titleStyle = {
-    fontSize: '1.875rem',
-    fontWeight: '700',
+    fontSize: '1.5rem',
+    fontWeight: '600',
     color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.md,
+    marginBottom: theme.spacing.sm,
+    lineHeight: '1.25',
   };
 
   const subtitleStyle = {
     color: theme.colors.textSecondary,
+    fontSize: '0.875rem',
+    lineHeight: '1.4',
   };
 
   const kpiTitleStyle = {
-    fontSize: '0.875rem',
+    fontSize: '0.75rem',
     fontWeight: '500',
-    color: theme.colors.textSecondary,
-    marginBottom: '0.5rem',
+    color: theme.colors.textMuted,
+    marginBottom: '0.25rem',
+    textTransform: 'uppercase',
+    letterSpacing: '0.05em',
   };
 
   const kpiValueStyle = {
-    fontSize: '2.25rem',
+    fontSize: '2rem',
     fontWeight: '700',
     color: theme.colors.primary,
+    lineHeight: '1.1',
   };
 
   const activityItemStyle = {
@@ -151,51 +158,57 @@ const Dashboard = () => {
     gap: theme.spacing.md,
     padding: theme.spacing.lg,
     backgroundColor: theme.colors.background,
-    borderRadius: theme.borderRadius.md,
+    borderRadius: theme.borderRadius.sm,
     cursor: 'pointer',
-    transition: 'background-color 0.2s ease',
+    transition: 'all 0.15s ease-in-out',
+    borderLeft: `3px solid ${theme.colors.borderLight}`,
   };
 
   const activityTitleStyle = {
     fontSize: '0.875rem',
-    fontWeight: '500',
+    fontWeight: '600',
     color: theme.colors.textPrimary,
+    lineHeight: '1.3',
   };
 
   const activityDescriptionStyle = {
     fontSize: '0.875rem',
     color: theme.colors.textSecondary,
-    marginTop: '0.25rem',
+    marginTop: '0.125rem',
+    lineHeight: '1.4',
   };
 
   const activityMetaStyle = {
     fontSize: '0.75rem',
-    color: theme.colors.neutral,
+    color: theme.colors.textMuted,
     marginTop: '0.5rem',
+    fontWeight: '400',
   };
 
   const chartContainerStyle = {
     backgroundColor: theme.colors.surface,
-    borderRadius: theme.borderRadius.lg,
-    border: `1px solid ${theme.colors.border}`,
-    boxShadow: theme.components.card,
-    padding: theme.spacing.xl,
-    height: '16rem',
+    borderRadius: theme.borderRadius.md,
+    border: `1px solid ${theme.colors.borderLight}`,
+    boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)',
+    padding: theme.spacing.lg,
+    height: 'auto',
+    minHeight: '16rem',
   };
 
   const chartTitleStyle = {
-    fontSize: '1.125rem',
+    fontSize: '1rem',
     fontWeight: '600',
     color: theme.colors.textPrimary,
-    marginBottom: theme.spacing.lg,
+    marginBottom: theme.spacing.md,
+    lineHeight: '1.25',
   };
 
   if (loading) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.sm }}>
-          <div style={{ width: '1.5rem', height: '1.5rem', border: `2px solid ${theme.colors.primary}`, borderTopColor: 'transparent', borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
-          <p style={{ color: theme.colors.textSecondary, fontWeight: '500' }}>Loading dashboard...</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: theme.spacing.xl }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: theme.spacing.md, backgroundColor: theme.colors.surface, padding: theme.spacing.lg, borderRadius: theme.borderRadius.md, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)' }}>
+          <div style={{ width: '1.25rem', height: '1.25rem', border: `2px solid ${theme.colors.primaryLight}`, borderTopColor: theme.colors.primary, borderRadius: '50%', animation: 'spin 1s linear infinite' }}></div>
+          <p style={{ color: theme.colors.textSecondary, fontWeight: '500', margin: 0 }}>Loading dashboard...</p>
         </div>
       </div>
     );
@@ -203,10 +216,10 @@ const Dashboard = () => {
 
   if (error) {
     return (
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh' }}>
-        <div style={{ backgroundColor: '#FEF2F2', border: `1px solid ${theme.colors.danger}`, borderRadius: theme.borderRadius.lg, boxShadow: theme.components.card, padding: theme.spacing.xl, maxWidth: '28rem' }}>
-          <h3 style={{ fontSize: '1.125rem', fontWeight: '600', color: theme.colors.danger, marginBottom: '0.5rem' }}>Error loading dashboard</h3>
-          <p style={{ color: theme.colors.danger }}>{error}</p>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', padding: theme.spacing.xl }}>
+        <div style={{ backgroundColor: theme.colors.dangerLight, border: `1px solid ${theme.colors.dangerLight}`, borderRadius: theme.borderRadius.md, boxShadow: '0 1px 3px rgba(0, 0, 0, 0.05)', padding: theme.spacing.lg, maxWidth: '28rem' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: '600', color: theme.colors.danger, marginBottom: theme.spacing.sm, lineHeight: '1.25' }}>Error loading dashboard</h3>
+          <p style={{ color: theme.colors.textSecondary, margin: 0, lineHeight: '1.4' }}>{error}</p>
         </div>
       </div>
     );
@@ -215,26 +228,26 @@ const Dashboard = () => {
   // Check user role for role-based rendering
   const userRole = user?.role || 'Employee';
 
-  // Employee-specific dashboard
+  // Employee-specific dashboard (Linear-inspired: minimal cards, subtle interactions)
   if (userRole === 'Employee') {
     return (
-      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.xl }}>
+      <div style={{ maxWidth: '80rem', margin: '0 auto', padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.lg }}>
         {/* Welcome Message */}
         <div style={cardStyle}>
           <h2 style={titleStyle}>
-            Welcome back, {user?.name || 'User'}!
+            Welcome back, {user?.full_name || 'User'}!
           </h2>
           <p style={subtitleStyle}>
             Here's what's happening with your tasks today.
           </p>
         </div>
 
-        {/* Employee KPI Cards */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(15rem, 1fr))', gap: theme.spacing.lg }}>
+        {/* Employee KPI Cards - Compact grid for focus */}
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))', gap: theme.spacing.md }}>
           <div
-            style={{ ...cardStyle, ':hover': cardHoverStyle }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+            style={cardStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
             onClick={() => handleCardClick('total_tasks')}
           >
             <div style={textCenterStyle}>
@@ -243,9 +256,9 @@ const Dashboard = () => {
             </div>
           </div>
           <div
-            style={{ ...cardStyle, ':hover': cardHoverStyle }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+            style={cardStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
             onClick={() => handleCardClick('active_tasks')}
           >
             <div style={textCenterStyle}>
@@ -254,65 +267,65 @@ const Dashboard = () => {
             </div>
           </div>
           <div
-            style={{ ...cardStyle, ':hover': cardHoverStyle }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+            style={cardStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
             onClick={() => handleCardClick('completed_tasks')}
           >
             <div style={textCenterStyle}>
-              <h3 style={kpiTitleStyle}>Completed Tasks</h3>
+              <h3 style={kpiTitleStyle}>Completed</h3>
               <p style={{ ...kpiValueStyle, color: theme.colors.primary }}>{kpis.completed_tasks || 0}</p>
             </div>
           </div>
           <div
-            style={{ ...cardStyle, ':hover': cardHoverStyle }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+            style={cardStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
             onClick={() => handleCardClick('pending_approvals')}
           >
             <div style={textCenterStyle}>
-              <h3 style={kpiTitleStyle}>Pending Approvals</h3>
-              <p style={{ ...kpiValueStyle, color: '#F59E0B' }}>{kpis.pending_approvals || 0}</p>
+              <h3 style={kpiTitleStyle}>Pending</h3>
+              <p style={{ ...kpiValueStyle, color: theme.colors.warning }}>{kpis.pending_approvals || 0}</p>
             </div>
           </div>
           <div
-            style={{ ...cardStyle, ':hover': cardHoverStyle }}
-            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+            style={cardStyle}
+            onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+            onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
             onClick={() => handleCardClick('active_teams')}
           >
             <div style={textCenterStyle}>
-              <h3 style={kpiTitleStyle}>Active Teams</h3>
+              <h3 style={kpiTitleStyle}>Teams</h3>
               <p style={{ ...kpiValueStyle, color: theme.colors.accent }}>{kpis.active_teams || 0}</p>
             </div>
           </div>
         </div>
 
-        {/* Employee Charts */}
-        <div>
+        {/* Employee Charts - Integrated for minimalism */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: theme.spacing.md }}>
           <DashboardCharts />
         </div>
 
-        {/* Recent Activities */}
+        {/* Recent Activities - List-like for Linear feel */}
         <div style={cardStyle}>
-          <div style={{ marginBottom: theme.spacing.lg }}>
+          <div style={{ marginBottom: theme.spacing.md }}>
             <h3 style={chartTitleStyle}>Recent Activities</h3>
           </div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.md }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.sm }}>
             {recentActivities.length > 0 ? (
               recentActivities.map((activity, index) => (
                 <div
                   key={index}
                   style={activityItemStyle}
-                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F3F4F6'; }}
-                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.background; }}
+                  onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surfaceHover; e.currentTarget.style.borderLeftColor = theme.colors.primaryLight; }}
+                  onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.background; e.currentTarget.style.borderLeftColor = theme.colors.borderLight; }}
                   onClick={() => handleActivityClick(activity)}
                 >
                   <div style={{
-                    width: '0.75rem',
-                    height: '0.75rem',
+                    width: '0.5rem',
+                    height: '0.5rem',
                     borderRadius: '50%',
-                    marginTop: '0.5rem',
+                    marginTop: '0.625rem',
                     flexShrink: '0',
                     backgroundColor: activity.type.includes('Task') ? theme.colors.accent : activity.type.includes('Approval') ? theme.colors.success : theme.colors.primary
                   }}></div>
@@ -324,14 +337,14 @@ const Dashboard = () => {
                       {activity.description}
                     </p>
                     <p style={activityMetaStyle}>
-                      Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
+                      {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
                     </p>
                   </div>
                 </div>
               ))
             ) : (
-              <div style={{ textAlign: 'center', padding: theme.spacing.xl }}>
-                <p style={{ color: theme.colors.neutral }}>
+              <div style={{ textAlign: 'center', padding: theme.spacing.lg }}>
+                <p style={{ color: theme.colors.textMuted, fontSize: '0.875rem' }}>
                   No recent activities to display.
                 </p>
               </div>
@@ -342,36 +355,36 @@ const Dashboard = () => {
     );
   }
 
-  // Manager, CompanyAdmin, and SuperAdmin dashboard (Linear-inspired layout)
+  // Manager, CompanyAdmin, and SuperAdmin dashboard (Enhanced Linear-inspired: clean, focused, minimal)
   return (
-    <div style={{ maxWidth: '80rem', margin: '0 auto', padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.xl }}>
+    <div style={{ maxWidth: '80rem', margin: '0 auto', padding: theme.spacing.lg, display: 'flex', flexDirection: 'column', gap: theme.spacing.lg }}>
       {/* Welcome Message */}
       <div style={cardStyle}>
         <h2 style={titleStyle}>
-          Welcome back, {user?.name || 'User'}!
+          Welcome back, {user?.full_name || 'User'}!
         </h2>
         <p style={subtitleStyle}>
           Here's what's happening with your workforce today.
         </p>
       </div>
 
-      {/* Manager KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(15rem, 1fr))', gap: theme.spacing.lg }}>
+      {/* Manager KPI Cards - Compact for overview */}
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(12rem, 1fr))', gap: theme.spacing.md }}>
         <div
-          style={{ ...cardStyle, ':hover': cardHoverStyle }}
-          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+          style={cardStyle}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
           onClick={() => handleCardClick('total_employees')}
         >
           <div style={textCenterStyle}>
-            <h3 style={kpiTitleStyle}>Total Employees</h3>
+            <h3 style={kpiTitleStyle}>Employees</h3>
             <p style={{ ...kpiValueStyle, color: theme.colors.accent }}>{kpis.total_employees || 0}</p>
           </div>
         </div>
         <div
-          style={{ ...cardStyle, ':hover': cardHoverStyle }}
-          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+          style={cardStyle}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
           onClick={() => handleCardClick('active_tasks')}
         >
           <div style={textCenterStyle}>
@@ -380,20 +393,20 @@ const Dashboard = () => {
           </div>
         </div>
         <div
-          style={{ ...cardStyle, ':hover': cardHoverStyle }}
-          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+          style={cardStyle}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
           onClick={() => handleCardClick('pending_approvals')}
         >
           <div style={textCenterStyle}>
             <h3 style={kpiTitleStyle}>Pending Leaves</h3>
-            <p style={{ ...kpiValueStyle, color: '#F59E0B' }}>{kpis.pending_leaves || 0}</p>
+            <p style={{ ...kpiValueStyle, color: theme.colors.warning }}>{kpis.pending_leaves || 0}</p>
           </div>
         </div>
         <div
-          style={{ ...cardStyle, ':hover': cardHoverStyle }}
-          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; }}
-          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; }}
+          style={cardStyle}
+          onMouseEnter={(e) => { e.currentTarget.style.boxShadow = cardHoverStyle.boxShadow; e.currentTarget.style.borderColor = cardHoverStyle.borderColor; e.currentTarget.style.transform = cardHoverStyle.transform; }}
+          onMouseLeave={(e) => { e.currentTarget.style.boxShadow = cardStyle.boxShadow; e.currentTarget.style.borderColor = cardStyle.border; e.currentTarget.style.transform = 'none'; }}
           onClick={() => handleCardClick('team_performance')}
         >
           <div style={textCenterStyle}>
@@ -403,61 +416,63 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Charts */}
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr', gap: theme.spacing.lg }}>
+      {/* Charts - Side-by-side for efficiency, minimal padding */}
+      <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: theme.spacing.md }}>
         <div style={chartContainerStyle}>
-          <div style={{ marginBottom: theme.spacing.lg }}>
-            <h3 style={chartTitleStyle}>Task Status Distribution</h3>
+          <div style={{ marginBottom: theme.spacing.md }}>
+            <h3 style={chartTitleStyle}>Task Status</h3>
           </div>
-          <div style={{ height: '16rem' }}>
+          <div style={{ height: '14rem' }}>
             <Doughnut data={{
               labels: taskStatusData.map(item => item.name),
               datasets: [{
                 data: taskStatusData.map(item => item.value),
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40'],
-                hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#FF9F40']
+                backgroundColor: ['#EF4444', '#3B82F6', '#F59E0B', '#10B981'],
+                hoverBackgroundColor: ['#EF4444', '#3B82F6', '#F59E0B', '#10B981'],
+                borderWidth: 0,
               }]
-            }} />
+            }} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
           </div>
         </div>
 
         <div style={chartContainerStyle}>
-          <div style={{ marginBottom: theme.spacing.lg }}>
-            <h3 style={chartTitleStyle}>Employee Role Distribution</h3>
+          <div style={{ marginBottom: theme.spacing.md }}>
+            <h3 style={chartTitleStyle}>Employee Roles</h3>
           </div>
-          <div style={{ height: '16rem' }}>
+          <div style={{ height: '14rem' }}>
             <Doughnut data={{
               labels: employeeDistributionData.map(item => item.name),
               datasets: [{
                 data: employeeDistributionData.map(item => item.value),
-                backgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0'],
-                hoverBackgroundColor: ['#FF6384', '#36A2EB', '#FFCE56', '#4BC0C0']
+                backgroundColor: ['#EF4444', '#3B82F6', '#F59E0B', '#10B981'],
+                hoverBackgroundColor: ['#EF4444', '#3B82F6', '#F59E0B', '#10B981'],
+                borderWidth: 0,
               }]
-            }} />
+            }} options={{ maintainAspectRatio: false, plugins: { legend: { display: false } } }} />
           </div>
         </div>
       </div>
 
       {/* Recent Activities */}
       <div style={cardStyle}>
-        <div style={{ marginBottom: theme.spacing.lg }}>
+        <div style={{ marginBottom: theme.spacing.md }}>
           <h3 style={chartTitleStyle}>Recent Activities</h3>
         </div>
-        <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.md }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: theme.spacing.sm }}>
           {recentActivities.length > 0 ? (
             recentActivities.map((activity, index) => (
               <div
                 key={index}
                 style={activityItemStyle}
-                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = '#F3F4F6'; }}
-                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.background; }}
+                onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = theme.colors.surfaceHover; e.currentTarget.style.borderLeftColor = theme.colors.primaryLight; }}
+                onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = theme.colors.background; e.currentTarget.style.borderLeftColor = theme.colors.borderLight; }}
                 onClick={() => handleActivityClick(activity)}
               >
                 <div style={{
-                  width: '0.75rem',
-                  height: '0.75rem',
+                  width: '0.5rem',
+                  height: '0.5rem',
                   borderRadius: '50%',
-                  marginTop: '0.5rem',
+                  marginTop: '0.625rem',
                   flexShrink: '0',
                   backgroundColor: activity.type.includes('Task') ? theme.colors.accent : activity.type.includes('Approval') ? theme.colors.success : theme.colors.primary
                 }}></div>
@@ -469,14 +484,14 @@ const Dashboard = () => {
                     {activity.description}
                   </p>
                   <p style={activityMetaStyle}>
-                    Status: {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
+                    {activity.status} • {new Date(activity.timestamp).toLocaleDateString()}
                   </p>
                 </div>
               </div>
             ))
           ) : (
-            <div style={{ textAlign: 'center', padding: theme.spacing.xl }}>
-              <p style={{ color: theme.colors.neutral }}>
+            <div style={{ textAlign: 'center', padding: theme.spacing.lg }}>
+              <p style={{ color: theme.colors.textMuted, fontSize: '0.875rem' }}>
                 No recent activities to display.
               </p>
             </div>
