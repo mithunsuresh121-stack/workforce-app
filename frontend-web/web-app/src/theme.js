@@ -1,51 +1,132 @@
-// src/theme.js
-// Centralized theme configuration for Linear-style design system
-// Minimal, modern, clean - no heavy frameworks
+import { createTheme } from '@mui/material/styles';
 
-export const theme = {
-  colors: {
-    primary: "#2563EB", // Blue-600
-    primaryHover: "#1E40AF", // Blue-800
-    accent: "#F59E0B", // Amber-500
-    background: "#F9FAFB", // Gray-50
-    surface: "#FFFFFF", // White cards
-    border: "#E5E7EB", // Gray-200
-    textPrimary: "#111827", // Gray-900
-    textSecondary: "#6B7280", // Gray-500
-    error: "#DC2626", // Red-600
-    success: "#16A34A", // Green-600
-    danger: "#DC2626",
-    neutral: "#6B7280",
+// Centralized MUI theme configuration matching Login page design
+// Extracted from Login.jsx: colors, typography, spacing, borderRadius
+
+const theme = createTheme({
+  palette: {
+    primary: {
+      main: '#2563EB', // Blue-600, matches login button background
+      dark: '#1E40AF', // Blue-800, for hover states
+    },
+    secondary: {
+      main: '#F59E0B', // Amber-500, accent color from login
+    },
+    background: {
+      default: '#F9FAFB', // Gray-50, login background
+      paper: '#FFFFFF', // White, for cards/surfaces
+    },
+    text: {
+      primary: '#111827', // Gray-900, login title/text
+      secondary: '#6B7280', // Gray-500, login subtitle/labels
+    },
+    error: {
+      main: '#DC2626', // Red-600, for errors
+    },
+    success: {
+      main: '#16A34A', // Green-600
+    },
+    divider: '#E5E7EB', // Gray-200, borders
   },
   typography: {
-    fontFamily: "Inter, system-ui, sans-serif",
-    h1: "font-size: 1.875rem; font-weight: 700; color: var(--text-primary);",
-    h2: "font-size: 1.5rem; font-weight: 600; color: var(--text-primary);",
-    body: "font-size: 1rem; color: var(--text-secondary);",
-    small: "font-size: 0.875rem; color: var(--text-secondary);",
+    fontFamily: 'Inter, system-ui, sans-serif', // Matches login font
+    h1: {
+      fontSize: '1.875rem', // 30px
+      fontWeight: 700,
+      color: 'text.primary',
+    },
+    h2: {
+      fontSize: '1.5rem', // 24px, matches login title
+      fontWeight: 600,
+      color: 'text.primary',
+    },
+    h3: {
+      fontSize: '1.25rem', // 20px
+      fontWeight: 600,
+      color: 'text.primary',
+    },
+    h4: {
+      fontSize: '1.125rem', // 18px, for page titles
+      fontWeight: 600,
+      color: 'text.primary',
+    },
+    h5: {
+      fontSize: '1rem', // 16px
+      fontWeight: 600,
+      color: 'text.primary',
+    },
+    h6: {
+      fontSize: '0.875rem', // 14px
+      fontWeight: 600,
+      color: 'text.primary',
+    },
+    body1: {
+      fontSize: '1rem', // 16px
+      color: 'text.primary',
+    },
+    body2: {
+      fontSize: '0.875rem', // 14px, matches login labels
+      color: 'text.secondary',
+    },
+    button: {
+      fontWeight: 500, // Matches login button
+      textTransform: 'none', // No uppercase
+    },
   },
+  shape: {
+    borderRadius: 8, // 0.5rem, matches login button/card radius
+  },
+  spacing: 8, // 8px unit, maps to theme.spacing(1) = 8px, etc.
   components: {
-    button: "padding: 0.5rem 1rem; border-radius: 0.5rem; font-weight: 500; transition: all 0.2s; box-shadow: 0 1px 2px 0 rgb(0 0 0 / 0.05);",
-    buttonPrimary: "background-color: var(--primary); color: white; border: none;",
-    buttonPrimaryHover: "background-color: var(--primary-hover);",
-    input: "width: 100%; padding: 0.5rem 0.75rem; border: 1px solid var(--border); border-radius: 0.5rem; outline: none; transition: border-color 0.2s;",
-    inputFocus: "border-color: var(--primary); box-shadow: 0 0 0 3px rgb(37 99 235 / 0.1);",
-    card: "background-color: var(--surface); padding: 2rem; border-radius: 0.75rem; box-shadow: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);",
-    link: "color: var(--primary); text-decoration: none; font-weight: 500;",
-    linkHover: "color: var(--primary-hover); text-decoration: underline;",
-    passwordInputWrapper: "position: relative;",
+    MuiButton: {
+      styleOverrides: {
+        root: {
+          borderRadius: 8, // Match login button
+          fontWeight: 500,
+          textTransform: 'none',
+          boxShadow: '0 1px 2px 0 rgb(0 0 0 / 0.05)', // Subtle shadow
+          '&:hover': {
+            boxShadow: '0 4px 6px -1px rgb(0 0 0 / 0.1)', // Deeper on hover
+          },
+        },
+      },
+    },
+    MuiCard: {
+      styleOverrides: {
+        root: {
+          borderRadius: 12, // 0.75rem, matches login card
+          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)', // Login shadow
+          border: '1px solid',
+          borderColor: 'divider',
+        },
+      },
+    },
+    MuiTextField: {
+      styleOverrides: {
+        root: {
+          '& .MuiOutlinedInput-root': {
+            borderRadius: 8, // Match login input
+            '&:hover .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'primary.main',
+            },
+            '&.Mui-focused .MuiOutlinedInput-notchedOutline': {
+              borderColor: 'primary.main',
+              boxShadow: '0 0 0 3px rgb(37 99 235 / 0.1)', // Login focus shadow
+            },
+          },
+        },
+      },
+    },
+    MuiInputLabel: {
+      styleOverrides: {
+        root: {
+          color: 'text.secondary',
+          fontSize: '0.875rem',
+          fontWeight: 500,
+        },
+      },
+    },
   },
-  spacing: {
-    xs: "0.25rem",
-    sm: "0.5rem",
-    md: "1rem",
-    lg: "1.5rem",
-    xl: "2rem",
-  },
-  borderRadius: {
-    sm: "0.25rem",
-    md: "0.5rem",
-    lg: "0.75rem",
-    xl: "1rem",
-  },
-};
+});
+
+export default theme;

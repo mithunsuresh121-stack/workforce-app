@@ -1,17 +1,48 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { DragDropContext, Droppable, Draggable } from 'react-beautiful-dnd';
 import {
-  PlusIcon,
-  MagnifyingGlassIcon,
-  Squares2X2Icon,
-  ListBulletIcon,
-  PencilIcon,
-  EyeIcon,
-  FunnelIcon,
-  XMarkIcon,
-  CalendarDaysIcon,
-  UserIcon,
-  FlagIcon
-} from '@heroicons/react/24/outline';
+  Card,
+  Typography,
+  Box,
+  Button,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  IconButton,
+  Chip,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions,
+  Alert,
+  CircularProgress,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Grid,
+  Divider
+} from '@mui/material';
+import {
+  Add as PlusIcon,
+  Search as MagnifyingGlassIcon,
+  GridView as Squares2X2Icon,
+  List as ListBulletIcon,
+  ViewKanban as QueueListIcon,
+  Edit as PencilIcon,
+  Visibility as EyeIcon,
+  FilterList as FunnelIcon,
+  Close as XMarkIcon,
+  CalendarToday as CalendarDaysIcon,
+  Person as UserIcon,
+  Flag as FlagIcon
+} from '@mui/icons-material';
+import DashboardLayout from '../layouts/DashboardLayout';
 import { api, useAuth } from '../contexts/AuthContext';
 
 const Tasks = () => {
@@ -22,7 +53,7 @@ const Tasks = () => {
   const [error, setError] = useState('');
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('');
-  const [viewMode, setViewMode] = useState('grid'); // 'grid' or 'list'
+  const [viewMode, setViewMode] = useState('kanban'); // 'grid', 'list', or 'kanban'
   const [dialogOpen, setDialogOpen] = useState(false);
   const [selectedTask, setSelectedTask] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -184,520 +215,530 @@ const Tasks = () => {
   };
 
   const TaskCard = ({ task }) => (
-    <div className="bg-surface border border-border rounded-lg p-6 hover:shadow-linear-lg transition-all duration-200 group cursor-pointer"
-         onClick={() => handleViewTask(task)}>
-      <div className="flex justify-between items-start mb-4">
-        <h3 className="text-lg font-semibold text-neutral-900 flex-1 mr-3 group-hover:text-accent-600 transition-colors">
+    <Card
+      sx={{
+        p: 3,
+        cursor: 'pointer',
+        '&:hover': { boxShadow: 3 },
+        transition: 'all 0.2s',
+      }}
+      onClick={() => handleViewTask(task)}
+    >
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', mb: 2 }}>
+        <Typography variant="h6" sx={{ flex: 1, mr: 2, '&:hover': { color: 'primary.main' } }}>
           {task.title}
-        </h3>
-        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-          task.priority === 'High' ? 'bg-danger-100 text-danger-700' :
-          task.priority === 'Medium' ? 'bg-warning-100 text-warning-700' :
-          'bg-success-100 text-success-700'
-        }`}>
-          <FlagIcon className="w-3 h-3 inline mr-1" />
-          {task.priority}
-        </div>
-      </div>
+        </Typography>
+        <Chip
+          label={task.priority}
+          size="small"
+          icon={<FlagIcon />}
+          color={
+            task.priority === 'High' ? 'error' :
+            task.priority === 'Medium' ? 'warning' :
+            'success'
+          }
+          variant="outlined"
+        />
+      </Box>
 
-      <p className="text-neutral-600 mb-4 line-clamp-2">
+      <Typography color="text.secondary" sx={{ mb: 2, overflow: 'hidden', textOverflow: 'ellipsis', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>
         {task.description}
-      </p>
+      </Typography>
 
-      <div className="flex justify-between items-center mb-4">
-        <div className={`px-3 py-1 rounded-full text-xs font-medium ${
-          task.status === 'Completed' ? 'bg-success-100 text-success-700' :
-          task.status === 'In Progress' ? 'bg-accent-100 text-accent-700' :
-          task.status === 'Pending' ? 'bg-warning-100 text-warning-700' :
-          'bg-danger-100 text-danger-700'
-        }`}>
-          {task.status}
-        </div>
-        <div className="flex items-center gap-1 text-neutral-500 text-sm">
-          <CalendarDaysIcon className="w-4 h-4" />
-          {new Date(task.dueDate).toLocaleDateString()}
-        </div>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+        <Chip
+          label={task.status}
+          size="small"
+          color={
+            task.status === 'Completed' ? 'success' :
+            task.status === 'In Progress' ? 'primary' :
+            task.status === 'Pending' ? 'warning' :
+            'error'
+          }
+        />
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5, color: 'text.secondary' }}>
+          <CalendarDaysIcon fontSize="small" />
+          <Typography variant="body2">{new Date(task.dueDate).toLocaleDateString()}</Typography>
+        </Box>
+      </Box>
 
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-2 text-neutral-600">
-          <UserIcon className="w-4 h-4" />
-          <span className="text-sm">{getName(task.assignee_id)}</span>
-        </div>
-        <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-          <button
-            className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-colors"
+      <Box sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
+          <UserIcon fontSize="small" />
+          <Typography variant="body2">{getName(task.assignee_id)}</Typography>
+        </Box>
+        <Box sx={{ display: 'flex', gap: 1, opacity: 0, '&:hover': { opacity: 1 } }}>
+          <IconButton
+            size="small"
             onClick={(e) => {
               e.stopPropagation();
               handleViewTask(task);
             }}
           >
-            <EyeIcon className="w-4 h-4" />
-          </button>
-          <button
-            className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-colors"
+            <EyeIcon />
+          </IconButton>
+          <IconButton
+            size="small"
             onClick={(e) => {
               e.stopPropagation();
               handleEditTask(task);
             }}
           >
-            <PencilIcon className="w-4 h-4" />
-          </button>
-        </div>
-      </div>
-    </div>
+            <PencilIcon />
+          </IconButton>
+        </Box>
+      </Box>
+    </Card>
   );
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-600">Loading tasks...</p>
-        </div>
-      </div>
+      <DashboardLayout>
+        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
+          <Box sx={{ textAlign: 'center' }}>
+            <CircularProgress sx={{ mb: 2 }} />
+            <Typography color="text.secondary">Loading tasks...</Typography>
+          </Box>
+        </Box>
+      </DashboardLayout>
     );
   }
 
-  return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="bg-surface border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-semibold text-neutral-900">Tasks</h1>
-              <p className="text-neutral-600 mt-1">Manage and track your team's tasks</p>
-            </div>
-            <button
-              onClick={handleCreateTask}
-              className="flex items-center gap-2 px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 font-medium"
-            >
-              <PlusIcon className="w-5 h-5" />
-              New Task
-            </button>
-          </div>
-        </div>
-      </div>
+  const onDragEnd = (result) => {
+    if (!result.destination) return;
+    const { source, destination, draggableId } = result;
+    if (source.droppableId !== destination.droppableId) {
+      const task = tasks.find(t => t.id.toString() === draggableId);
+      if (task) {
+        const updatedTask = { ...task, status: destination.droppableId };
+        setTasks(tasks.map(t => t.id === task.id ? updatedTask : t));
+        api.put(`/tasks/${task.id}`, { status: destination.droppableId }).catch(error => {
+          console.error('Error updating task status:', error);
+          // Revert on error
+          setTasks(tasks.map(t => t.id === task.id ? task : t));
+        });
+      }
+    }
+  };
 
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6">
+  return (
+    <DashboardLayout>
+      <Box sx={{ p: 3 }}>
+        {/* Header Section */}
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Box>
+            <Typography variant="h4" sx={{ color: 'text.primary' }}>Tasks</Typography>
+            <Typography sx={{ color: 'text.secondary' }}>Manage and track your team's tasks</Typography>
+          </Box>
+          <Button
+            variant="contained"
+            startIcon={<PlusIcon />}
+            onClick={handleCreateTask}
+          >
+            New Task
+          </Button>
+        </Box>
+
+        {/* Main Content */}
         {error && (
-          <div className="mb-6 p-4 bg-danger-50 border border-danger-200 text-danger-800 rounded-lg">
-            <div className="flex items-start gap-3">
-              <svg className="w-5 h-5 mt-0.5 flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-              </svg>
-              <p>{error}</p>
-              <button
-                onClick={() => setError('')}
-                className="ml-auto text-current hover:opacity-70"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
+          <Alert severity="error" sx={{ mb: 3 }} action={
+            <IconButton size="small" onClick={() => setError('')}>
+              <XMarkIcon />
+            </IconButton>
+          }>
+            {error}
+          </Alert>
         )}
 
         {/* Filters and View Controls */}
-        <div className="bg-surface border border-border rounded-lg p-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <div className="relative">
-              <div className="relative">
-                <MagnifyingGlassIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
-                <input
-                  type="text"
-                  placeholder="Search tasks..."
-                  value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
-                  className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                />
-              </div>
-            </div>
-            <div className="relative">
-              <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent appearance-none bg-white"
-              >
-                <option value="">All Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="In Progress">In Progress</option>
-                <option value="Completed">Completed</option>
-                <option value="Overdue">Overdue</option>
-              </select>
-            </div>
-            <div className="flex gap-2">
-              <button
-                onClick={() => setViewMode('grid')}
-                className={`flex items-center justify-center p-2 rounded-lg transition-colors duration-200 ${
-                  viewMode === 'grid'
-                    ? 'bg-accent-100 text-accent-600 border border-accent-200'
-                    : 'text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                <Squares2X2Icon className="w-5 h-5" />
-              </button>
-              <button
-                onClick={() => setViewMode('list')}
-                className={`flex items-center justify-center p-2 rounded-lg transition-colors duration-200 ${
-                  viewMode === 'list'
-                    ? 'bg-accent-100 text-accent-600 border border-accent-200'
-                    : 'text-neutral-600 border border-neutral-200 hover:bg-neutral-50'
-                }`}
-              >
-                <ListBulletIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="flex items-end">
-              <button
+        <Card sx={{ p: 3, mb: 3 }}>
+          <Grid container spacing={2}>
+            <Grid item xs={12} md={3}>
+              <TextField
+                fullWidth
+                placeholder="Search tasks..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                InputProps={{
+                  startAdornment: <MagnifyingGlassIcon sx={{ mr: 1, color: 'text.secondary' }} />,
+                }}
+              />
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <FormControl fullWidth>
+                <InputLabel>Status</InputLabel>
+                <Select
+                  value={statusFilter}
+                  onChange={(e) => setStatusFilter(e.target.value)}
+                  startAdornment={<FunnelIcon sx={{ mr: 1, color: 'text.secondary' }} />}
+                >
+                  <MenuItem value="">All Statuses</MenuItem>
+                  <MenuItem value="Pending">Pending</MenuItem>
+                  <MenuItem value="In Progress">In Progress</MenuItem>
+                  <MenuItem value="Completed">Completed</MenuItem>
+                  <MenuItem value="Overdue">Overdue</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Box sx={{ display: 'flex', gap: 1 }}>
+                <IconButton
+                  onClick={() => setViewMode('grid')}
+                  sx={{
+                    border: 1,
+                    borderColor: viewMode === 'grid' ? 'primary.main' : 'grey.300',
+                    bgcolor: viewMode === 'grid' ? 'primary.light' : 'transparent',
+                  }}
+                >
+                  <Squares2X2Icon />
+                </IconButton>
+                <IconButton
+                  onClick={() => setViewMode('list')}
+                  sx={{
+                    border: 1,
+                    borderColor: viewMode === 'list' ? 'primary.main' : 'grey.300',
+                    bgcolor: viewMode === 'list' ? 'primary.light' : 'transparent',
+                  }}
+                >
+                  <ListBulletIcon />
+                </IconButton>
+                <IconButton
+                  onClick={() => setViewMode('kanban')}
+                  sx={{
+                    border: 1,
+                    borderColor: viewMode === 'kanban' ? 'primary.main' : 'grey.300',
+                    bgcolor: viewMode === 'kanban' ? 'primary.light' : 'transparent',
+                  }}
+                >
+                  <QueueListIcon />
+                </IconButton>
+              </Box>
+            </Grid>
+            <Grid item xs={12} md={3}>
+              <Button
+                fullWidth
+                variant="outlined"
                 onClick={() => {
                   setSearchTerm('');
                   setStatusFilter('');
                 }}
-                className="w-full px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
               >
                 Clear Filters
-              </button>
-            </div>
-          </div>
-        </div>
+              </Button>
+            </Grid>
+          </Grid>
+        </Card>
 
         {/* Results Summary */}
-        <div className="flex items-center justify-between mb-6">
-          <p className="text-neutral-600">
+        <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+          <Typography color="text.secondary">
             Showing {filteredTasks.length} of {tasks.length} tasks
-          </p>
+          </Typography>
           {(searchTerm || statusFilter) && (
-            <div className="flex items-center gap-2 text-sm text-neutral-500">
-              <span>Filtered by:</span>
-              {searchTerm && <span className="px-2 py-1 bg-neutral-100 rounded">"{searchTerm}"</span>}
-              {statusFilter && <span className="px-2 py-1 bg-neutral-100 rounded">{statusFilter}</span>}
-            </div>
+            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+              <Typography variant="body2" color="text.secondary">Filtered by:</Typography>
+              {searchTerm && <Chip label={`"${searchTerm}"`} size="small" />}
+              {statusFilter && <Chip label={statusFilter} size="small" />}
+            </Box>
           )}
-        </div>
+        </Box>
 
         {/* Tasks Display */}
-        {viewMode === 'grid' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredTasks.map((task) => (
-              <TaskCard key={task.id} task={task} />
-            ))}
-          </div>
-        ) : (
-          <div className="bg-surface border border-border rounded-lg overflow-hidden">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-neutral-50 border-b border-border">
-                  <tr>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                      Title
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                      Status
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                      Priority
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                      Assignee
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                      Due Date
-                    </th>
-                    <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                      Actions
-                    </th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-border">
+        <DragDropContext onDragEnd={onDragEnd}>
+          {viewMode === 'kanban' ? (
+            <Box sx={{ display: 'flex', gap: 2, overflowX: 'auto', p: 2 }}>
+              {['Pending', 'In Progress', 'Completed', 'Overdue'].map(status => (
+                <Card key={status} sx={{ minWidth: 320, p: 2 }}>
+                  <Typography variant="h6" fontWeight="bold" mb={2}>{status}</Typography>
+                  <Droppable droppableId={status}>
+                    {(provided) => (
+                      <Box ref={provided.innerRef} {...provided.droppableProps} sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+                        {filteredTasks.filter(task => task.status === status).map((task, index) => (
+                          <Draggable key={task.id} draggableId={task.id.toString()} index={index}>
+                            {(provided) => (
+                              <Box ref={provided.innerRef} {...provided.draggableProps} {...provided.dragHandleProps}>
+                                <TaskCard task={task} />
+                              </Box>
+                            )}
+                          </Draggable>
+                        ))}
+                        {provided.placeholder}
+                      </Box>
+                    )}
+                  </Droppable>
+                </Card>
+              ))}
+            </Box>
+          ) : viewMode === 'grid' ? (
+            <Grid container spacing={3}>
+              {filteredTasks.map((task) => (
+                <Grid item xs={12} md={6} lg={4} key={task.id}>
+                  <TaskCard task={task} />
+                </Grid>
+              ))}
+            </Grid>
+          ) : (
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow>
+                    <TableCell>Title</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Priority</TableCell>
+                    <TableCell>Assignee</TableCell>
+                    <TableCell>Due Date</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
                   {filteredTasks.map((task) => (
-                    <tr key={task.id} className="hover:bg-neutral-50 transition-colors">
-                      <td className="px-6 py-4">
-                        <div className="font-medium text-neutral-900">{task.title}</div>
-                        <div className="text-sm text-neutral-600 mt-1 line-clamp-1">{task.description}</div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                          task.status === 'Completed' ? 'bg-success-100 text-success-700' :
-                          task.status === 'In Progress' ? 'bg-accent-100 text-accent-700' :
-                          task.status === 'Pending' ? 'bg-warning-100 text-warning-700' :
-                          'bg-danger-100 text-danger-700'
-                        }`}>
-                          {task.status}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className={`inline-flex px-3 py-1 rounded-full text-xs font-medium ${
-                          task.priority === 'High' ? 'bg-danger-100 text-danger-700' :
-                          task.priority === 'Medium' ? 'bg-warning-100 text-warning-700' :
-                          'bg-success-100 text-success-700'
-                        }`}>
-                          <FlagIcon className="w-3 h-3 mr-1" />
-                          {task.priority}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2">
-                          <UserIcon className="w-4 h-4 text-neutral-400" />
-                          <span className="text-neutral-700">{getName(task.assignee_id)}</span>
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex items-center gap-2 text-neutral-600">
-                          <CalendarDaysIcon className="w-4 h-4" />
-                          {new Date(task.dueDate).toLocaleDateString()}
-                        </div>
-                      </td>
-                      <td className="px-6 py-4">
-                        <div className="flex gap-2">
-                          <button
-                            className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-colors"
-                            onClick={() => handleViewTask(task)}
-                          >
-                            <EyeIcon className="w-4 h-4" />
-                          </button>
-                          <button
-                            className="p-2 text-neutral-400 hover:text-accent-600 hover:bg-accent-50 rounded-lg transition-colors"
-                            onClick={() => handleEditTask(task)}
-                          >
-                            <PencilIcon className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </td>
-                    </tr>
+                    <TableRow key={task.id} hover>
+                      <TableCell>
+                        <Typography fontWeight="bold">{task.title}</Typography>
+                        <Typography variant="body2" color="text.secondary" sx={{ mt: 0.5, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {task.description}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={task.status}
+                          size="small"
+                          color={
+                            task.status === 'Completed' ? 'success' :
+                            task.status === 'In Progress' ? 'primary' :
+                            task.status === 'Pending' ? 'warning' :
+                            'error'
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={task.priority}
+                          size="small"
+                          icon={<FlagIcon />}
+                          color={
+                            task.priority === 'High' ? 'error' :
+                            task.priority === 'Medium' ? 'warning' :
+                            'success'
+                          }
+                          variant="outlined"
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <UserIcon fontSize="small" color="disabled" />
+                          <Typography variant="body2">{getName(task.assignee_id)}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CalendarDaysIcon fontSize="small" color="disabled" />
+                          <Typography variant="body2">{new Date(task.dueDate).toLocaleDateString()}</Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <IconButton size="small" onClick={() => handleViewTask(task)}>
+                            <EyeIcon />
+                          </IconButton>
+                          <IconButton size="small" onClick={() => handleEditTask(task)}>
+                            <PencilIcon />
+                          </IconButton>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
                   ))}
-                </tbody>
-              </table>
-            </div>
-          </div>
-        )}
+                </TableBody>
+              </Table>
+            </TableContainer>
+          )}
+        </DragDropContext>
 
         {filteredTasks.length === 0 && (
-          <div className="bg-surface border border-border rounded-lg p-12 text-center">
-            <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-              <svg className="w-8 h-8 text-neutral-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
-              </svg>
-            </div>
-            <h3 className="text-lg font-semibold text-neutral-900 mb-2">
+          <Card sx={{ p: 6, textAlign: 'center' }}>
+            <Box sx={{ width: 64, height: 64, bgcolor: 'grey.100', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+              <Box sx={{ width: 32, height: 32, color: 'grey.400' }}>
+                <svg fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+                </svg>
+              </Box>
+            </Box>
+            <Typography variant="h6" fontWeight="bold" mb={1}>
               No tasks found
-            </h3>
-            <p className="text-neutral-600">
+            </Typography>
+            <Typography color="text.secondary">
               {searchTerm || statusFilter
                 ? "No tasks match your current filters. Try adjusting your search criteria."
                 : "Get started by creating your first task."
               }
-            </p>
-          </div>
+            </Typography>
+          </Card>
         )}
-      </div>
 
-      {/* Task Dialog */}
-      {dialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-surface rounded-lg shadow-linear-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <h2 className="text-xl font-semibold text-neutral-900">
-                {isEditing ? 'Edit Task' : selectedTask ? 'Task Details' : 'Create New Task'}
-              </h2>
-              <button
-                onClick={() => setDialogOpen(false)}
-                className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
-              >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <div className="p-6 space-y-6">
-              {selectedTask && !isEditing ? (
-                // View mode
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Title
-                    </label>
-                    <h3 className="text-xl font-semibold text-neutral-900">
-                      {selectedTask.title}
-                    </h3>
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Description
-                    </label>
-                    <p className="text-neutral-600 bg-neutral-50 p-4 rounded-lg">
-                      {selectedTask.description}
-                    </p>
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Status
-                      </label>
-                      <div className={`inline-flex px-3 py-2 rounded-lg text-sm font-medium ${
-                        selectedTask.status === 'Completed' ? 'bg-success-100 text-success-700' :
-                        selectedTask.status === 'In Progress' ? 'bg-accent-100 text-accent-700' :
-                        selectedTask.status === 'Pending' ? 'bg-warning-100 text-warning-700' :
-                        'bg-danger-100 text-danger-700'
-                      }`}>
-                        {selectedTask.status}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Priority
-                      </label>
-                      <div className={`inline-flex px-3 py-2 rounded-lg text-sm font-medium ${
-                        selectedTask.priority === 'High' ? 'bg-danger-100 text-danger-700' :
-                        selectedTask.priority === 'Medium' ? 'bg-warning-100 text-warning-700' :
-                        'bg-success-100 text-success-700'
-                      }`}>
-                        <FlagIcon className="w-4 h-4 mr-2" />
-                        {selectedTask.priority}
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Assignee
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <UserIcon className="w-5 h-5 text-neutral-400" />
-                        <span className="text-neutral-700">{getName(selectedTask.assignee_id)}</span>
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Due Date
-                      </label>
-                      <div className="flex items-center gap-2">
-                        <CalendarDaysIcon className="w-5 h-5 text-neutral-400" />
-                        <span className="text-neutral-700">{new Date(selectedTask.dueDate).toLocaleDateString()}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              ) : (
-                // Edit/Create mode
-                <div className="space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Title *
-                    </label>
-                    <input
-                      type="text"
-                      value={formData.title}
-                      onChange={(e) => setFormData({...formData, title: e.target.value})}
-                      className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                      placeholder="Enter task title"
-                      required
-                    />
-                  </div>
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Description
-                    </label>
-                    <textarea
-                      value={formData.description}
-                      onChange={(e) => setFormData({...formData, description: e.target.value})}
-                      className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent resize-none"
-                      rows={4}
-                      placeholder="Enter task description"
-                    />
-                  </div>
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Status
-                      </label>
-                      <select
-                        value={formData.status}
-                        onChange={(e) => setFormData({...formData, status: e.target.value})}
-                        className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-white"
+        {/* Task Dialog */}
+        <Dialog open={dialogOpen} onClose={() => setDialogOpen(false)} maxWidth="md" fullWidth>
+        <DialogTitle>
+          {isEditing ? 'Edit Task' : selectedTask ? 'Task Details' : 'Create New Task'}
+        </DialogTitle>
+        <DialogContent>
+          {selectedTask && !isEditing ? (
+            // View mode
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Title</Typography>
+                <Typography variant="h5">{selectedTask.title}</Typography>
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Description</Typography>
+                <Box sx={{ bgcolor: 'grey.50', p: 2, borderRadius: 1 }}>
+                  <Typography color="text.secondary">{selectedTask.description}</Typography>
+                </Box>
+              </Box>
+              <Grid container spacing={3}>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Status</Typography>
+                  <Chip
+                    label={selectedTask.status}
+                    color={
+                      selectedTask.status === 'Completed' ? 'success' :
+                      selectedTask.status === 'In Progress' ? 'primary' :
+                      selectedTask.status === 'Pending' ? 'warning' :
+                      'error'
+                    }
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Priority</Typography>
+                  <Chip
+                    label={selectedTask.priority}
+                    icon={<FlagIcon />}
+                    color={
+                      selectedTask.priority === 'High' ? 'error' :
+                      selectedTask.priority === 'Medium' ? 'warning' :
+                      'success'
+                    }
+                    variant="outlined"
+                  />
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Assignee</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <UserIcon color="disabled" />
+                    <Typography>{getName(selectedTask.assignee_id)}</Typography>
+                  </Box>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Due Date</Typography>
+                  <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                    <CalendarDaysIcon color="disabled" />
+                    <Typography>{new Date(selectedTask.dueDate).toLocaleDateString()}</Typography>
+                  </Box>
+                </Grid>
+              </Grid>
+            </Box>
+          ) : (
+            // Edit/Create mode
+            <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+              <Box>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Title *</Typography>
+                <TextField
+                  fullWidth
+                  value={formData.title}
+                  onChange={(e) => setFormData({...formData, title: e.target.value})}
+                  placeholder="Enter task title"
+                  required
+                />
+              </Box>
+              <Box>
+                <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Description</Typography>
+                <TextField
+                  fullWidth
+                  multiline
+                  rows={4}
+                  value={formData.description}
+                  onChange={(e) => setFormData({...formData, description: e.target.value})}
+                  placeholder="Enter task description"
+                />
+              </Box>
+              <Grid container spacing={3}>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Status</Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      value={formData.status}
+                      onChange={(e) => setFormData({...formData, status: e.target.value})}
+                    >
+                      <MenuItem value="Pending">Pending</MenuItem>
+                      <MenuItem value="In Progress">In Progress</MenuItem>
+                      <MenuItem value="Completed">Completed</MenuItem>
+                      <MenuItem value="Overdue">Overdue</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+                <Grid item xs={6}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Priority</Typography>
+                  <FormControl fullWidth>
+                    <Select
+                      value={formData.priority}
+                      onChange={(e) => setFormData({...formData, priority: e.target.value})}
+                    >
+                      <MenuItem value="Low">Low</MenuItem>
+                      <MenuItem value="Medium">Medium</MenuItem>
+                      <MenuItem value="High">High</MenuItem>
+                    </Select>
+                  </FormControl>
+                </Grid>
+              </Grid>
+              <Grid container spacing={3}>
+                {isManager && (
+                  <Grid item xs={6}>
+                    <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Assignee *</Typography>
+                    <FormControl fullWidth>
+                      <Select
+                        value={formData.assignee_id}
+                        onChange={(e) => setFormData({...formData, assignee_id: e.target.value})}
                       >
-                        <option value="Pending">Pending</option>
-                        <option value="In Progress">In Progress</option>
-                        <option value="Completed">Completed</option>
-                        <option value="Overdue">Overdue</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Priority
-                      </label>
-                      <select
-                        value={formData.priority}
-                        onChange={(e) => setFormData({...formData, priority: e.target.value})}
-                        className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-white"
-                      >
-                        <option value="Low">Low</option>
-                        <option value="Medium">Medium</option>
-                        <option value="High">High</option>
-                      </select>
-                    </div>
-                  </div>
-                  <div className={isManager ? "grid grid-cols-2 gap-6" : "grid grid-cols-1 gap-6"}>
-                    {isManager && (
-                      <div>
-                        <label className="block text-sm font-medium text-neutral-700 mb-2">
-                          Assignee *
-                        </label>
-                        <select
-                          value={formData.assignee_id}
-                          onChange={(e) => setFormData({...formData, assignee_id: e.target.value})}
-                          className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-white"
-                        >
-                          <option value="">Select Employee</option>
-                          {employees.map(emp => (
-                            <option key={emp.id} value={emp.id}>
-                              {emp.name}
-                            </option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Due Date
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.dueDate}
-                        onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
-                        className="w-full px-4 py-3 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent"
-                      />
-                    </div>
-                  </div>
-                </div>
-              )}
-            </div>
-            <div className="flex justify-end gap-3 p-6 border-t border-border bg-neutral-50">
-              <button
-                onClick={() => setDialogOpen(false)}
-                className="px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
-              >
-                {selectedTask && !isEditing ? 'Close' : 'Cancel'}
-              </button>
-              {(!selectedTask || isEditing) && (
-                <button
-                  onClick={handleSaveTask}
-                  className="px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 font-medium"
-                >
-                  {isEditing ? 'Update Task' : 'Create Task'}
-                </button>
-              )}
-              {selectedTask && !isEditing && (
-                <button
-                  onClick={() => { setIsEditing(true); }}
-                  className="px-4 py-2 bg-neutral-600 text-white rounded-lg hover:bg-neutral-700 transition-colors duration-200 font-medium"
-                >
-                  Edit Task
-                </button>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-    </div>
+                        <MenuItem value="">Select Employee</MenuItem>
+                        {employees.map(emp => (
+                          <MenuItem key={emp.id} value={emp.id}>
+                            {emp.name}
+                          </MenuItem>
+                        ))}
+                      </Select>
+                    </FormControl>
+                  </Grid>
+                )}
+                <Grid item xs={isManager ? 6 : 12}>
+                  <Typography variant="subtitle2" fontWeight="bold" gutterBottom>Due Date</Typography>
+                  <TextField
+                    fullWidth
+                    type="date"
+                    value={formData.dueDate}
+                    onChange={(e) => setFormData({...formData, dueDate: e.target.value})}
+                  />
+                </Grid>
+              </Grid>
+            </Box>
+          )}
+        </DialogContent>
+        <DialogActions>
+          <Button onClick={() => setDialogOpen(false)}>
+            {selectedTask && !isEditing ? 'Close' : 'Cancel'}
+          </Button>
+          {(!selectedTask || isEditing) && (
+            <Button variant="contained" onClick={handleSaveTask}>
+              {isEditing ? 'Update Task' : 'Create Task'}
+            </Button>
+          )}
+          {selectedTask && !isEditing && (
+            <Button variant="outlined" onClick={() => setIsEditing(true)}>
+              Edit Task
+            </Button>
+          )}
+        </DialogActions>
+      </Dialog>
+      </Box>
+    </DashboardLayout>
   );
 };
 

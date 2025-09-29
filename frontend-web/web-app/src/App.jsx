@@ -1,16 +1,23 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { ThemeProvider } from '@mui/material/styles';
 import { AuthProvider } from './contexts/AuthContext';
+import theme from './theme';
 import ProtectedRoute from './components/ProtectedRoute';
-import Layout from './components/Layout';
+import DashboardLayout from './layouts/DashboardLayout';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
 import Dashboard from './pages/Dashboard';
+import Employees from './pages/Employees';
+import Projects from './pages/Projects';
 import Profile from './pages/Profile';
 import Directory from './pages/Directory';
 import Tasks from './pages/Tasks';
 import Leave from './pages/Leave';
 import Company from './pages/Company';
+import Attendance from './pages/Attendance';
+import Shifts from './pages/Shifts';
+import Documents from './pages/Documents';
 
 function App() {
   const AppRoutes = () => (
@@ -22,37 +29,62 @@ function App() {
       {/* Protected routes */}
       <Route path="/" element={
         <ProtectedRoute>
-          <Layout><Dashboard /></Layout>
+          <DashboardLayout><Dashboard /></DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/dashboard" element={
         <ProtectedRoute>
-          <Layout><Dashboard /></Layout>
+          <DashboardLayout><Dashboard /></DashboardLayout>
         </ProtectedRoute>
       } />
-      <Route path="/profile" element={
+      <Route path="/employees" element={
         <ProtectedRoute>
-          <Layout><Profile /></Layout>
+          <DashboardLayout><Employees /></DashboardLayout>
         </ProtectedRoute>
       } />
-      <Route path="/directory" element={
+      <Route path="/projects" element={
         <ProtectedRoute>
-          <Layout><Directory /></Layout>
+          <DashboardLayout><Projects /></DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/tasks" element={
         <ProtectedRoute>
-          <Layout><Tasks /></Layout>
+          <DashboardLayout><Tasks /></DashboardLayout>
         </ProtectedRoute>
       } />
-      <Route path="/leave" element={
+      <Route path="/attendance" element={
         <ProtectedRoute>
-          <Layout><Leave /></Layout>
+          <DashboardLayout><Attendance /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/leaves" element={
+        <ProtectedRoute>
+          <DashboardLayout><Leave /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/documents" element={
+        <ProtectedRoute>
+          <DashboardLayout><Documents /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/shifts" element={
+        <ProtectedRoute>
+          <DashboardLayout><Shifts /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/profile" element={
+        <ProtectedRoute>
+          <DashboardLayout><Profile /></DashboardLayout>
+        </ProtectedRoute>
+      } />
+      <Route path="/directory" element={
+        <ProtectedRoute>
+          <DashboardLayout><Directory /></DashboardLayout>
         </ProtectedRoute>
       } />
       <Route path="/company" element={
         <ProtectedRoute>
-          <Layout><Company /></Layout>
+          <DashboardLayout><Company /></DashboardLayout>
         </ProtectedRoute>
       } />
     </Routes>
@@ -65,9 +97,11 @@ function App() {
 
   return (
     <AuthProvider>
-      <Router>
-        <AppRoutes />
-      </Router>
+      <ThemeProvider theme={theme}>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </ThemeProvider>
     </AuthProvider>
   );
 }

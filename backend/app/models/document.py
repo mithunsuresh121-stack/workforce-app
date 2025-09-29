@@ -1,39 +1,21 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Enum
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text
 from sqlalchemy.orm import relationship
-from sqlalchemy.sql import func
+from datetime import datetime
 from ..db import Base
-import enum
-
-class DocumentType(str, enum.Enum):
-    CONTRACT = "CONTRACT"
-    POLICY = "POLICY"
-    TRAINING = "TRAINING"
-    CERTIFICATE = "CERTIFICATE"
-    OTHER = "OTHER"
-
-class AccessLevel(str, enum.Enum):
-    PUBLIC = "PUBLIC"  # Visible to all company employees
-    PRIVATE = "PRIVATE"  # Only uploader and admins
-    RESTRICTED = "RESTRICTED"  # Specific roles only
 
 class Document(Base):
     __tablename__ = "documents"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
-    title = Column(String(255), nullable=False)
+    title = Column(String, nullable=False)
     description = Column(Text, nullable=True)
-    file_url = Column(String(500), nullable=False)  # URL/path to stored file
-    file_type = Column(String(100), nullable=True)  # MIME type
-    document_type = Column(Enum(DocumentType), nullable=False)
-    access_level = Column(Enum(AccessLevel), default=AccessLevel.PRIVATE, nullable=False)
-    created_at = Column(DateTime, server_default=func.now())
-    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+    file_path = Column(String, nullable=False)
+    file_type = Column(String, nullable=False)
+    file_size = Column(Integer, nullable=False)
+    uploaded_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
 
-    # Relationships
-    company = relationship("Company", back_populates="documents")
     uploader = relationship("User", back_populates="documents")
-
-    def __repr__(self):
-        return f"<Document {self.title} by user {self.user_id}>"
+    company = relationship("Company", back_populates="documents")

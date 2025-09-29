@@ -1,19 +1,31 @@
-# TODO List for Frontend Profile Update E2E Tests and Manual Testing Instructions
+# Frontend Theme Refactor TODO
 
-## Completed
-- Fixed test environment by separating Playwright and Vitest tests into different directories.
-- Updated playwright.config.js to point to e2e directory.
-- Fixed frontend Profile.jsx to correctly fetch and display profile data.
+## 1. Update src/theme.js ✅
+- Convert to MUI createTheme with palette, typography, components, shape, spacing matching Login page.
 
-## Pending
-- Write Playwright end-to-end tests for profile update and approval workflow.
-  - Employee submits profile update request.
-  - Super Admin approves or rejects the request.
-  - Form validation tests.
-  - Employee views updated profile after approval.
-- Prepare manual testing instructions for profile update feature.
+## 2. Update src/App.jsx ✅
+- Import ThemeProvider and theme.
+- Wrap Router in ThemeProvider.
 
-## Next Steps
-- Run the new Playwright e2e tests to verify functionality.
-- Review and refine manual testing instructions.
-- Address any test failures or issues found during test runs.
+## 3. Patch src/layouts/DashboardLayout.jsx ✅
+- Update sx to use theme refs (e.g., colors, spacing).
+- Add responsive sidebar collapse with useMediaQuery.
+- Style buttons/topbar with theme.
+
+## 4. Patch Pages ✅
+- Dashboard.jsx: Update Typography, Card sx, chart colors, grid responsiveness.
+- Employees.jsx: Update titles, cards, tables with theme.
+- Projects.jsx: Same as above.
+- Tasks.jsx: Same.
+- Leave.jsx: Same.
+- Attendance.jsx: Same.
+- Documents.jsx: Same.
+
+## 5. Scan and Remove Inconsistent Styling ✅
+- Use search_files to find Tailwind classes or inline styles.
+- Replace with MUI theme equivalents.
+
+## 6. Followup Steps
+- Run npm run build to check errors.
+- Use browser_action to verify theme consistency and responsiveness.
+- Run npm start if needed for live testing.

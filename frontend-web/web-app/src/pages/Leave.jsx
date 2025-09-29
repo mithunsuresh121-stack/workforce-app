@@ -11,6 +11,31 @@ import {
   FunnelIcon,
   XMarkIcon
 } from '@heroicons/react/24/outline';
+import {
+  Box,
+  Typography,
+  Card,
+  Button,
+  Modal,
+  TextField,
+  Select,
+  MenuItem,
+  FormControl,
+  InputLabel,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableRow,
+  Paper,
+  Alert,
+  IconButton,
+  Grid,
+  Chip,
+  LinearProgress
+} from '@mui/material';
+import DashboardLayout from '../layouts/DashboardLayout';
 import { api } from '../contexts/AuthContext';
 
 const Leave = () => {
@@ -120,10 +145,6 @@ const Leave = () => {
     }
   };
 
-
-
-
-
   const calculateDays = (startDate, endDate) => {
     const start = new Date(startDate);
     const end = new Date(endDate);
@@ -134,356 +155,341 @@ const Leave = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-64">
-        <div className="text-center">
-          <div className="w-8 h-8 border-2 border-accent-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-          <p className="text-neutral-600">Loading leave data...</p>
-        </div>
-      </div>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 256 }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <Box sx={{ width: 32, height: 32, border: 2, borderColor: 'primary.main', borderTopColor: 'transparent', borderRadius: '50%', mx: 'auto', mb: 2, animation: 'spin 1s linear infinite' }} />
+          <Typography variant="body2" color="text.secondary">Loading leave data...</Typography>
+        </Box>
+      </Box>
     );
   }
 
   return (
-    <div className="space-y-8">
-      {/* Header Section */}
-      <div className="bg-surface border-b border-border">
-        <div className="max-w-7xl mx-auto px-6 py-6">
-          <div className="flex justify-between items-center">
-            <div>
-              <h1 className="text-2xl font-semibold text-neutral-900">Leave Management</h1>
-              <p className="text-neutral-600 mt-1">Manage your leave requests and balances</p>
-            </div>
-            <button
-              onClick={() => setDialogOpen(true)}
-              className="flex items-center gap-2 px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 font-medium"
-            >
-              <PlusIcon className="w-5 h-5" />
-              Request Leave
-            </button>
-          </div>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="max-w-7xl mx-auto px-6">
-        {error && (
-          <div className="mb-6 p-4 bg-danger-50 border border-danger-200 text-danger-800 rounded-lg">
-            <div className="flex items-start gap-3">
-              <ExclamationTriangleIcon className="w-5 h-5 mt-0.5 flex-shrink-0" />
-              <p>{error}</p>
-              <button
-                onClick={() => setError('')}
-                className="ml-auto text-current hover:opacity-70"
+    <DashboardLayout>
+      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
+        {/* Header Section */}
+        <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
+          <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3, py: 3 }}>
+            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              <Box>
+                <Typography variant="h4" sx={{ color: 'text.primary' }}>Leave Management</Typography>
+                <Typography variant="body1" sx={{ color: 'text.secondary' }}>Manage your leave requests and balances</Typography>
+              </Box>
+              <Button
+                onClick={() => setDialogOpen(true)}
+                variant="contained"
+                startIcon={<PlusIcon />}
               >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-          </div>
-        )}
+                Request Leave
+              </Button>
+            </Box>
+          </Box>
+        </Box>
 
-        {/* Leave Balances */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {Object.entries(leaveBalances).map(([type, balance]) => (
-            <div key={type} className="bg-surface border border-border rounded-lg p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-neutral-900">{type}</h3>
-                <div className="flex items-center gap-2 text-neutral-500">
-                  <ClockIcon className="w-5 h-5" />
-                  <span className="text-sm font-medium">{balance.total - balance.used} left</span>
-                </div>
-              </div>
-              <div className="space-y-3">
-                <div className="flex justify-between text-sm">
-                  <span className="text-neutral-600">Used</span>
-                  <span className="font-medium text-neutral-900">{balance.used} days</span>
-                </div>
-                <div className="flex justify-between text-sm">
-                  <span className="text-neutral-600">Total</span>
-                  <span className="font-medium text-neutral-900">{balance.total} days</span>
-                </div>
-                <div className="w-full bg-neutral-200 rounded-full h-2">
-                  <div
-                    className={`h-2 rounded-full transition-all duration-300 ${
-                      balance.used / balance.total > 0.8 ? 'bg-danger-500' :
-                      balance.used / balance.total > 0.6 ? 'bg-warning-500' : 'bg-accent-500'
-                    }`}
-                    style={{ width: `${(balance.used / balance.total) * 100}%` }}
-                  />
-                </div>
-                <div className="text-xs text-neutral-500">
-                  {Math.round((balance.used / balance.total) * 100)}% utilized
-                </div>
-              </div>
-            </div>
-          ))}
-        </div>
-
-        {/* Filters */}
-        <div className="bg-surface border border-border rounded-lg p-6 mb-8">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div className="relative">
-              <FunnelIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
-              <select
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent appearance-none bg-white"
-              >
-                <option value="">All Statuses</option>
-                <option value="Pending">Pending</option>
-                <option value="Approved">Approved</option>
-                <option value="Rejected">Rejected</option>
-              </select>
-            </div>
-            <div className="relative">
-              <CalendarDaysIcon className="absolute left-3 top-1/2 transform -translate-y-1/2 text-neutral-400 w-5 h-5" />
-              <select
-                value={typeFilter}
-                onChange={(e) => setTypeFilter(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-neutral-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent appearance-none bg-white"
-              >
-                <option value="">All Types</option>
-                <option value="Annual Leave">Annual Leave</option>
-                <option value="Sick Leave">Sick Leave</option>
-                <option value="Personal Leave">Personal Leave</option>
-              </select>
-            </div>
-            <div className="flex items-end">
-              <button
-                onClick={() => {
-                  setStatusFilter('');
-                  setTypeFilter('');
-                }}
-                className="w-full px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
-              >
-                Clear Filters
-              </button>
-            </div>
-          </div>
-        </div>
-
-        {/* Leave History */}
-        <div className="bg-surface border border-border rounded-lg overflow-hidden">
-          <div className="px-6 py-4 border-b border-border bg-neutral-50">
-            <h2 className="text-lg font-semibold text-neutral-900">Leave History</h2>
-            <p className="text-sm text-neutral-600 mt-1">View and manage your leave requests</p>
-          </div>
-          <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-neutral-50 border-b border-border">
-                <tr>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                    Type
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                    Dates
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                    Days
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                    Status
-                  </th>
-                  <th className="px-6 py-4 text-left text-sm font-medium text-neutral-700">
-                    Reason
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-border">
-                {filteredLeaves.map((leave) => (
-                  <tr key={leave.id} className="hover:bg-neutral-50 transition-colors">
-                    <td className="px-6 py-4">
-                      <div className="font-medium text-neutral-900">{leave.type}</div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className="flex items-center gap-2">
-                        <CalendarDaysIcon className="w-4 h-4 text-neutral-400" />
-                        <span className="text-neutral-700">
-                          {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
-                        </span>
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <span className="font-medium text-neutral-900">
-                        {leave.days || calculateDays(leave.startDate, leave.endDate)}
-                      </span>
-                    </td>
-                    <td className="px-6 py-4">
-                      <div className={`inline-flex items-center gap-2 px-3 py-1 rounded-full text-sm font-medium ${
-                        leave.status === 'Approved' ? 'bg-success-100 text-success-700' :
-                        leave.status === 'Pending' ? 'bg-warning-100 text-warning-700' :
-                        leave.status === 'Rejected' ? 'bg-danger-100 text-danger-700' :
-                        'bg-neutral-100 text-neutral-700'
-                      }`}>
-                        {leave.status === 'Approved' && <CheckCircleIcon className="w-4 h-4" />}
-                        {leave.status === 'Pending' && <ClockIcon className="w-4 h-4" />}
-                        {leave.status === 'Rejected' && <XCircleIcon className="w-4 h-4" />}
-                        {leave.status}
-                      </div>
-                    </td>
-                    <td className="px-6 py-4">
-                      <p className="text-neutral-600 max-w-xs truncate">{leave.reason}</p>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-
-          {filteredLeaves.length === 0 && (
-            <div className="text-center py-12">
-              <div className="w-16 h-16 bg-neutral-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                <CalendarDaysIcon className="w-8 h-8 text-neutral-400" />
-              </div>
-              <h3 className="text-lg font-semibold text-neutral-900 mb-2">
-                No leave requests found
-              </h3>
-              <p className="text-neutral-600">
-                {statusFilter || typeFilter
-                  ? "No leave requests match your current filters. Try adjusting your search criteria."
-                  : "You haven't submitted any leave requests yet."
-                }
-              </p>
-            </div>
+        {/* Main Content */}
+        <Box sx={{ maxWidth: 1200, mx: 'auto', px: 3 }}>
+          {error && (
+            <Alert severity="error" onClose={() => setError('')} sx={{ mb: 3 }}>
+              {error}
+            </Alert>
           )}
-        </div>
 
-      {/* Leave Request Dialog */}
-      {dialogOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-          <div className="bg-surface rounded-lg shadow-linear-xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <div className="flex items-center justify-between p-6 border-b border-border">
-              <div>
-                <h2 className="text-xl font-semibold text-neutral-900">Request Leave</h2>
-                <p className="text-sm text-neutral-600 mt-1">Submit a new leave request</p>
-              </div>
-              <button
-                onClick={() => setDialogOpen(false)}
-                className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors"
+          {/* Leave Balances */}
+          <Grid container spacing={3} sx={{ mb: 4 }}>
+            {Object.entries(leaveBalances).map(([type, balance]) => (
+              <Grid item xs={12} md={4} key={type}>
+                <Card sx={{ p: 3 }}>
+                  <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+                    <Typography variant="h6" sx={{ color: 'text.primary' }}>{type}</Typography>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, color: 'text.secondary' }}>
+                      <ClockIcon sx={{ width: 20, height: 20 }} />
+                      <Typography variant="body2" fontWeight="medium">{balance.total - balance.used} left</Typography>
+                    </Box>
+                  </Box>
+                  <Box sx={{ spaceY: 1 }}>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                      <Typography sx={{ color: 'text.secondary' }}>Used</Typography>
+                      <Typography sx={{ fontWeight: 'medium', color: 'text.primary' }}>{balance.used} days</Typography>
+                    </Box>
+                    <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
+                      <Typography sx={{ color: 'text.secondary' }}>Total</Typography>
+                      <Typography sx={{ fontWeight: 'medium', color: 'text.primary' }}>{balance.total} days</Typography>
+                    </Box>
+                    <Box sx={{ width: '100%', height: 8, bgcolor: 'grey.200', borderRadius: 1 }}>
+                      <Box
+                        sx={{
+                          width: `${(balance.used / balance.total) * 100}%`,
+                          height: '100%',
+                          bgcolor: 'primary.main',
+                          borderRadius: 1,
+                          transition: 'width 0.3s'
+                        }}
+                      />
+                    </Box>
+                      <Typography variant="caption" sx={{ color: 'text.secondary' }}>
+                        {Math.round((balance.used / balance.total) * 100)}% utilized
+                      </Typography>
+                  </Box>
+                </Card>
+              </Grid>
+            ))}
+          </Grid>
+
+          {/* Filters */}
+          <Card sx={{ p: 3, mb: 4 }}>
+            <Grid container spacing={2}>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Status</InputLabel>
+                  <Select
+                    value={statusFilter}
+                    onChange={(e) => setStatusFilter(e.target.value)}
+                    label="Status"
+                  >
+                    <MenuItem value="">All Statuses</MenuItem>
+                    <MenuItem value="Pending">Pending</MenuItem>
+                    <MenuItem value="Approved">Approved</MenuItem>
+                    <MenuItem value="Rejected">Rejected</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <FormControl fullWidth>
+                  <InputLabel>Type</InputLabel>
+                  <Select
+                    value={typeFilter}
+                    onChange={(e) => setTypeFilter(e.target.value)}
+                    label="Type"
+                  >
+                    <MenuItem value="">All Types</MenuItem>
+                    <MenuItem value="Annual Leave">Annual Leave</MenuItem>
+                    <MenuItem value="Sick Leave">Sick Leave</MenuItem>
+                    <MenuItem value="Personal Leave">Personal Leave</MenuItem>
+                  </Select>
+                </FormControl>
+              </Grid>
+              <Grid item xs={12} md={4}>
+                <Button
+                  fullWidth
+                  variant="outlined"
+                  onClick={() => {
+                    setStatusFilter('');
+                    setTypeFilter('');
+                  }}
+                >
+                  Clear Filters
+                </Button>
+              </Grid>
+            </Grid>
+          </Card>
+
+          {/* Leave History */}
+          <Card sx={{ overflow: 'hidden' }}>
+            <Box sx={{ px: 3, py: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
+              <Typography variant="h6" sx={{ color: 'text.primary' }}>Leave History</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>View and manage your leave requests</Typography>
+            </Box>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'grey.50' }}>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Dates</TableCell>
+                    <TableCell>Days</TableCell>
+                    <TableCell>Status</TableCell>
+                    <TableCell>Reason</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {filteredLeaves.map((leave) => (
+                    <TableRow key={leave.id} hover>
+                      <TableCell>
+                      <Typography sx={{ fontWeight: 'medium', color: 'text.primary' }}>{leave.type}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CalendarDaysIcon sx={{ width: 16, height: 16, color: 'text.secondary' }} />
+                          <Typography sx={{ color: 'text.primary' }}>
+                            {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 'medium', color: 'text.primary' }}>
+                          {leave.days || calculateDays(leave.startDate, leave.endDate)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Chip
+                          label={leave.status}
+                          size="small"
+                          color={
+                            leave.status === 'Approved' ? 'success' :
+                            leave.status === 'Pending' ? 'warning' :
+                            'error'
+                          }
+                          icon={
+                            leave.status === 'Approved' ? <CheckCircleIcon sx={{ width: 16, height: 16 }} /> :
+                            leave.status === 'Pending' ? <ClockIcon sx={{ width: 16, height: 16 }} /> :
+                            <XCircleIcon sx={{ width: 16, height: 16 }} />
+                          }
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', color: 'text.primary' }}>
+                          {leave.reason}
+                        </Typography>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {filteredLeaves.length === 0 && (
+              <Box sx={{ textAlign: 'center', py: 12 }}>
+                <Box sx={{ width: 64, height: 64, bgcolor: 'grey.100', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', mx: 'auto', mb: 2 }}>
+                  <CalendarDaysIcon sx={{ width: 32, height: 32, color: 'text.secondary' }} />
+                </Box>
+                <Typography variant="h6" sx={{ mb: 1, color: 'text.primary' }}>No leave requests found</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  {statusFilter || typeFilter
+                    ? "No leave requests match your current filters. Try adjusting your search criteria."
+                    : "You haven't submitted any leave requests yet."
+                  }
+                </Typography>
+              </Box>
+            )}
+          </Card>
+
+          {/* Leave Request Modal */}
+          <Modal
+            open={dialogOpen}
+            onClose={() => setDialogOpen(false)}
+          >
+            <Box sx={{
+              position: 'absolute',
+              top: '50%',
+              left: '50%',
+              transform: 'translate(-50%, -50%)',
+              width: '100%',
+              maxWidth: 600,
+              bgcolor: 'background.paper',
+              borderRadius: 2,
+              boxShadow: 24,
+              p: 4,
+              maxHeight: '90vh',
+              overflowY: 'auto'
+            }}>
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3, borderBottom: 1, borderColor: 'divider', pb: 2 }}>
+                <Box>
+                <Typography variant="h5" sx={{ color: 'text.primary' }}>Request Leave</Typography>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>Submit a new leave request</Typography>
+                </Box>
+                <IconButton onClick={() => setDialogOpen(false)}>
+                  <XMarkIcon sx={{ width: 24, height: 24 }} />
+                </IconButton>
+              </Box>
+              <Formik
+                initialValues={{
+                  type: '',
+                  startDate: '',
+                  endDate: '',
+                  reason: ''
+                }}
+                validationSchema={validationSchema}
+                onSubmit={handleSubmit}
               >
-                <XMarkIcon className="w-5 h-5" />
-              </button>
-            </div>
-            <Formik
-              initialValues={{
-                type: '',
-                startDate: '',
-                endDate: '',
-                reason: ''
-              }}
-              validationSchema={validationSchema}
-              onSubmit={handleSubmit}
-            >
-              {({ values, errors, touched, setFieldValue }) => (
-                <Form className="p-6 space-y-6">
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Leave Type *
-                    </label>
-                    <select
-                      value={values.type}
-                      onChange={(e) => setFieldValue('type', e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent bg-white ${
-                        touched.type && errors.type ? 'border-danger-300' : 'border-neutral-200'
-                      }`}
-                    >
-                      <option value="">Select leave type</option>
-                      <option value="Annual Leave">Annual Leave</option>
-                      <option value="Sick Leave">Sick Leave</option>
-                      <option value="Personal Leave">Personal Leave</option>
-                    </select>
-                    {touched.type && errors.type && (
-                      <p className="text-danger-600 text-sm mt-1">{errors.type}</p>
-                    )}
-                  </div>
+                {({ values, errors, touched, handleChange, handleSubmit, isSubmitting }) => (
+                  <Form onSubmit={handleSubmit}>
+                    <Box sx={{ spaceY: 3 }}>
+                      <FormControl fullWidth error={touched.type && Boolean(errors.type)}>
+                        <InputLabel>Leave Type</InputLabel>
+                        <Select
+                          name="type"
+                          value={values.type}
+                          onChange={handleChange}
+                          label="Leave Type"
+                        >
+                          <MenuItem value="">Select leave type</MenuItem>
+                          <MenuItem value="Annual Leave">Annual Leave</MenuItem>
+                          <MenuItem value="Sick Leave">Sick Leave</MenuItem>
+                          <MenuItem value="Personal Leave">Personal Leave</MenuItem>
+                        </Select>
+                        {touched.type && errors.type && (
+                          <Typography variant="caption" sx={{ color: 'error' }}>{errors.type}</Typography>
+                        )}
+                      </FormControl>
 
-                  <div className="grid grid-cols-2 gap-6">
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        Start Date *
-                      </label>
-                      <input
-                        type="date"
-                        value={values.startDate}
-                        onChange={(e) => setFieldValue('startDate', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent ${
-                          touched.startDate && errors.startDate ? 'border-danger-300' : 'border-neutral-200'
-                        }`}
+                      <Grid container spacing={3}>
+                        <Grid item xs={6}>
+                          <TextField
+                            fullWidth
+                            label="Start Date"
+                            type="date"
+                            name="startDate"
+                            value={values.startDate}
+                            onChange={handleChange}
+                            error={touched.startDate && Boolean(errors.startDate)}
+                            helperText={touched.startDate && errors.startDate}
+                            sx={{ '& .MuiFormHelperText-root': { color: 'error.main' } }}
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        </Grid>
+                        <Grid item xs={6}>
+                          <TextField
+                            fullWidth
+                            label="End Date"
+                            type="date"
+                            name="endDate"
+                            value={values.endDate}
+                            onChange={handleChange}
+                            error={touched.endDate && Boolean(errors.endDate)}
+                            helperText={touched.endDate && errors.endDate}
+                            sx={{ '& .MuiFormHelperText-root': { color: 'error.main' } }}
+                            InputLabelProps={{ shrink: true }}
+                          />
+                        </Grid>
+                      </Grid>
+
+                      <TextField
+                        fullWidth
+                        multiline
+                        rows={4}
+                        label="Reason"
+                        name="reason"
+                        value={values.reason}
+                        onChange={handleChange}
+                        error={touched.reason && Boolean(errors.reason)}
+                        helperText={touched.reason && errors.reason}
+                        sx={{ '& .MuiFormHelperText-root': { color: 'error.main' } }}
                       />
-                      {touched.startDate && errors.startDate && (
-                        <p className="text-danger-600 text-sm mt-1">{errors.startDate}</p>
+
+                      {values.startDate && values.endDate && (
+                        <Alert severity="info" sx={{ mt: 2 }}>
+                          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                            <CalendarDaysIcon sx={{ width: 20, height: 20 }} />
+                          <Typography sx={{ color: 'text.primary' }}>Total days: {calculateDays(values.startDate, values.endDate)}</Typography>
+                          </Box>
+                        </Alert>
                       )}
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-neutral-700 mb-2">
-                        End Date *
-                      </label>
-                      <input
-                        type="date"
-                        value={values.endDate}
-                        onChange={(e) => setFieldValue('endDate', e.target.value)}
-                        className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent ${
-                          touched.endDate && errors.endDate ? 'border-danger-300' : 'border-neutral-200'
-                        }`}
-                      />
-                      {touched.endDate && errors.endDate && (
-                        <p className="text-danger-600 text-sm mt-1">{errors.endDate}</p>
-                      )}
-                    </div>
-                  </div>
 
-                  <div>
-                    <label className="block text-sm font-medium text-neutral-700 mb-2">
-                      Reason *
-                    </label>
-                    <textarea
-                      value={values.reason}
-                      onChange={(e) => setFieldValue('reason', e.target.value)}
-                      className={`w-full px-4 py-3 border rounded-lg focus:outline-none focus:ring-2 focus:ring-accent-500 focus:border-transparent resize-none ${
-                        touched.reason && errors.reason ? 'border-danger-300' : 'border-neutral-200'
-                      }`}
-                      rows={4}
-                      placeholder="Please provide a reason for your leave request"
-                    />
-                    {touched.reason && errors.reason && (
-                      <p className="text-danger-600 text-sm mt-1">{errors.reason}</p>
-                    )}
-                  </div>
-
-                  {values.startDate && values.endDate && (
-                    <div className="bg-accent-50 border border-accent-200 text-accent-800 px-4 py-3 rounded-lg">
-                      <div className="flex items-center gap-2">
-                        <CalendarDaysIcon className="w-5 h-5" />
-                        <span className="font-medium">Total days: {calculateDays(values.startDate, values.endDate)}</span>
-                      </div>
-                    </div>
-                  )}
-
-                  <div className="flex justify-end gap-3 pt-4 border-t border-border">
-                    <button
-                      type="button"
-                      onClick={() => setDialogOpen(false)}
-                      className="px-4 py-2 text-neutral-600 border border-neutral-200 rounded-lg hover:bg-neutral-50 transition-colors duration-200"
-                    >
-                      Cancel
-                    </button>
-                    <button
-                      type="submit"
-                      disabled={submitting}
-                      className={`px-4 py-2 bg-accent-500 text-white rounded-lg hover:bg-accent-600 transition-colors duration-200 font-medium ${
-                        submitting ? 'opacity-50 cursor-not-allowed' : ''
-                      }`}
-                    >
-                      {submitting ? 'Submitting...' : 'Submit Request'}
-                    </button>
-                  </div>
-                </Form>
-              )}
-            </Formik>
-          </div>
-        </div>
-      )}
-      </div>
-    </div>
+                      <Box sx={{ display: 'flex', justifyContent: 'flex-end', gap: 2, pt: 2, borderTop: 1, borderColor: 'divider' }}>
+                        <Button variant="outlined" onClick={() => setDialogOpen(false)} disabled={isSubmitting}>
+                          Cancel
+                        </Button>
+                        <Button type="submit" variant="contained" disabled={isSubmitting}>
+                          {isSubmitting ? 'Submitting...' : 'Submit Request'}
+                        </Button>
+                      </Box>
+                    </Box>
+                  </Form>
+                )}
+              </Formik>
+            </Box>
+          </Modal>
+        </Box>
+      </Box>
+    </DashboardLayout>
   );
 };
 

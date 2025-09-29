@@ -1,26 +1,24 @@
 # app/config.py
-from pydantic_settings import BaseSettings
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
-class Settings(BaseSettings):
+class Settings:
     # PostgreSQL settings
-    POSTGRES_USER: str = "workforce"
-    POSTGRES_PASSWORD: str = "workforce_pw"
-    POSTGRES_DB: str = "workforce"
-    POSTGRES_HOST: str = "localhost"  # Use localhost for local PostgreSQL
-    POSTGRES_PORT: int = 5432
+    POSTGRES_USER: str = os.getenv("POSTGRES_USER", "workforce")
+    POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "workforce_pw")
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "workforce")
+    POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")  # Use localhost for local PostgreSQL
+    POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", 5432))
 
     # JWT / App settings
-    SECRET_KEY: str = "CHANGE_ME"
-    JWT_SECRET: str = "CHANGE_ME"
-    JWT_ALG: str = "HS256"
-    APP_ENV: str = "dev"
+    SECRET_KEY: str = os.getenv("SECRET_KEY", "CHANGE_ME")
+    JWT_SECRET: str = os.getenv("JWT_SECRET", "CHANGE_ME")
+    JWT_ALG: str = os.getenv("JWT_ALG", "HS256")
+    APP_ENV: str = os.getenv("APP_ENV", "dev")
 
-    class Config:
-        env_file = ".env"
 
-# Load settings from .env
+# Load settings
 settings = Settings()
 
 # Construct the database URL - using Unix socket since PostgreSQL is running on /tmp
