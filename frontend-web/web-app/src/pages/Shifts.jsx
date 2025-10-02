@@ -90,7 +90,7 @@ export default function Shifts() {
 
   return (
     <DashboardLayout>
-      <Typography variant="h4" mb={3}>Shift Scheduling</Typography>
+      <Typography variant="h4" sx={{ color: 'text.primary' }} mb={3}>Shift Scheduling</Typography>
       <Card sx={{ p: 3 }}>
         <Calendar
           localizer={localizer}
@@ -108,7 +108,7 @@ export default function Shifts() {
 
       <Modal open={modalOpen} onClose={() => setModalOpen(false)}>
         <Box sx={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -50%)', width: 400, bgcolor: 'background.paper', p: 4, borderRadius: 2 }}>
-          <Typography variant="h6" mb={2}>Create New Shift</Typography>
+          <Typography variant="h6" sx={{ color: 'text.primary' }} mb={2}>Create New Shift</Typography>
           <FormControl fullWidth margin="normal">
             <InputLabel>Employee</InputLabel>
             <Select

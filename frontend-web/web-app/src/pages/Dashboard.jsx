@@ -3,7 +3,6 @@ import { Card, Typography, Box, List, ListItem, ListItemText, Divider, TextField
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../contexts/AuthContext";
 
 const initialKpis = [
@@ -91,7 +90,7 @@ export default function Dashboard() {
   };
 
   return (
-    <DashboardLayout>
+    <>
       <Typography variant="h4" sx={{ mb: 3, color: 'text.primary' }}>Dashboard Overview</Typography>
       <DragDropContext onDragEnd={onDragEnd}>
         <Droppable droppableId="kpis" direction="horizontal">
@@ -175,6 +174,6 @@ export default function Dashboard() {
           </List>
         </Card>
       </Box>
-    </DashboardLayout>
+    </>
   );
 }

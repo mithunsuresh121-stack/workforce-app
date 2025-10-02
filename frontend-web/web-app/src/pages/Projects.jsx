@@ -2,7 +2,6 @@ import React, { useState, useEffect } from "react";
 import { Card, Typography, Box, TextField, Select, MenuItem, FormControl, InputLabel, IconButton, LinearProgress } from "@mui/material";
 import { DragDropContext, Droppable, Draggable } from "react-beautiful-dnd";
 import { MagnifyingGlassIcon, PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../contexts/AuthContext";
 
 const initialProjects = [
@@ -181,7 +180,7 @@ export default function Projects() {
   };
 
   return (
-    <DashboardLayout>
+    <>
       <Typography variant="h4" sx={{ mb: 3, color: 'text.primary' }}>Projects</Typography>
       <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <TextField
@@ -217,6 +216,6 @@ export default function Projects() {
           )}
         </Droppable>
       </DragDropContext>
-    </DashboardLayout>
+    </>
   );
 }

@@ -39,7 +39,6 @@ import {
   GridView as Squares2X2Icon,
   FilterList as FunnelIcon
 } from '@mui/icons-material';
-import DashboardLayout from '../layouts/DashboardLayout';
 import { api, useAuth } from "../contexts/AuthContext";
 
 export default function Documents() {
@@ -170,19 +169,19 @@ export default function Documents() {
 
   if (loading) {
     return (
-      <DashboardLayout>
+      <>
         <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
           <Box sx={{ textAlign: 'center' }}>
             <CircularProgress sx={{ mb: 2 }} />
             <Typography color="text.secondary">Loading documents...</Typography>
           </Box>
         </Box>
-      </DashboardLayout>
+      </>
     );
   }
 
   return (
-    <DashboardLayout>
+    <>
       <Box sx={{ p: 3 }}>
         {/* Header */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -407,6 +406,6 @@ export default function Documents() {
           </DialogActions>
         </Dialog>
       </Box>
-    </DashboardLayout>
+    </>
   );
 }

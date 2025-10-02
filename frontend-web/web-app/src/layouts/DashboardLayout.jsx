@@ -76,9 +76,9 @@ export default function DashboardLayout({ children }) {
         </Box>
       </Box>
 
-      <Stack direction="row" flex={1}>
+      <Stack direction="row" flex={1} sx={{ position: 'relative' }}>
         {/* Sidebar */}
-        <Collapse in={!sidebarCollapsed} orientation="horizontal">
+        <Collapse in={!sidebarCollapsed} orientation="horizontal" sx={{ flexShrink: 0 }}>
           <Box
             component="aside"
             sx={{
@@ -88,6 +88,9 @@ export default function DashboardLayout({ children }) {
               py: 3,
               px: 2,
               bgcolor: "background.paper",
+              position: 'relative',
+              zIndex: 1,
+              flexShrink: 0,
             }}
           >
             <Stack direction="column" spacing={1}>
@@ -194,7 +197,7 @@ export default function DashboardLayout({ children }) {
         </Collapse>
 
         {/* Main content */}
-        <Box component="main" sx={{ flex: 1, p: 4 }}>
+        <Box component="main" sx={{ flex: 1, p: 4, minWidth: 0 }}>
           {children}
         </Box>
       </Stack>

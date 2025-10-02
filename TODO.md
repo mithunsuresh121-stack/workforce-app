@@ -1,12 +1,11 @@
-# Auto-Fix “Loading…” Blank Page in Workforce App
+# Fix Document Management Issues
 
 ## Steps
-- [ ] Check backend availability via curl to http://localhost:8000/api/auth/me
-- [ ] If down, activate venv: source backend/venv/bin/activate
-- [ ] Start FastAPI backend: uvicorn main:app --reload --host 127.0.0.1 --port 8000
-- [ ] Verify backend responds (401 or user JSON)
-- [ ] Seed test users: python seed_data.py
-- [ ] Test login endpoint with curl for superadmin
-- [ ] Confirm /api/auth/me returns user JSON
-- [ ] Start frontend on localhost:3000 if not running
-- [ ] Verify frontend renders dashboard past “loading…” screen
+- [x] Add download endpoint in backend/app/routers/documents.py to support /documents/{id}/download
+- [x] Adjust upload endpoint in backend/app/routers/documents.py to match frontend expectations (e.g., rename to /documents/upload or adjust parameters)
+- [x] Ensure backend returns document fields that match frontend expectations (name instead of title, type instead of file_type, upload_date instead of created_at, uploaded_by as string)
+- [x] Update backend/app/schemas/document.py to include computed fields or adjust response model
+- [ ] Test upload functionality
+- [ ] Test download functionality
+- [ ] Test delete functionality
+- [ ] Test listing and filtering

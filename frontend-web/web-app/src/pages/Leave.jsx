@@ -35,7 +35,6 @@ import {
   Chip,
   LinearProgress
 } from '@mui/material';
-import DashboardLayout from '../layouts/DashboardLayout';
 import { api } from '../contexts/AuthContext';
 
 const Leave = () => {
@@ -165,7 +164,7 @@ const Leave = () => {
   }
 
   return (
-    <DashboardLayout>
+    <>
       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
         {/* Header Section */}
         <Box sx={{ bgcolor: 'background.paper', borderBottom: 1, borderColor: 'divider' }}>
@@ -489,7 +488,7 @@ const Leave = () => {
           </Modal>
         </Box>
       </Box>
-    </DashboardLayout>
+    </>
   );
 };
 

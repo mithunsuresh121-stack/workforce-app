@@ -42,7 +42,6 @@ import {
   Person as UserIcon,
   Flag as FlagIcon
 } from '@mui/icons-material';
-import DashboardLayout from '../layouts/DashboardLayout';
 import { api, useAuth } from '../contexts/AuthContext';
 
 const Tasks = () => {
@@ -90,60 +89,57 @@ const Tasks = () => {
     return emp ? emp.name : `Employee ${id}`;
   }, [employees]);
 
-  useEffect(() => {
-    const fetchTasks = async () => {
-      try {
-        setLoading(true);
-        setError('');
-        const response = await api.get('/tasks');
-        setTasks(response.data);
-      } catch (error) {
-        console.error('Error fetching tasks:', error);
-        setError('Failed to load tasks. Using sample data.');
-        // Fallback sample data
-        setTasks([
-          {
-            id: 1,
-            title: 'Complete quarterly report',
-            description: 'Prepare and submit the Q4 financial report',
-            status: 'In Progress',
-            assignee_id: 1,
-            priority: 'High',
-            dueDate: '2024-01-15',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 2,
-            title: 'Review code changes',
-            description: 'Review pull request #123 for the new feature',
-            status: 'Pending',
-            assignee_id: 2,
-            priority: 'Medium',
-            dueDate: '2024-01-10',
-            createdAt: new Date().toISOString()
-          },
-          {
-            id: 3,
-            title: 'Update documentation',
-            description: 'Update API documentation for version 2.0',
-            status: 'Completed',
-            assignee_id: 3,
-            priority: 'Low',
-            dueDate: '2024-01-05',
-            createdAt: new Date().toISOString()
-          },
-        ]);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const fetchTasks = async () => {
+    try {
+      setLoading(true);
+      setError('');
+      const response = await api.get('/tasks');
+      setTasks(response.data);
+    } catch (error) {
+      console.error('Error fetching tasks:', error);
+      setError('Failed to load tasks. Using sample data.');
+      // Fallback sample data
+      setTasks([
+        {
+          id: 1,
+          title: 'Complete quarterly report',
+          description: 'Prepare and submit the Q4 financial report',
+          status: 'In Progress',
+          assignee_id: 1,
+          priority: 'High',
+          dueDate: '2024-01-15',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 2,
+          title: 'Review code changes',
+          description: 'Review pull request #123 for the new feature',
+          status: 'Pending',
+          assignee_id: 2,
+          priority: 'Medium',
+          dueDate: '2024-01-10',
+          createdAt: new Date().toISOString()
+        },
+        {
+          id: 3,
+          title: 'Update documentation',
+          description: 'Update API documentation for version 2.0',
+          status: 'Completed',
+          assignee_id: 3,
+          priority: 'Low',
+          dueDate: '2024-01-05',
+          createdAt: new Date().toISOString()
+        },
+      ]);
+    } finally {
+      setLoading(false);
+    }
+  };
 
+  useEffect(() => {
     fetchTasks();
   }, []);
 
-  useEffect(() => {
-    fetchEmployees();
-  }, []);
 
   const filteredTasks = useMemo(() => {
     return tasks.filter(task => {
@@ -293,14 +289,12 @@ const Tasks = () => {
 
   if (loading) {
     return (
-      <DashboardLayout>
-        <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300 }}>
-          <Box sx={{ textAlign: 'center' }}>
-            <CircularProgress sx={{ mb: 2 }} />
-            <Typography color="text.secondary">Loading tasks...</Typography>
-          </Box>
+      <Box sx={{ display: 'flex', justifyContent: 'center', alignItems: 'center', height: 300, p: 3 }}>
+        <Box sx={{ textAlign: 'center' }}>
+          <CircularProgress sx={{ mb: 2 }} />
+          <Typography color="text.secondary">Loading tasks...</Typography>
         </Box>
-      </DashboardLayout>
+      </Box>
     );
   }
 
@@ -322,7 +316,7 @@ const Tasks = () => {
   };
 
   return (
-    <DashboardLayout>
+    <>
       <Box sx={{ p: 3 }}>
         {/* Header Section */}
         <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
@@ -722,24 +716,15 @@ const Tasks = () => {
           )}
         </DialogContent>
         <DialogActions>
-          <Button onClick={() => setDialogOpen(false)}>
-            {selectedTask && !isEditing ? 'Close' : 'Cancel'}
+          <Button onClick={() => setDialogOpen(false)}>Cancel</Button>
+          <Button onClick={handleSaveTask} variant="contained">
+            {isEditing ? 'Update Task' : 'Create Task'}
           </Button>
-          {(!selectedTask || isEditing) && (
-            <Button variant="contained" onClick={handleSaveTask}>
-              {isEditing ? 'Update Task' : 'Create Task'}
-            </Button>
-          )}
-          {selectedTask && !isEditing && (
-            <Button variant="outlined" onClick={() => setIsEditing(true)}>
-              Edit Task
-            </Button>
-          )}
         </DialogActions>
       </Dialog>
-      </Box>
-    </DashboardLayout>
-  );
+    </Box>
+  </>
+);
 };
 
 export default Tasks;

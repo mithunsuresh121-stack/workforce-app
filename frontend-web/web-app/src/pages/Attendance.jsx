@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from "react";
 import { Card, Typography, Box, Button, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper } from "@mui/material";
-import DashboardLayout from "../layouts/DashboardLayout";
 import axios from "axios";
 
 export default function Attendance() {
@@ -73,8 +72,8 @@ export default function Attendance() {
   };
 
   return (
-    <DashboardLayout>
-      <Typography variant="h4" mb={3}>Attendance</Typography>
+    <>
+      <Typography variant="h4" sx={{ color: 'text.primary' }} mb={3}>Attendance</Typography>
       <Box sx={{ display: 'flex', gap: 2, mb: 4 }}>
         <Button variant="contained" color="primary" onClick={handleClockIn} disabled={!!activeAttendance}>
           Clock In
@@ -85,12 +84,12 @@ export default function Attendance() {
       </Box>
       {activeAttendance && (
         <Card sx={{ p: 3, mb: 4 }}>
-          <Typography variant="h6">Active Session</Typography>
-          <Typography>Clocked in at: {new Date(activeAttendance.clock_in_time).toLocaleString()}</Typography>
+          <Typography variant="h6" sx={{ color: 'text.primary' }}>Active Session</Typography>
+          <Typography sx={{ color: 'text.primary' }}>Clocked in at: {new Date(activeAttendance.clock_in_time).toLocaleString()}</Typography>
         </Card>
       )}
       <Card sx={{ p: 3 }}>
-        <Typography variant="h6" mb={2}>Daily Log</Typography>
+        <Typography variant="h6" sx={{ color: 'text.primary' }} mb={2}>Daily Log</Typography>
         <TableContainer component={Paper}>
           <Table>
             <TableHead>
@@ -114,6 +113,6 @@ export default function Attendance() {
           </Table>
         </TableContainer>
       </Card>
-    </DashboardLayout>
+    </>
   );
 }

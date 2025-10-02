@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from "react";
 import { Card, Typography, Table, TableBody, TableCell, TableContainer, TableHead, TableRow, Paper, TextField, Select, MenuItem, FormControl, InputLabel, Box, IconButton, Chip, useMediaQuery, useTheme } from "@mui/material";
 import { MagnifyingGlassIcon, ArrowUpIcon, ArrowDownIcon, PencilIcon, CheckIcon, XMarkIcon } from "@heroicons/react/24/outline";
-import DashboardLayout from "../layouts/DashboardLayout";
 import { api } from "../contexts/AuthContext";
 
 const initialEmployees = [
@@ -137,7 +136,7 @@ export default function Employees() {
   );
 
   return (
-    <DashboardLayout>
+    <>
       <Typography variant="h4" sx={{ mb: 3, color: 'text.primary' }}>Employees</Typography>
       <Box sx={{ mb: 3, display: 'flex', gap: 2, flexWrap: 'wrap' }}>
         <TextField
@@ -145,7 +144,7 @@ export default function Employees() {
           value={searchTerm}
           onChange={(e) => setSearchTerm(e.target.value)}
           InputProps={{
-            startAdornment: <MagnifyingGlassIcon style={{ width: 20, height: 20, marginRight: 8 }} />,
+            startAdornment: <MagnifyingGlassIcon style={{ width: 20, height: 20, marginRight: 8, color: '#6B7280' }} />,
           }}
           sx={{ minWidth: 250 }}
         />
@@ -169,16 +168,16 @@ export default function Employees() {
               <TableHead>
                 <TableRow>
                   <TableCell onClick={() => handleSort('id')} sx={{ cursor: 'pointer' }}>
-                    ID {sortField === 'id' && (sortDirection === 'asc' ? <ArrowUpIcon style={{ width: 16, height: 16 }} /> : <ArrowDownIcon style={{ width: 16, height: 16 }} />)}
+                    ID {sortField === 'id' && (sortDirection === 'asc' ? <ArrowUpIcon style={{ width: 16, height: 16, color: '#2563EB' }} /> : <ArrowDownIcon style={{ width: 16, height: 16, color: '#2563EB' }} />)}
                   </TableCell>
                   <TableCell onClick={() => handleSort('name')} sx={{ cursor: 'pointer' }}>
-                    Name {sortField === 'name' && (sortDirection === 'asc' ? <ArrowUpIcon style={{ width: 16, height: 16 }} /> : <ArrowDownIcon style={{ width: 16, height: 16 }} />)}
+                    Name {sortField === 'name' && (sortDirection === 'asc' ? <ArrowUpIcon style={{ width: 16, height: 16, color: '#2563EB' }} /> : <ArrowDownIcon style={{ width: 16, height: 16, color: '#2563EB' }} />)}
                   </TableCell>
                   <TableCell onClick={() => handleSort('role')} sx={{ cursor: 'pointer' }}>
-                    Role {sortField === 'role' && (sortDirection === 'asc' ? <ArrowUpIcon style={{ width: 16, height: 16 }} /> : <ArrowDownIcon style={{ width: 16, height: 16 }} />)}
+                    Role {sortField === 'role' && (sortDirection === 'asc' ? <ArrowUpIcon style={{ width: 16, height: 16, color: '#2563EB' }} /> : <ArrowDownIcon style={{ width: 16, height: 16, color: '#2563EB' }} />)}
                   </TableCell>
                   <TableCell onClick={() => handleSort('status')} sx={{ cursor: 'pointer' }}>
-                    Status {sortField === 'status' && (sortDirection === 'asc' ? <ArrowUpIcon style={{ width: 16, height: 16 }} /> : <ArrowDownIcon style={{ width: 16, height: 16 }} />)}
+                    Status {sortField === 'status' && (sortDirection === 'asc' ? <ArrowUpIcon style={{ width: 16, height: 16, color: '#2563EB' }} /> : <ArrowDownIcon style={{ width: 16, height: 16, color: '#2563EB' }} />)}
                   </TableCell>
                 </TableRow>
               </TableHead>
@@ -198,6 +197,6 @@ export default function Employees() {
           </TableContainer>
         )}
       </Card>
-    </DashboardLayout>
+    </>
   );
 }
