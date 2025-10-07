@@ -1,4 +1,4 @@
-# TODO List for Frontend Profile Update E2E Tests and Manual Testing Instructions
+# TODO List 1 for Frontend Profile Update E2E Tests and Manual Testing Instructions
 
 ## Completed
 - Fixed test environment by separating Playwright and Vitest tests into different directories.
