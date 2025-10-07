@@ -268,15 +268,18 @@ def delete_company(db: Session, company_id: int):
     return True
 
 # Leave CRUD functions
-def create_leave(db: Session, company_id: int, employee_id: int, leave_type: str, start_at, end_at, status: str = "Pending", approver_id: int = None):
+def create_leave(db: Session, company_id: int, employee_id: int, leave_type: str, start_at, end_at, reason: str = None, status: str = "PENDING", approved_by: int = None):
+    # Convert leave_type to uppercase enum value
+    leave_type_enum = leave_type.upper()
     leave = Leave(
         company_id=company_id,
         employee_id=employee_id,
-        type=leave_type,
+        type=leave_type_enum,
         start_at=start_at,
         end_at=end_at,
+        reason=reason,
         status=status,
-        approver_id=approver_id
+        approved_by=approved_by
     )
     db.add(leave)
     db.commit()
@@ -291,6 +294,29 @@ def list_leaves_by_employee(db: Session, employee_id: int):
 
 def list_leaves_by_company(db: Session, company_id: int):
     return db.query(Leave).filter(Leave.company_id == company_id).all()
+
+def list_pending_leaves_by_company(db: Session, company_id: int):
+    return db.query(Leave).filter(Leave.company_id == company_id, Leave.status == "PENDING").all()
+
+def approve_leave(db: Session, leave_id: int, approved_by: int):
+    leave = get_leave_by_id(db, leave_id)
+    if not leave:
+        return None
+    leave.status = "APPROVED"
+    leave.approved_by = approved_by
+    db.commit()
+    db.refresh(leave)
+    return leave
+
+def reject_leave(db: Session, leave_id: int, approved_by: int):
+    leave = get_leave_by_id(db, leave_id)
+    if not leave:
+        return None
+    leave.status = "REJECTED"
+    leave.approved_by = approved_by
+    db.commit()
+    db.refresh(leave)
+    return leave
 
 def update_leave_status(db: Session, leave_id: int, status: str, approver_id: int = None):
     leave = db.query(Leave).filter(Leave.id == leave_id).first()
@@ -660,10 +686,14 @@ def delete_payroll_entry(db: Session, payroll_entry_id: int):
     return True
 
 # Attendance CRUD functions
-def create_attendance(db: Session, employee_id: int, clock_in_time, notes: str = None):
+def create_attendance(db: Session, employee_id: int, clock_in_time, lat: float = None, lng: float = None, ip_address: str = None, notes: str = None):
     attendance = Attendance(
         employee_id=employee_id,
         clock_in_time=clock_in_time,
+        lat=lat,
+        lng=lng,
+        ip_address=ip_address,
+        status="CLOCKED_IN",
         notes=notes
     )
     db.add(attendance)
@@ -677,21 +707,24 @@ def get_attendance_by_id(db: Session, attendance_id: int):
 def get_active_attendance_by_employee(db: Session, employee_id: int):
     return db.query(Attendance).filter(
         Attendance.employee_id == employee_id,
-        Attendance.clock_out_time.is_(None)
+        Attendance.status == "CLOCKED_IN"
     ).first()
 
-def list_attendance_by_employee(db: Session, employee_id: int, limit: int = 50):
-    return db.query(Attendance).filter(Attendance.employee_id == employee_id).order_by(Attendance.created_at.desc()).limit(limit).all()
+def get_attendance_history(db: Session, employee_id: int, limit: int = 50, offset: int = 0):
+    return db.query(Attendance).filter(Attendance.employee_id == employee_id).order_by(Attendance.clock_in_time.desc()).offset(offset).limit(limit).all()
 
-def clock_out_attendance(db: Session, attendance_id: int, notes: str = None):
+def clock_out_attendance(db: Session, attendance_id: int, lat: float = None, lng: float = None, ip_address: str = None, notes: str = None):
     attendance = get_attendance_by_id(db, attendance_id)
     if not attendance:
         return None
     from datetime import datetime, timezone
     attendance.clock_out_time = datetime.now(timezone.utc)
+    attendance.lat = lat or attendance.lat
+    attendance.lng = lng or attendance.lng
+    attendance.ip_address = ip_address or attendance.ip_address
     if notes:
         attendance.notes = notes
-    attendance.status = "completed"
+    attendance.status = "CLOCKED_OUT"
     # Calculate total hours
     if attendance.clock_in_time and attendance.clock_out_time:
         duration = attendance.clock_out_time - attendance.clock_in_time

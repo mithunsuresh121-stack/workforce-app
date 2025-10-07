@@ -9,21 +9,21 @@ def base_url():
 @pytest.fixture(scope="session")
 def superadmin_jwt(base_url):
     """Get superadmin JWT token for tests"""
-    r = requests.post(f"{base_url}/auth/login", json={"email": "admin@app.com", "password": "supersecure123"})
+    r = requests.post(f"{base_url}/api/auth/login", json={"email": "superadmin@workforce.com", "password": "password123"})
     r.raise_for_status()
     return r.json()["access_token"]
 
 @pytest.fixture(scope="session")
 def manager_jwt(base_url):
     """Get manager JWT token for tests"""
-    r = requests.post(f"{base_url}/auth/login", json={"email": "admin@techcorp.com", "password": "password123"})
+    r = requests.post(f"{base_url}/api/auth/login", json={"email": "manager1@techcorp.com", "password": "ManagerPass123"})
     r.raise_for_status()
     return r.json()["access_token"]
 
 @pytest.fixture(scope="session")
 def employee_jwt(base_url):
     """Get employee JWT token for tests"""
-    r = requests.post(f"{base_url}/auth/login", json={"email": "test@company.com", "password": "password123"})
+    r = requests.post(f"{base_url}/api/auth/login", json={"email": "emp1@techcorp.com", "password": "password123"})
     r.raise_for_status()
     return r.json()["access_token"]
 

@@ -24,15 +24,15 @@ from app.models.shift import Shift
 from app.models.document import Document
 from app.crud import (
     create_company, create_user, create_employee_profile,
-    get_company_by_name, get_user_by_email, pwd_context
+    get_company_by_name, get_user_by_email, pwd_context, get_employee_profile_by_user_id
 )
 from app.db import Base  # For potential table checks, but using direct CRUD
 
 # Add backend/app to path for imports
 sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
-# Database connection (dev only)
-DATABASE_URL = "postgresql://workforce:workforce_pw@localhost:5432/workforce"
+# Database connection (dev only) - match app config
+DATABASE_URL = "postgresql://workforce:workforce_pw@localhost:5432/workforce_app_db"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
@@ -237,17 +237,22 @@ def seed_clean_data(db):
         elif user.role == Role.EMPLOYEE:
             manager_id = manager1.id  # Employees report to manager1
         
-        create_employee_profile(
-            db, user_id=user.id, company_id=company1.id,
-            department="Engineering" if user.role == "Employee" else "Management",
-            position=f"{user.role} Position",
-            phone=f"+1-555-01{idx+1:02d}",
-            hire_date=datetime(2023, 6 + (idx % 6), 1),  # Varied recent dates
-            manager_id=manager_id,
-            address="TechCorp Office", city="San Francisco",
-            emergency_contact="Emergency Tech"
-        )
-        print(f"   Created profile for {user.email}")
+        # Check if profile exists before creating
+        existing_profile = get_employee_profile_by_user_id(db, user.id, company1.id)
+        if not existing_profile:
+            create_employee_profile(
+                db, user_id=user.id, company_id=company1.id,
+                department="Engineering" if user.role == Role.EMPLOYEE else "Management",
+                position=f"{user.role} Position",
+                phone=f"+1-555-01{idx+1:02d}",
+                hire_date=datetime(2023, 6 + (idx % 6), 1),  # Varied recent dates
+                manager_id=manager_id,
+                address="TechCorp Office", city="San Francisco",
+                emergency_contact="Emergency Tech"
+            )
+            print(f"   Created profile for {user.email}")
+        else:
+            print(f"   Profile already exists for {user.email}")
     
     # Step 4: Seed InnoCorp (Company 2: 1 Admin, 1 Manager, 5 Employees)
     innocorp_users = []
@@ -299,18 +304,23 @@ def seed_clean_data(db):
             manager_id = admin2.id
         elif user.role == Role.EMPLOYEE:
             manager_id = manager3.id
-        
-        create_employee_profile(
-            db, user_id=user.id, company_id=company2.id,
-            department="HR" if idx % 2 == 0 else "Engineering",  # Mix departments
-            position=f"{user.role} Position",
-            phone=f"+1-555-02{idx+1:02d}",
-            hire_date=datetime(2023, 7 + (idx % 5), 15),  # Varied
-            manager_id=manager_id,
-            address="InnoCorp Office", city="New York",
-            emergency_contact="Emergency Inno"
-        )
-        print(f"   Created profile for {user.email}")
+
+        # Check if profile exists before creating
+        existing_profile = get_employee_profile_by_user_id(db, user.id, company2.id)
+        if not existing_profile:
+            create_employee_profile(
+                db, user_id=user.id, company_id=company2.id,
+                department="HR" if idx % 2 == 0 else "Engineering",  # Mix departments
+                position=f"{user.role} Position",
+                phone=f"+1-555-02{idx+1:02d}",
+                hire_date=datetime(2023, 7 + (idx % 5), 15),  # Varied
+                manager_id=manager_id,
+                address="InnoCorp Office", city="New York",
+                emergency_contact="Emergency Inno"
+            )
+            print(f"   Created profile for {user.email}")
+        else:
+            print(f"   Profile already exists for {user.email}")
     
     db.commit()
     print("✅ Clean data seeding completed: 2 companies, 1 SuperAdmin, 14 total users, 14 profiles.")

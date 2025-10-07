@@ -14,6 +14,7 @@ import Profile from './pages/Profile';
 import Directory from './pages/Directory';
 import Tasks from './pages/Tasks';
 import Leave from './pages/Leave';
+
 import Company from './pages/Company';
 import Attendance from './pages/Attendance';
 import Shifts from './pages/Shifts';

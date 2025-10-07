@@ -71,13 +71,12 @@ def get_auth_token() -> Optional[str]:
         print(f"❌ Unexpected error during authentication: {e}")
         return None
 
-def test_notification_endpoints() -> bool:
+def test_notification_endpoints():
     """Test notification API endpoints"""
     print("🔔 Testing Notification Endpoints...")
 
     token = get_auth_token()
-    if not token:
-        return False
+    assert token, "Failed to get authentication token"
 
     headers = {"Authorization": f"Bearer {token}"}
 
@@ -86,61 +85,47 @@ def test_notification_endpoints() -> bool:
         print("  📋 Testing GET /notifications/")
         response = requests.get(f"{BASE_URL}/notifications/", headers=headers, timeout=REQUEST_TIMEOUT)
         print(f"    Status: {response.status_code}")
+        assert response.status_code == 200, f"GET notifications failed: {response.text}"
         
-        if response.status_code == 200:
-            notifications = response.json()
-            print(f"    Found {len(notifications)} notifications")
-            print("    ✅ GET notifications successful")
-            
-            # Test mark-read if notifications exist
-            if notifications:
-                notification_id = notifications[0]["id"]
-                print(f"  📝 Testing POST /notifications/mark-read/{notification_id}")
-                mark_read_response = requests.post(
-                    f"{BASE_URL}/notifications/mark-read/{notification_id}", 
-                    headers=headers, 
-                    timeout=REQUEST_TIMEOUT
-                )
-                print(f"    Status: {mark_read_response.status_code}")
-                if mark_read_response.status_code == 200:
-                    print("    ✅ Mark as read successful")
-                else:
-                    print(f"    ❌ Mark as read failed: {mark_read_response.text}")
-                    return False
-            else:
-                print("    ℹ️  No existing notifications to test mark-read functionality")
-                
-            return True
+        notifications = response.json()
+        print(f"    Found {len(notifications)} notifications")
+        print("    ✅ GET notifications successful")
+        
+        # Test mark-read if notifications exist
+        if notifications:
+            notification_id = notifications[0]["id"]
+            print(f"  📝 Testing POST /notifications/mark-read/{notification_id}")
+            mark_read_response = requests.post(
+                f"{BASE_URL}/notifications/mark-read/{notification_id}", 
+                headers=headers, 
+                timeout=REQUEST_TIMEOUT
+            )
+            print(f"    Status: {mark_read_response.status_code}")
+            assert mark_read_response.status_code == 200, f"Mark as read failed: {mark_read_response.text}"
+            print("    ✅ Mark as read successful")
         else:
-            print(f"    ❌ GET notifications failed: {response.text}")
-            return False
-
+            print("    ℹ️  No existing notifications to test mark-read functionality")
+                
     except requests.exceptions.ConnectionError:
-        print("    ❌ Connection error during notification endpoint test")
-        return False
+        assert False, "Connection error during notification endpoint test"
     except requests.exceptions.Timeout:
-        print("    ❌ Request timed out during notification endpoint test")
-        return False
+        assert False, "Request timed out during notification endpoint test"
     except Exception as e:
-        print(f"    ❌ Error testing notification endpoints: {e}")
-        return False
+        assert False, f"Error testing notification endpoints: {e}"
 
-def test_task_assignment_notification() -> bool:
+def test_task_assignment_notification():
     """Test notification creation on task assignment"""
     print("📋 Testing Task Assignment Notifications...")
 
     token = get_auth_token()
-    if not token:
-        return False
+    assert token, "Failed to get authentication token"
 
     headers = {"Authorization": f"Bearer {token}"}
 
     try:
         # Get current user profile to get company_id
         profile_response = requests.get(f"{BASE_URL}/auth/me", headers=headers, timeout=REQUEST_TIMEOUT)
-        if profile_response.status_code != 200:
-            print(f"❌ Failed to get user profile: {profile_response.status_code}")
-            return False
+        assert profile_response.status_code == 200, f"Failed to get user profile: {profile_response.status_code}"
 
         user_data = profile_response.json()
         
@@ -187,46 +172,34 @@ def test_task_assignment_notification() -> bool:
         print(f"    Task data: {json.dumps(task_data, indent=2)}")
         response = requests.post(f"{BASE_URL}/tasks/", json=task_data, headers=headers, timeout=REQUEST_TIMEOUT)
         print(f"    Status: {response.status_code}")
+        assert response.status_code == 201, f"Task creation failed: {response.text}"
         
-        if response.status_code == 201:
-            task = response.json()
-            created_tasks.append(task["id"])  # Track for cleanup
-            print(f"    ✅ Task created: {task['title']}")
+        task = response.json()
+        created_tasks.append(task["id"])  # Track for cleanup
+        print(f"    ✅ Task created: {task['title']}")
 
-            # Wait a moment for notification to be created
-            time.sleep(1)
+        # Wait a moment for notification to be created
+        time.sleep(1)
 
-            # Check if notification was created
-            print("  🔔 Checking for task assignment notification...")
-            response = requests.get(f"{BASE_URL}/notifications/", headers=headers, timeout=REQUEST_TIMEOUT)
-            if response.status_code == 200:
-                notifications = response.json()
-                task_notifications = [n for n in notifications if n.get("type") == "TASK_ASSIGNED"]
-                if task_notifications:
-                    print(f"    ✅ Found {len(task_notifications)} task assignment notification(s)")
-                    for notification in task_notifications:
-                        print(f"      - {notification['title']}: {notification['message']}")
-                        created_notifications.append(notification["id"])  # Track for cleanup
-                    return True
-                else:
-                    print("    ❌ No task assignment notifications found")
-                    return False
-            else:
-                print(f"    ❌ Failed to get notifications: {response.status_code}")
-                return False
-        else:
-            print(f"    ❌ Task creation failed: {response.text}")
-            return False
+        # Check if notification was created
+        print("  🔔 Checking for task assignment notification...")
+        response = requests.get(f"{BASE_URL}/notifications/", headers=headers, timeout=REQUEST_TIMEOUT)
+        assert response.status_code == 200, f"Failed to get notifications: {response.status_code}"
+        
+        notifications = response.json()
+        task_notifications = [n for n in notifications if n.get("type") == "TASK_ASSIGNED"]
+        assert task_notifications, "No task assignment notifications found"
+        print(f"    ✅ Found {len(task_notifications)} task assignment notification(s)")
+        for notification in task_notifications:
+            print(f"      - {notification['title']}: {notification['message']}")
+            created_notifications.append(notification["id"])  # Track for cleanup
 
     except requests.exceptions.ConnectionError:
-        print("    ❌ Connection error during task assignment test")
-        return False
+        assert False, "Connection error during task assignment test"
     except requests.exceptions.Timeout:
-        print("    ❌ Request timed out during task assignment test")
-        return False
+        assert False, "Request timed out during task assignment test"
     except Exception as e:
-        print(f"    ❌ Error testing task assignment notifications: {e}")
-        return False
+        assert False, f"Error testing task assignment notifications: {e}"
 
 def test_company_isolation() -> bool:
     """Test company isolation for notifications"""

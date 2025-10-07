@@ -301,7 +301,35 @@ def update_leave_status(db: Session, leave_id: int, status: str, approver_id: in
         leave.approver_id = approver_id
     db.commit()
     db.refresh(leave)
+    # Create notification for the employee
+    if status == "APPROVED":
+        create_notification(
+            db=db,
+            user_id=leave.employee_id,
+            company_id=leave.company_id,
+            title="Leave Approved",
+            message=f"Your leave request from {leave.start_at} to {leave.end_at} has been approved.",
+            type=NotificationType.LEAVE_APPROVED
+        )
+    elif status == "REJECTED":
+        create_notification(
+            db=db,
+            user_id=leave.employee_id,
+            company_id=leave.company_id,
+            title="Leave Rejected",
+            message=f"Your leave request from {leave.start_at} to {leave.end_at} has been rejected.",
+            type=NotificationType.LEAVE_REJECTED
+        )
     return leave
+
+def approve_leave(db: Session, leave_id: int, approver_id: int):
+    return update_leave_status(db, leave_id, "APPROVED", approver_id)
+
+def reject_leave(db: Session, leave_id: int, approver_id: int):
+    return update_leave_status(db, leave_id, "REJECTED", approver_id)
+
+def list_pending_leaves_by_company(db: Session, company_id: int):
+    return db.query(Leave).filter(Leave.company_id == company_id, Leave.status == "PENDING").all()
 
 def delete_leave(db: Session, leave_id: int):
     leave = db.query(Leave).filter(Leave.id == leave_id).first()
@@ -368,6 +396,7 @@ def delete_shift(db: Session, shift_id: int):
 from .models.payroll import Employee as PayrollEmployee, Salary, Allowance, Deduction, Bonus, PayrollRun, PayrollEntry
 from .models.attendance import Attendance, Break
 from .models.document import Document
+from .models.notification import Notification, NotificationType
 
 # Payroll CRUD functions
 def create_payroll_employee(db: Session, tenant_id: str, user_id: int, employee_id: str, department: str = None, position: str = None, hire_date = None, base_salary: float = 0.0, status: str = "Active"):
@@ -659,15 +688,29 @@ def delete_payroll_entry(db: Session, payroll_entry_id: int):
     return True
 
 # Attendance CRUD functions
-def create_attendance(db: Session, employee_id: int, clock_in_time, notes: str = None):
+def create_attendance(db: Session, employee_id: int, clock_in_time, notes: str = None, lat: float = None, lng: float = None, ip_address: str = None):
     attendance = Attendance(
         employee_id=employee_id,
         clock_in_time=clock_in_time,
-        notes=notes
+        notes=notes,
+        lat=lat,
+        lng=lng,
+        ip_address=ip_address
     )
     db.add(attendance)
     db.commit()
     db.refresh(attendance)
+    # Get company_id from user
+    user = get_user_by_id(db, employee_id)
+    if user and user.company_id:
+        create_notification(
+            db=db,
+            user_id=employee_id,
+            company_id=user.company_id,
+            title="Clock In",
+            message=f"You have clocked in at {clock_in_time}.",
+            type=NotificationType.ATTENDANCE_CLOCK_IN
+        )
     return attendance
 
 def get_attendance_by_id(db: Session, attendance_id: int):
@@ -697,6 +740,17 @@ def clock_out_attendance(db: Session, attendance_id: int, notes: str = None):
         attendance.total_hours = duration.total_seconds() / 3600
     db.commit()
     db.refresh(attendance)
+    # Get company_id from user
+    user = get_user_by_id(db, attendance.employee_id)
+    if user and user.company_id:
+        create_notification(
+            db=db,
+            user_id=attendance.employee_id,
+            company_id=user.company_id,
+            title="Clock Out",
+            message=f"You have clocked out at {attendance.clock_out_time}. Total hours: {attendance.total_hours:.2f}",
+            type=NotificationType.ATTENDANCE_CLOCK_OUT
+        )
     return attendance
 
 def create_break(db: Session, attendance_id: int, break_start, break_type: str = "lunch"):
@@ -770,5 +824,42 @@ def delete_document(db: Session, document_id: int):
     if not document:
         return False
     db.delete(document)
+    db.commit()
+    return True
+
+# Notification CRUD functions
+def create_notification(db: Session, user_id: int, company_id: int, title: str, message: str, type: NotificationType):
+    notification = Notification(
+        user_id=user_id,
+        company_id=company_id,
+        title=title,
+        message=message,
+        type=type
+    )
+    db.add(notification)
+    db.commit()
+    db.refresh(notification)
+    return notification
+
+def get_notification_by_id(db: Session, notification_id: int):
+    return db.query(Notification).filter(Notification.id == notification_id).first()
+
+def list_notifications_by_user(db: Session, user_id: int, limit: int = 50):
+    return db.query(Notification).filter(Notification.user_id == user_id).order_by(Notification.created_at.desc()).limit(limit).all()
+
+def mark_notification_as_read(db: Session, notification_id: int):
+    notification = get_notification_by_id(db, notification_id)
+    if not notification:
+        return None
+    notification.status = "READ"
+    db.commit()
+    db.refresh(notification)
+    return notification
+
+def delete_notification(db: Session, notification_id: int):
+    notification = get_notification_by_id(db, notification_id)
+    if not notification:
+        return False
+    db.delete(notification)
     db.commit()
     return True

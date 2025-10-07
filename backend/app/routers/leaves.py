@@ -31,6 +31,120 @@ def get_leaves(
         leaves = list_leaves_by_company(db, current_user.company_id)
     return leaves
 
+@router.get("/pending", response_model=List[LeaveOut])
+def get_pending_leaves(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get all pending leave requests for the current user's company (for managers/admins)
+    """
+    if current_user.role.value not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions"
+        )
+    leaves = list_pending_leaves_by_company(db, current_user.company_id)
+    return leaves
+
+@router.post("/request", response_model=LeaveOut, status_code=status.HTTP_201_CREATED)
+def create_leave_request(
+    payload: LeaveCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Create a new leave request
+    """
+    # Role-based access control - employees can create their own leave requests
+    # Managers and admins can create leave requests for others
+    if current_user.role.value not in ["SuperAdmin", "CompanyAdmin", "Manager", "Employee"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to create leave requests"
+        )
+
+    # Ensure the leave is created for the user's company
+    if current_user.role.value != "SuperAdmin" and payload.company_id != current_user.company_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Cannot create leave request for another company"
+        )
+
+    # Employees can only create leave requests for themselves
+    if current_user.role.value == "Employee" and payload.employee_id != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Employees can only create leave requests for themselves"
+        )
+
+    leave = create_leave(
+        db=db,
+        company_id=payload.company_id,
+        employee_id=payload.employee_id,
+        leave_type=payload.type.upper(),
+        start_at=payload.start_at,
+        end_at=payload.end_at,
+        reason=payload.reason if payload.reason else "",
+        status=payload.status.value.upper()
+    )
+    return leave
+
+@router.put("/{leave_id}/approve", response_model=LeaveOut)
+def approve_leave_request(
+    leave_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Approve a leave request
+    """
+    if current_user.role.value not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to approve leave requests"
+        )
+    leave = approve_leave(db, leave_id, current_user.id)
+    if not leave:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Leave request not found"
+        )
+    return leave
+
+@router.put("/{leave_id}/reject", response_model=LeaveOut)
+def reject_leave_request(
+    leave_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Reject a leave request
+    """
+    if current_user.role.value not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to reject leave requests"
+        )
+    leave = reject_leave(db, leave_id, current_user.id)
+    if not leave:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Leave request not found"
+        )
+    return leave
+
+@router.get("/my", response_model=List[LeaveOut])
+def get_my_leaves(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get leave requests for the current user
+    """
+    leaves = list_leaves_by_employee(db, current_user.id)
+    return leaves
+
 @router.get("/balances", response_model=Dict[str, Dict[str, int]])
 def get_leave_balances(
     db: Session = Depends(get_db),

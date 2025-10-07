@@ -17,7 +17,7 @@ from ..crud import (
     create_attendance,
     get_active_attendance_by_employee,
     clock_out_attendance,
-    list_attendance_by_employee,
+    get_attendance_history,
     create_break,
     get_break_by_id,
     end_break,
@@ -32,6 +32,9 @@ router = APIRouter(prefix="/attendance", tags=["Attendance"])
 @router.post("/clock-in", response_model=Attendance, status_code=status.HTTP_201_CREATED)
 def clock_in(
     payload: ClockInRequest,
+    lat: float = None,
+    lng: float = None,
+    ip_address: str = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -46,8 +49,11 @@ def clock_in(
             detail="User already has an active attendance record"
         )
 
+    # Use current user id if not provided
+    employee_id = payload.employee_id or current_user.id
+
     # Verify the employee_id matches the current user or user has permission
-    if current_user.id != payload.employee_id and current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+    if current_user.id != employee_id and current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Access denied"
@@ -55,8 +61,11 @@ def clock_in(
 
     attendance = create_attendance(
         db=db,
-        employee_id=payload.employee_id,
+        employee_id=employee_id,
         clock_in_time=datetime.now(timezone.utc),
+        lat=lat,
+        lng=lng,
+        ip_address=ip_address,
         notes=payload.notes
     )
     logging.info(f"Attendance clock-in created for employee {payload.employee_id} at {attendance.clock_in_time}")
@@ -66,6 +75,9 @@ def clock_in(
 @router.put("/clock-out", response_model=Attendance)
 def clock_out(
     payload: ClockOutRequest,
+    lat: float = None,
+    lng: float = None,
+    ip_address: str = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
@@ -81,19 +93,20 @@ def clock_out(
                 detail="Attendance record not found"
             )
 
-        if attendance.employee_id != payload.employee_id:
+        # Use current_user.id for employee_id check instead of payload.employee_id
+        if attendance.employee_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
                 detail="Employee ID mismatch"
             )
 
-        if current_user.id != payload.employee_id and current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+        if current_user.id != attendance.employee_id and current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail="Access denied"
             )
 
-        print(f"Clocking out attendance {payload.attendance_id} for employee {payload.employee_id}")
+        print(f"Clocking out attendance {payload.attendance_id} for employee {current_user.id}")
 
         updated_attendance = clock_out_attendance(
             db=db,
@@ -284,6 +297,18 @@ def end_break_endpoint(
     return updated_break
 
 
+@router.get("/history", response_model=List[Attendance])
+def get_attendance_history_endpoint(
+    limit: int = 50,
+    offset: int = 0,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """
+    Get current user's attendance history
+    """
+    return get_attendance_history(db, current_user.id, limit, offset)
+
 @router.get("/my", response_model=List[Attendance])
 def get_my_attendance(
     limit: int = 50,
@@ -293,7 +318,7 @@ def get_my_attendance(
     """
     Get current user's attendance records
     """
-    return list_attendance_by_employee(db, current_user.id, limit)
+    return get_attendance_history(db, current_user.id, limit)
 
 
 @router.get("/{employee_id}", response_model=List[Attendance])

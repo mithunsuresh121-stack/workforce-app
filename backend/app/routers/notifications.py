@@ -1,15 +1,22 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
 from ..db import get_db
 from ..models.notification import Notification, NotificationStatus
-from ..crud_notifications import get_notifications_for_user, mark_notification_as_read
+from ..crud_notifications import get_notifications_for_user, mark_notification_as_read, broadcast_notification
 from ..deps import get_current_user
 from ..schemas.schemas import NotificationOut
+from pydantic import BaseModel
 
-router = APIRouter()
+class BroadcastNotificationRequest(BaseModel):
+    user_ids: List[int]
+    title: str
+    message: str
+    type: str
 
-@router.get("/notifications/", response_model=List[NotificationOut])
+router = APIRouter(prefix="/notifications", tags=["Notifications"])
+
+@router.get("/", response_model=List[NotificationOut])
 def get_notifications(
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
@@ -28,7 +35,7 @@ def get_notifications(
         )
     return notifications
 
-@router.post("/notifications/mark-read/{notification_id}")
+@router.post("/mark-read/{notification_id}")
 def mark_notification_read(
     notification_id: int,
     db: Session = Depends(get_db),
@@ -55,3 +62,25 @@ def mark_notification_read(
     if not notification:
         raise HTTPException(status_code=404, detail="Notification not found")
     return {"message": "Notification marked as read"}
+
+@router.post("/broadcast", status_code=status.HTTP_201_CREATED)
+def broadcast_notification_endpoint(
+    payload: BroadcastNotificationRequest,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Broadcast notification to multiple users (for managers/admins)"""
+    if current_user.role.value not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Insufficient permissions to broadcast notifications"
+        )
+    notifications = broadcast_notification(
+        db=db,
+        user_ids=payload.user_ids,
+        company_id=current_user.company_id,
+        title=payload.title,
+        message=payload.message,
+        type=payload.type
+    )
+    return {"message": f"Broadcasted to {len(notifications)} users"}

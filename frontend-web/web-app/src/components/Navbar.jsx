@@ -1,7 +1,8 @@
 import React from 'react';
-import { BellIcon, UserCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
+import { UserCircleIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 import { useNavigate, useLocation } from 'react-router-dom';
+import Notifications from './Notifications';
 
 const Navbar = ({ onMenuClick }) => {
   const { user, logout } = useAuth();
@@ -75,11 +76,7 @@ const Navbar = ({ onMenuClick }) => {
           </button>
 
           {/* Notifications */}
-          <button className="p-2 text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 rounded-lg transition-colors duration-200 relative">
-            <BellIcon className="w-5 h-5" />
-            {/* Notification dot */}
-            <div className="absolute top-1 right-1 w-2 h-2 bg-danger-500 rounded-full"></div>
-          </button>
+          <Notifications />
 
           {/* User menu */}
           <div className="flex items-center space-x-3 pl-3 border-l border-border">

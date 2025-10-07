@@ -9,7 +9,8 @@ import {
   XCircleIcon,
   ExclamationTriangleIcon,
   FunnelIcon,
-  XMarkIcon
+  XMarkIcon,
+  CheckIcon
 } from '@heroicons/react/24/outline';
 import {
   Box,
@@ -33,12 +34,18 @@ import {
   IconButton,
   Grid,
   Chip,
-  LinearProgress
+  LinearProgress,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  DialogActions
 } from '@mui/material';
-import { api } from '../contexts/AuthContext';
+import { api, useAuth } from '../contexts/AuthContext';
 
 const Leave = () => {
+  const { user, isManager } = useAuth();
   const [leaves, setLeaves] = useState([]);
+  const [pendingLeaves, setPendingLeaves] = useState([]);
   const [leaveBalances, setLeaveBalances] = useState({});
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -46,6 +53,7 @@ const Leave = () => {
   const [statusFilter, setStatusFilter] = useState('');
   const [typeFilter, setTypeFilter] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  const [approveDialog, setApproveDialog] = useState({ open: false, leave: null, action: '' });
 
   useEffect(() => {
     const fetchLeaveData = async () => {
@@ -56,6 +64,12 @@ const Leave = () => {
         // Fetch leave requests
         const leavesResponse = await api.get('/leaves');
         setLeaves(leavesResponse.data);
+
+        // Fetch pending leaves if manager
+        if (isManager()) {
+          const pendingResponse = await api.get('/leaves/pending');
+          setPendingLeaves(pendingResponse.data);
+        }
 
         // Fetch leave balances
         const balancesResponse = await api.get('/leaves/balances');
@@ -112,14 +126,6 @@ const Leave = () => {
     fetchLeaveData();
   }, []);
 
-  const filteredLeaves = useMemo(() => {
-    return leaves.filter(leave => {
-      const matchesStatus = !statusFilter || leave.status === statusFilter;
-      const matchesType = !typeFilter || leave.type === typeFilter;
-      return matchesStatus && matchesType;
-    });
-  }, [leaves, statusFilter, typeFilter]);
-
   const validationSchema = Yup.object({
     type: Yup.string().required('Leave type is required'),
     startDate: Yup.date().required('Start date is required'),
@@ -136,6 +142,11 @@ const Leave = () => {
       setLeaves([response.data, ...leaves]);
       setDialogOpen(false);
       resetForm();
+      // Refresh pending leaves if manager
+      if (isManager()) {
+        const pendingResponse = await api.get('/leaves/pending');
+        setPendingLeaves(pendingResponse.data);
+      }
     } catch (error) {
       console.error('Error submitting leave request:', error);
       setError('Failed to submit leave request. Please try again.');
@@ -151,6 +162,36 @@ const Leave = () => {
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24)) + 1;
     return diffDays;
   };
+
+  const handleApproveReject = async (leaveId, action) => {
+    try {
+      setLoading(true);
+      const endpoint = `/leaves/${leaveId}/status`;
+      const status = action === 'approve' ? 'Approved' : 'Rejected';
+      await api.put(endpoint, { status });
+      // Refresh leaves and pending leaves
+      const leavesResponse = await api.get('/leaves');
+      setLeaves(leavesResponse.data);
+      if (isManager()) {
+        const pendingResponse = await api.get('/leaves/pending');
+        setPendingLeaves(pendingResponse.data);
+      }
+      setApproveDialog({ open: false, leave: null, action: '' });
+    } catch (error) {
+      console.error('Error updating leave status:', error);
+      setError('Failed to update leave status. Please try again.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const filteredLeaves = useMemo(() => {
+    return leaves.filter(leave => {
+      const matchesStatus = !statusFilter || leave.status === statusFilter;
+      const matchesType = !typeFilter || leave.type === typeFilter;
+      return matchesStatus && matchesType;
+    });
+  }, [leaves, statusFilter, typeFilter]);
 
   if (loading) {
     return (
@@ -205,7 +246,7 @@ const Leave = () => {
                       <Typography variant="body2" fontWeight="medium">{balance.total - balance.used} left</Typography>
                     </Box>
                   </Box>
-                  <Box sx={{ spaceY: 1 }}>
+                  <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.875rem' }}>
                       <Typography sx={{ color: 'text.secondary' }}>Used</Typography>
                       <Typography sx={{ fontWeight: 'medium', color: 'text.primary' }}>{balance.used} days</Typography>
@@ -224,10 +265,10 @@ const Leave = () => {
                           transition: 'width 0.3s'
                         }}
                       />
-                    </Box>
                       <Typography variant="caption" sx={{ color: 'text.secondary' }}>
                         {Math.round((balance.used / balance.total) * 100)}% utilized
                       </Typography>
+                    </Box>
                   </Box>
                 </Card>
               </Grid>
@@ -400,7 +441,7 @@ const Leave = () => {
               >
                 {({ values, errors, touched, handleChange, handleSubmit, isSubmitting }) => (
                   <Form onSubmit={handleSubmit}>
-                    <Box sx={{ spaceY: 3 }}>
+                    <Box sx={{ display: 'flex', flexDirection: 'column', gap: 3 }}>
                       <FormControl fullWidth error={touched.type && Boolean(errors.type)}>
                         <InputLabel>Leave Type</InputLabel>
                         <Select
@@ -486,10 +527,122 @@ const Leave = () => {
               </Formik>
             </Box>
           </Modal>
-        </Box>
+
+        {/* Pending Leaves for Manager Approval */}
+        {isManager() && (
+          <Card sx={{ overflow: 'hidden', mt: 6 }}>
+            <Box sx={{ px: 3, py: 2, borderBottom: 1, borderColor: 'divider', bgcolor: 'grey.50' }}>
+              <Typography variant="h6" sx={{ color: 'text.primary' }}>Pending Leave Approvals</Typography>
+              <Typography variant="body2" sx={{ color: 'text.secondary' }}>Approve or reject leave requests</Typography>
+            </Box>
+            <TableContainer component={Paper}>
+              <Table>
+                <TableHead>
+                  <TableRow sx={{ bgcolor: 'grey.50' }}>
+                    <TableCell>Employee</TableCell>
+                    <TableCell>Type</TableCell>
+                    <TableCell>Dates</TableCell>
+                    <TableCell>Days</TableCell>
+                    <TableCell>Reason</TableCell>
+                    <TableCell>Actions</TableCell>
+                  </TableRow>
+                </TableHead>
+                <TableBody>
+                  {pendingLeaves.map((leave) => (
+                    <TableRow key={leave.id} hover>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 'medium', color: 'text.primary' }}>
+                          {leave.employee_name || 'Unknown'}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ color: 'text.primary' }}>{leave.type}</Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
+                          <CalendarDaysIcon sx={{ width: 16, height: 16, color: 'text.secondary' }} />
+                          <Typography sx={{ color: 'text.primary' }}>
+                            {new Date(leave.startDate).toLocaleDateString()} - {new Date(leave.endDate).toLocaleDateString()}
+                          </Typography>
+                        </Box>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ fontWeight: 'medium', color: 'text.primary' }}>
+                          {leave.days || calculateDays(leave.startDate, leave.endDate)}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Typography sx={{ maxWidth: 200, overflow: 'hidden', textOverflow: 'ellipsis', color: 'text.primary' }}>
+                          {leave.reason}
+                        </Typography>
+                      </TableCell>
+                      <TableCell>
+                        <Box sx={{ display: 'flex', gap: 1 }}>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="success"
+                            startIcon={<CheckIcon sx={{ width: 16, height: 16 }} />}
+                            onClick={() => setApproveDialog({ open: true, leave, action: 'approve' })}
+                          >
+                            Approve
+                          </Button>
+                          <Button
+                            size="small"
+                            variant="contained"
+                            color="error"
+                            startIcon={<XCircleIcon sx={{ width: 16, height: 16 }} />}
+                            onClick={() => setApproveDialog({ open: true, leave, action: 'reject' })}
+                          >
+                            Reject
+                          </Button>
+                        </Box>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </TableContainer>
+            {pendingLeaves.length === 0 && (
+              <Box sx={{ textAlign: 'center', py: 12 }}>
+                <Typography variant="body2" sx={{ color: 'text.secondary' }}>
+                  No pending leave requests to approve.
+                </Typography>
+              </Box>
+            )}
+          </Card>
+        )}
+
+        {/* Approval Confirmation Dialog */}
+        <Dialog
+          open={approveDialog.open}
+          onClose={() => setApproveDialog({ open: false, leave: null, action: '' })}
+        >
+          <DialogTitle>
+            Confirm {approveDialog.action === 'approve' ? 'Approval' : 'Rejection'}
+          </DialogTitle>
+          <DialogContent>
+            <Typography>
+              Are you sure you want to {approveDialog.action} the leave request from {approveDialog.leave?.employee_name}?
+            </Typography>
+          </DialogContent>
+          <DialogActions>
+            <Button onClick={() => setApproveDialog({ open: false, leave: null, action: '' })}>
+              Cancel
+            </Button>
+            <Button
+              onClick={() => handleApproveReject(approveDialog.leave?.id, approveDialog.action)}
+              color={approveDialog.action === 'approve' ? 'success' : 'error'}
+              variant="contained"
+            >
+              {approveDialog.action === 'approve' ? 'Approve' : 'Reject'}
+            </Button>
+          </DialogActions>
+        </Dialog>
       </Box>
-    </>
-  );
+    </Box>
+  </>
+);
 };
 
 export default Leave;

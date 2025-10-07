@@ -40,11 +40,11 @@ def upgrade() -> None:
 
     op.add_column('leaves', sa.Column('reason', sa.String(), nullable=True))
     op.add_column('leaves', sa.Column('approved_by', sa.Integer(), nullable=True))
-    op.alter_column('leaves', 'type',
-               existing_type=sa.VARCHAR(),
-               type_=leavetype,
-               existing_nullable=False,
-               postgresql_using='type::leavetype')
+    # Handle leave type conversion - convert varchar to enum
+    op.execute("ALTER TABLE leaves ALTER COLUMN type DROP DEFAULT")
+    op.execute("ALTER TABLE leaves ALTER COLUMN type TYPE VARCHAR")
+    op.execute("ALTER TABLE leaves ALTER COLUMN type TYPE leavetype USING type::leavetype")
+    op.execute("ALTER TABLE leaves ALTER COLUMN type SET DEFAULT 'ANNUAL'")
     op.alter_column('leaves', 'status',
                existing_type=postgresql.ENUM('Pending', 'Approved', 'Rejected', 'Cancelled', name='leavestatus'),
                nullable=False)

@@ -12,6 +12,10 @@ class DocumentBase(BaseModel):
 class DocumentCreate(DocumentBase):
     pass
 
+class DocumentUpdate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+
 class Document(DocumentBase):
     id: int
     uploaded_by: int
@@ -24,7 +28,7 @@ class Document(DocumentBase):
 
 class DocumentOut(BaseModel):
     id: int
-    name: str
+    title: str
     type: str
     size: int
     uploaded_by: str  # Will be populated from user relationship

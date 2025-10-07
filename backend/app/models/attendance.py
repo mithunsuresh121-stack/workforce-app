@@ -1,19 +1,25 @@
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Text, Float, Enum, Index
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..db import Base
+import enum
 
+class AttendanceStatusEnum(str, enum.Enum):
+    CLOCKED_IN = "CLOCKED_IN"
+    CLOCKED_OUT = "CLOCKED_OUT"
 
 class Attendance(Base):
     __tablename__ = "attendance"
 
     id = Column(Integer, primary_key=True, index=True)
-    employee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    employee_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    lat = Column(Float, nullable=True)
+    lng = Column(Float, nullable=True)
+    ip_address = Column(String, nullable=True)
     clock_in_time = Column(DateTime(timezone=True), nullable=False)
     clock_out_time = Column(DateTime(timezone=True), nullable=True)
-    total_hours = Column(Float, nullable=True)
-    overtime_hours = Column(Float, default=0.0)
-    status = Column(String(50), default="active")  # active, completed, approved
+    total_hours = Column(Float, nullable=True)  # computed on clock-out
+    status = Column(Enum(AttendanceStatusEnum), server_default="CLOCKED_OUT", nullable=False)
     notes = Column(Text, nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
@@ -21,6 +27,10 @@ class Attendance(Base):
     # Relationships
     employee = relationship("User", back_populates="attendance_records")
     breaks = relationship("Break", back_populates="attendance")
+
+    __table_args__ = (
+        Index('ix_attendance_employee_clockin', 'employee_id', 'clock_in_time'),
+    )
 
 
 class Break(Base):

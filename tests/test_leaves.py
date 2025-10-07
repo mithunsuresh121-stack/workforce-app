@@ -14,43 +14,43 @@ def test_leave_crud_superadmin(base_url, superadmin_jwt, auth_headers):
     end_at = (datetime.now() + timedelta(days=3))
 
     payload = {
-        "tenant_id": "1",
+        "company_id": 1,
         "employee_id": 3,
-        "type": "Vacation",
+        "type": "ANNUAL",
         "start_at": start_at.isoformat(),
         "end_at": end_at.isoformat(),
-        "status": "Pending"
+        "status": "PENDING"
     }
 
-    r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
     assert r.status_code in [200, 201]
     leave_data = r.json()
     leave_id = leave_data["id"]
 
     # Verify leave was created with correct data
     assert leave_data["employee_id"] == 3
-    assert leave_data["type"] == "Vacation"
-    assert leave_data["status"] == "Pending"
+    assert leave_data["type"] == "ANNUAL"
+    assert leave_data["status"] == "PENDING"
 
     # Read - get the specific leave
-    r = requests.get(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+    r = requests.get(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
     assert r.status_code == 200
     assert r.json()["id"] == leave_id
 
     # Update leave status to Approved
-    r = requests.put(f"{base_url}/leaves/{leave_id}/status", json={"status": "Approved"}, headers=auth_headers(superadmin_jwt))
+    r = requests.put(f"{base_url}/api/leaves/{leave_id}/status", json={"status": "APPROVED"}, headers=auth_headers(superadmin_jwt))
     assert r.status_code == 200
-    assert r.json()["status"] == "Approved"
+    assert r.json()["status"] == "APPROVED"
 
     # Note: Leave details update endpoint is not implemented in the current API
     # Skipping the update details test for now
 
     # Delete leave
-    r = requests.delete(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+    r = requests.delete(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
     assert r.status_code == 200
 
     # Verify leave is deleted
-    r = requests.get(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+    r = requests.get(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
     assert r.status_code == 404
 
 def test_leave_status_transitions(base_url, superadmin_jwt, auth_headers):
@@ -60,64 +60,64 @@ def test_leave_status_transitions(base_url, superadmin_jwt, auth_headers):
     end_at = (datetime.now() + timedelta(days=7))
 
     payload = {
-        "tenant_id": "1",
+        "company_id": 1,
         "employee_id": 3,
-        "type": "Sick Leave",
+        "type": "SICK",
         "start_at": start_at.isoformat(),
         "end_at": end_at.isoformat(),
-        "status": "Pending"
+        "status": "PENDING"
     }
 
-    r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
     assert r.status_code in [200, 201]
     leave_id = r.json()["id"]
 
     # Test status transitions
-    statuses = ["Approved", "Rejected", "Pending"]
+    statuses = ["APPROVED", "REJECTED", "PENDING"]
 
     for status in statuses:
-        r = requests.put(f"{base_url}/leaves/{leave_id}/status", json={"status": status}, headers=auth_headers(superadmin_jwt))
+        r = requests.put(f"{base_url}/api/leaves/{leave_id}/status", json={"status": status}, headers=auth_headers(superadmin_jwt))
         assert r.status_code == 200
         assert r.json()["status"] == status
 
     # Clean up
-    requests.delete(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+    requests.delete(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
 
 def test_leave_validation(base_url, superadmin_jwt, auth_headers):
     """Test leave request validation"""
     # Test invalid date range (end before start)
     payload = {
-        "tenant_id": "1",
+        "company_id": 1,
         "employee_id": 3,
-        "type": "Vacation",
+        "type": "ANNUAL",
         "start_at": "2024-12-31T00:00:00",
         "end_at": "2024-01-01T00:00:00"
     }
 
-    r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
     assert r.status_code == 422  # Validation error
 
     # Test missing required fields
     incomplete_payload = {
-        "tenant_id": "1",
+        "company_id": 1,
         "employee_id": 3,
-        "type": "Vacation"
+        "type": "ANNUAL"
         # Missing start_at and end_at
     }
 
-    r = requests.post(f"{base_url}/leaves/", json=incomplete_payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=incomplete_payload, headers=auth_headers(superadmin_jwt))
     assert r.status_code == 422
 
     # Test invalid leave type
     invalid_payload = {
-        "tenant_id": "1",
+        "company_id": 1,
         "employee_id": 3,
         "type": "InvalidType",
         "start_at": "2024-01-01T00:00:00",
         "end_at": "2024-01-02T00:00:00"
     }
 
-    r = requests.post(f"{base_url}/leaves/", json=invalid_payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=invalid_payload, headers=auth_headers(superadmin_jwt))
     assert r.status_code == 422
 
 def test_leave_role_based_access(base_url, superadmin_jwt, manager_jwt, employee_jwt, auth_headers):
@@ -127,61 +127,61 @@ def test_leave_role_based_access(base_url, superadmin_jwt, manager_jwt, employee
     end_at = (datetime.now() + timedelta(days=12))
 
     payload = {
-        "tenant_id": "1",
-        "employee_id": 3,
-        "type": "Personal Leave",
+        "company_id": 29,
+        "employee_id": 30,  # Use an employee from company 29
+        "type": "PERSONAL",
         "start_at": start_at.isoformat(),
         "end_at": end_at.isoformat(),
-        "status": "Pending"
+        "status": "PENDING"
     }
 
-    r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
     assert r.status_code in [200, 201]
     leave_id = r.json()["id"]
 
     # Manager should be able to read and update leaves in their company
-    r = requests.get(f"{base_url}/leaves/{leave_id}", headers=auth_headers(manager_jwt))
+    r = requests.get(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(manager_jwt))
     assert r.status_code == 200
 
-    r = requests.put(f"{base_url}/leaves/{leave_id}/status", json={"status": "Approved"}, headers=auth_headers(manager_jwt))
+    r = requests.put(f"{base_url}/api/leaves/{leave_id}/status", json={"status": "APPROVED"}, headers=auth_headers(manager_jwt))
     assert r.status_code == 200
 
     # Employee should have limited access (read-only for their own leaves)
-    r = requests.get(f"{base_url}/leaves/{leave_id}", headers=auth_headers(employee_jwt))
+    r = requests.get(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(employee_jwt))
     assert r.status_code in [200, 403]  # May be restricted based on implementation
 
     # Employee should not be able to approve/reject leaves
-    r = requests.put(f"{base_url}/leaves/{leave_id}/status", json={"status": "Rejected"}, headers=auth_headers(employee_jwt))
+    r = requests.put(f"{base_url}/api/leaves/{leave_id}/status", json={"status": "REJECTED"}, headers=auth_headers(employee_jwt))
     assert r.status_code in [403, 401]
 
     # Clean up
-    requests.delete(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+    requests.delete(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
 
 def test_leave_listing_and_filtering(base_url, superadmin_jwt, auth_headers):
     """Test leave listing and filtering capabilities"""
     # Create multiple leave requests
     leaves_created = []
 
-    valid_types = ["Vacation", "Sick Leave", "Personal Leave"]
+    valid_types = ["ANNUAL", "SICK", "PERSONAL"]
     for i in range(3):
         start_at = (datetime.now() + timedelta(days=i+1))
         end_at = (datetime.now() + timedelta(days=i+2))
 
         payload = {
-            "tenant_id": "1",
+            "company_id": 1,
             "employee_id": 3,
             "type": valid_types[i % len(valid_types)],
             "start_at": start_at.isoformat(),
             "end_at": end_at.isoformat(),
-            "status": "Pending"
+            "status": "PENDING"
         }
 
-        r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+        r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
         assert r.status_code in [200, 201]
         leaves_created.append(r.json()["id"])
 
     # Get all leaves
-    r = requests.get(f"{base_url}/leaves/", headers=auth_headers(superadmin_jwt))
+    r = requests.get(f"{base_url}/api/leaves/", headers=auth_headers(superadmin_jwt))
     assert r.status_code == 200
     leaves_list = r.json()
     assert len(leaves_list) >= 3
@@ -193,7 +193,7 @@ def test_leave_listing_and_filtering(base_url, superadmin_jwt, auth_headers):
 
     # Clean up
     for leave_id in leaves_created:
-        requests.delete(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+        requests.delete(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
 
 def test_leave_edge_cases(base_url, superadmin_jwt, auth_headers):
     """Test edge cases for leave operations"""
@@ -202,42 +202,42 @@ def test_leave_edge_cases(base_url, superadmin_jwt, auth_headers):
     end_at = (datetime.now() + timedelta(days=365))  # 1 year leave
 
     payload = {
-        "tenant_id": "1",
+        "company_id": 1,
         "employee_id": 3,
-        "type": "vacation",
+        "type": "ANNUAL",
         "start_at": start_at.isoformat(),
         "end_at": end_at.isoformat(),
-        "status": "pending"
+        "status": "PENDING"
     }
 
-    r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
     # This might be allowed or rejected based on business rules
     assert r.status_code in [200, 201, 422]
 
     if r.status_code in [200, 201]:
         leave_id = r.json()["id"]
         # Clean up if created
-        requests.delete(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+        requests.delete(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
 
     # Test same day leave
     same_day = (datetime.now() + timedelta(days=30))
 
     payload = {
-        "tenant_id": "1",
+        "company_id": 1,
         "employee_id": 3,
-        "type": "vacation",
+        "type": "ANNUAL",
         "start_at": same_day.isoformat(),
         "end_at": same_day.isoformat(),
-        "status": "pending"
+        "status": "PENDING"
     }
 
-    r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
     assert r.status_code in [200, 201, 422]
 
     if r.status_code in [200, 201]:
         leave_id = r.json()["id"]
         # Clean up if created
-        requests.delete(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+        requests.delete(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
 
 def test_leave_concurrent_operations(base_url, superadmin_jwt, auth_headers):
     """Test concurrent leave operations"""
@@ -249,25 +249,25 @@ def test_leave_concurrent_operations(base_url, superadmin_jwt, auth_headers):
         end_at = (datetime.now() + timedelta(days=i+2))
 
         payload = {
-            "tenant_id": "1",
+            "company_id": 1,
             "employee_id": 3,
-            "type": "vacation",
+            "type": "ANNUAL",
             "start_at": start_at.isoformat(),
             "end_at": end_at.isoformat(),
-            "status": "pending"
+            "status": "PENDING"
         }
 
-        r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+        r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
         if r.status_code in [200, 201]:
             leave_ids.append(r.json()["id"])
 
     # Verify all were created
-    r = requests.get(f"{base_url}/leaves/", headers=auth_headers(superadmin_jwt))
+    r = requests.get(f"{base_url}/api/leaves/", headers=auth_headers(superadmin_jwt))
     assert r.status_code == 200
 
     # Clean up
     for leave_id in leave_ids:
-        requests.delete(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+        requests.delete(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
 
 def test_leave_timestamp_tracking(base_url, superadmin_jwt, auth_headers):
     """Test that timestamps are properly tracked"""
@@ -275,18 +275,18 @@ def test_leave_timestamp_tracking(base_url, superadmin_jwt, auth_headers):
     end_at = (datetime.now() + timedelta(days=22))
 
     payload = {
-        "tenant_id": "1",
+        "company_id": 1,
         "employee_id": 3,
-        "type": "vacation",
+        "type": "ANNUAL",
         "start_at": start_at.isoformat(),
         "end_at": end_at.isoformat(),
-        "status": "pending"
+        "status": "PENDING"
     }
 
     # Record time before creation
     before_create = datetime.now()
 
-    r = requests.post(f"{base_url}/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
+    r = requests.post(f"{base_url}/api/leaves/", json=payload, headers=auth_headers(superadmin_jwt))
     assert r.status_code in [200, 201]
     leave_data = r.json()
     leave_id = leave_data["id"]
@@ -306,7 +306,7 @@ def test_leave_timestamp_tracking(base_url, superadmin_jwt, auth_headers):
     time.sleep(1)  # Small delay to ensure timestamp difference
     before_update = datetime.now()
 
-    r = requests.put(f"{base_url}/leaves/{leave_id}/status", json={"status": "approved"}, headers=auth_headers(superadmin_jwt))
+    r = requests.put(f"{base_url}/api/leaves/{leave_id}/status", json={"status": "APPROVED"}, headers=auth_headers(superadmin_jwt))
     assert r.status_code == 200
     updated_leave = r.json()
 
@@ -314,4 +314,4 @@ def test_leave_timestamp_tracking(base_url, superadmin_jwt, auth_headers):
     assert updated_at_after >= before_update
 
     # Clean up
-    requests.delete(f"{base_url}/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))
+    requests.delete(f"{base_url}/api/leaves/{leave_id}", headers=auth_headers(superadmin_jwt))

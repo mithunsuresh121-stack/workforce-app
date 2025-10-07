@@ -7,7 +7,7 @@ class Settings:
     # PostgreSQL settings
     POSTGRES_USER: str = os.getenv("POSTGRES_USER", "workforce")
     POSTGRES_PASSWORD: str = os.getenv("POSTGRES_PASSWORD", "workforce_pw")
-    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "workforce")
+    POSTGRES_DB: str = os.getenv("POSTGRES_DB", "workforce_app_db")
     POSTGRES_HOST: str = os.getenv("POSTGRES_HOST", "localhost")  # Use localhost for local PostgreSQL
     POSTGRES_PORT: int = int(os.getenv("POSTGRES_PORT", 5432))
 

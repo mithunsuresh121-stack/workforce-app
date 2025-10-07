@@ -21,9 +21,9 @@ class TaskStatus(str, Enum):
         return super()._missing_(value)
 
 class LeaveStatus(str, Enum):
-    PENDING = "Pending"
-    APPROVED = "Approved"
-    REJECTED = "Rejected"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
 
 class CompanyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -180,10 +180,11 @@ class LeaveBase(BaseModel):
     start_at: datetime
     end_at: datetime
     status: LeaveStatus = LeaveStatus.PENDING
+    reason: Optional[str] = None
 
     @validator('type')
     def validate_leave_type(cls, v):
-        valid_types = ["Vacation", "Sick Leave", "Personal Leave", "Maternity Leave", "Paternity Leave", "Bereavement Leave"]
+        valid_types = ["ANNUAL", "SICK", "MATERNITY", "PATERNITY", "PERSONAL"]
         if v not in valid_types:
             raise ValueError(f'Invalid leave type. Must be one of: {", ".join(valid_types)}')
         return v
@@ -205,7 +206,8 @@ class LeaveOut(BaseModel):
     start_at: datetime
     end_at: datetime
     status: LeaveStatus
-    approver_id: Optional[int] = None
+    approved_by: Optional[int] = None
+    reason: Optional[str] = None
     created_at: datetime
     updated_at: datetime
 

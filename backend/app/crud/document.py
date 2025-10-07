@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session, joinedload
 from ..models.document import Document
-from ..schemas.document import DocumentCreate, DocumentOut
+from ..schemas.document import DocumentCreate, DocumentUpdate, DocumentOut
 
 def create_document(db: Session, document: DocumentCreate, uploaded_by: int, company_id: int):
     db_document = Document(
@@ -21,7 +21,7 @@ def get_documents_by_company(db: Session, company_id: int, skip: int = 0, limit:
     return [
         DocumentOut(
             id=doc.id,
-            name=doc.title,
+            title=doc.title,
             type=doc.file_type,
             size=doc.file_size,
             uploaded_by=doc.uploader.full_name if doc.uploader else "Unknown",
@@ -31,14 +31,7 @@ def get_documents_by_company(db: Session, company_id: int, skip: int = 0, limit:
         for doc in documents
     ]
 
-def update_document(db: Session, document_id: int, document: DocumentCreate):
-    db_document = db.query(Document).filter(Document.id == document_id).first()
-    if db_document:
-        for key, value in document.dict().items():
-            setattr(db_document, key, value)
-        db.commit()
-        db.refresh(db_document)
-    return db_document
+
 
 def delete_document(db: Session, document_id: int):
     db_document = db.query(Document).filter(Document.id == document_id).first()

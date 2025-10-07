@@ -38,3 +38,11 @@ def create_notification(db: Session, user_id: int, company_id: int, title: str, 
     db.commit()
     db.refresh(notification)
     return notification
+
+def broadcast_notification(db: Session, user_ids: List[int], company_id: int, title: str, message: str, type: str) -> List[Notification]:
+    notifications = []
+    for user_id in user_ids:
+        notification = create_notification(db, user_id, company_id, title, message, type)
+        if notification:
+            notifications.append(notification)
+    return notifications

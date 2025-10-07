@@ -52,6 +52,9 @@ class Attendance(AttendanceBase):
     model_config = ConfigDict(from_attributes=True)
 
     id: int
+    lat: Optional[float] = None
+    lng: Optional[float] = None
+    ip_address: Optional[str] = None
     clock_in_time: datetime
     clock_out_time: Optional[datetime] = None
     total_hours: Optional[float] = None
@@ -71,7 +74,7 @@ class AttendanceSummary(BaseModel):
 
 
 class ClockInRequest(BaseModel):
-    employee_id: int
+    employee_id: Optional[int] = None
     notes: Optional[str] = None
 
 
