@@ -20,6 +20,7 @@ from .schemas import (
     # Task schemas
     TaskCreate,
     TaskOut,
+    AttachmentOut,
 
     # Leave schemas
     LeaveCreate,

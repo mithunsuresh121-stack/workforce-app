@@ -67,10 +67,10 @@ from fastapi import Response
 def get_current_user_profile(response: Response, current_user: UserOut = Depends(get_current_user)):
     """Get current authenticated user profile"""
     # Fix role value if invalid (e.g., 'user' instead of enum)
-    valid_roles = {"SuperAdmin", "CompanyAdmin", "Manager", "Employee"}
+    valid_roles = {"SUPERADMIN", "COMPANYADMIN", "MANAGER", "EMPLOYEE"}
     if current_user.role not in valid_roles:
         # Map invalid role to Employee as fallback
-        current_user.role = "Employee"
+        current_user.role = "EMPLOYEE"
 
     # Include company information if user has a company_id
     if current_user.company_id:

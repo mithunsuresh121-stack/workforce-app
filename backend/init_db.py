@@ -12,19 +12,22 @@ from sqlalchemy.orm import Session
 from app.db import SessionLocal, engine, Base
 from app.models.company import Company
 from app.models.user import User
+from app.models import *  # Import all models to ensure tables are created
 from app.auth import hash_password
 
 def init_database():
     """Initialize the database with sample data"""
     # Create all tables
     Base.metadata.create_all(bind=engine)
-    
+
     db = SessionLocal()
     try:
         # Check if companies already exist
         existing_companies = db.query(Company).count()
         if existing_companies > 0:
             print("Database already initialized with companies.")
+            # Still create tables if missing
+            Base.metadata.create_all(bind=engine)
             return
         
         # Create sample companies

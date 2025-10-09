@@ -37,8 +37,8 @@ def seed_demo_user(db: Session):
         print("Super Admin user already exists.")
     else:
         # Create Super Admin user (no company_id needed)
-        create_user(db, super_admin_email, super_admin_password, 
-                   full_name="Super Administrator", role="SuperAdmin", company_id=None)
+        create_user(db, super_admin_email, super_admin_password,
+                   full_name="Super Administrator", role="SUPERADMIN", company_id=None)
         print("Super Admin user created successfully.")
     
     # Create demo company and user (optional, for backward compatibility)
@@ -66,12 +66,12 @@ def seed_demo_user(db: Session):
     if existing_user:
         print("Demo user already exists.")
         # Fix role if invalid
-        if existing_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager", "Employee"]:
-            existing_user.role = "Employee"
+        if existing_user.role not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER", "EMPLOYEE"]:
+            existing_user.role = "EMPLOYEE"
             db.commit()
-            print("Fixed demo user role to Employee.")
+            print("Fixed demo user role to EMPLOYEE.")
     else:
-        create_user(db, demo_email, demo_password, full_name="Demo User", role="Employee", company_id=company.id)
+        create_user(db, demo_email, demo_password, full_name="Demo User", role="EMPLOYEE", company_id=company.id)
         print("Demo user created successfully.")
 
 if __name__ == "__main__":

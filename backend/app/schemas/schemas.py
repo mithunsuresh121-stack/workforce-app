@@ -5,10 +5,10 @@ from datetime import datetime
 from enum import Enum
 
 class Role(str, Enum):
-    SuperAdmin = "SuperAdmin"
-    CompanyAdmin = "CompanyAdmin"
-    Manager = "Manager"
-    Employee = "Employee"
+    SUPERADMIN = "SUPERADMIN"
+    COMPANYADMIN = "COMPANYADMIN"
+    MANAGER = "MANAGER"
+    EMPLOYEE = "EMPLOYEE"
 
 class TaskStatus(str, Enum):
     PENDING = "Pending"
@@ -63,7 +63,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6)
     full_name: Optional[str] = Field(None, max_length=100)
-    role: Role = Role.Employee
+    role: Role = Role.EMPLOYEE
     company_id: Optional[int] = None  # Added optional company_id for employees
 
 class UserUpdate(BaseModel):
