@@ -80,9 +80,21 @@ def test_auth_endpoints():
         print(f"❌ Auth endpoints failed: {e}")
         return None
 
-def test_protected_endpoints(token: str):
+def test_protected_endpoints():
     """Test protected endpoints that require authentication"""
     print("🔍 Testing protected endpoints...")
+
+    # Obtain token first
+    login_data = {"email": "demo@company.com", "password": "password123"}
+    response = requests.post(f"{BASE_URL}/api/auth/login", json=login_data)
+    if response.status_code != 200:
+        print("❌ Failed to login for protected endpoints test")
+        return False
+    token = response.json().get("access_token")
+    if not token:
+        print("❌ No token received for protected endpoints test")
+        return False
+
     headers = {"Authorization": f"Bearer {token}"}
 
     endpoints_to_test = [
