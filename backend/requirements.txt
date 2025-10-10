@@ -85,6 +85,7 @@ uritemplate==4.2.0
 urllib3==2.5.0
 uvicorn==0.30.6
 uvloop==0.21.0
+pandas==2.2.3
 vine==5.1.0
 watchfiles==1.1.0
 wcwidth==0.2.13

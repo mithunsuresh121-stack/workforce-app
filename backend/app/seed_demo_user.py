@@ -74,6 +74,21 @@ def seed_demo_user(db: Session):
         create_user(db, demo_email, demo_password, full_name="Demo User", role="EMPLOYEE", company_id=company.id)
         print("Demo user created successfully.")
 
+    # Create manager user
+    manager_email = "manager@company.com"
+    manager_password = "password123"
+    existing_manager = db.query(User).filter_by(email=manager_email, company_id=company.id).first()
+    if existing_manager:
+        print("Demo manager already exists.")
+        # Fix role if invalid
+        if existing_manager.role not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER", "EMPLOYEE"]:
+            existing_manager.role = "MANAGER"
+            db.commit()
+            print("Fixed demo manager role to MANAGER.")
+    else:
+        create_user(db, manager_email, manager_password, full_name="Demo Manager", role="MANAGER", company_id=company.id)
+        print("Demo manager created successfully.")
+
 if __name__ == "__main__":
     db = next(get_db())
     seed_demo_user(db)

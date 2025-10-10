@@ -20,6 +20,7 @@ class User(Base):
     company = relationship("Company", back_populates="users")
     employee_profile = relationship("EmployeeProfile", back_populates="user", uselist=False, foreign_keys="[EmployeeProfile.user_id]")
     attendance_records = relationship("Attendance", back_populates="employee")
+    shifts = relationship("Shift", back_populates="employee")
     
     def __repr__(self):
         return f"<User {self.email}>"

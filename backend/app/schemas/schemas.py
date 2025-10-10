@@ -228,7 +228,7 @@ class LeaveOut(BaseModel):
 
 # New Schemas for Shifts
 class ShiftBase(BaseModel):
-    tenant_id: str
+    company_id: int
     employee_id: int
     start_at: datetime
     end_at: datetime
@@ -239,9 +239,10 @@ class ShiftCreate(ShiftBase):
 
 class ShiftOut(ShiftBase):
     id: int
+    status: str
     created_at: datetime
     updated_at: datetime
-    
+
     class Config:
         from_attributes = True
 

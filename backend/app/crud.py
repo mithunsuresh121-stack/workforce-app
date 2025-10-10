@@ -325,13 +325,13 @@ def list_leaves_by_tenant(db: Session, tenant_id: str):
     return db.query(Leave).filter(Leave.tenant_id == tenant_id).all()
 
 # Shift CRUD functions
-def create_shift(db: Session, tenant_id: str, employee_id: int, start_at, end_at, type: str = None):
+def create_shift(db: Session, company_id: int, employee_id: int, start_at, end_at, location: str = None):
     shift = Shift(
-        tenant_id=tenant_id,
+        company_id=company_id,
         employee_id=employee_id,
         start_at=start_at,
         end_at=end_at,
-        type=type
+        location=location
     )
     db.add(shift)
     db.commit()
@@ -363,8 +363,8 @@ def delete_shift(db: Session, shift_id: int):
     db.commit()
     return True
 
-def list_shifts_by_tenant(db: Session, tenant_id: str):
-    return db.query(Shift).filter(Shift.tenant_id == tenant_id).all()
+def list_shifts_by_company(db: Session, company_id: int):
+    return db.query(Shift).filter(Shift.company_id == company_id).all()
 from .models.payroll import Employee as PayrollEmployee, Salary, Allowance, Deduction, Bonus, PayrollRun, PayrollEntry
 from .models.attendance import Attendance, Break
 
@@ -658,8 +658,9 @@ def delete_payroll_entry(db: Session, payroll_entry_id: int):
     return True
 
 # Attendance CRUD functions
-def create_attendance(db: Session, employee_id: int, clock_in_time, notes: str = None):
+def create_attendance(db: Session, company_id: int, employee_id: int, clock_in_time, notes: str = None):
     attendance = Attendance(
+        company_id=company_id,
         employee_id=employee_id,
         clock_in_time=clock_in_time,
         notes=notes

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Doughnut } from 'react-chartjs-2';
 import { Chart as ChartJS, CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement } from 'chart.js';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsTooltip, Legend as RechartsLegend, ResponsiveContainer, PieChart, Pie, Cell, BarChart, Bar, AreaChart, Area } from 'recharts';
 import { useAuth, api } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import DashboardCharts from '../components/DashboardCharts';
@@ -22,20 +23,53 @@ const Dashboard = () => {
   const [recentActivities, setRecentActivities] = useState([]);
   const [error, setError] = useState(null);
 
+  // New dashboard data for managers
+  const [attendanceData, setAttendanceData] = useState([]);
+  const [leaveData, setLeaveData] = useState([]);
+  const [overtimeData, setOvertimeData] = useState([]);
+  const [payrollData, setPayrollData] = useState({});
+  const [period, setPeriod] = useState('weekly');
+
   useEffect(() => {
     const fetchDashboardData = async () => {
       try {
-        const [kpisRes, taskStatusRes, employeeDistRes, activitiesRes] = await Promise.all([
-          api.get('/dashboard/kpis'),
-          api.get('/dashboard/charts/task-status'),
-          api.get('/dashboard/charts/employee-distribution'),
-          api.get('/dashboard/recent-activities'),
-        ]);
+        const userRole = user?.role || 'Employee';
 
-        setKpis(kpisRes.data);
-        setTaskStatusData(taskStatusRes.data);
-        setEmployeeDistributionData(employeeDistRes.data);
-        setRecentActivities(activitiesRes.data);
+        if (userRole === 'Employee') {
+          // Employee dashboard
+          const [kpisRes, taskStatusRes, employeeDistRes, activitiesRes] = await Promise.all([
+            api.get('/dashboard/kpis'),
+            api.get('/dashboard/charts/task-status'),
+            api.get('/dashboard/charts/employee-distribution'),
+            api.get('/dashboard/recent-activities'),
+          ]);
+
+          setKpis(kpisRes.data);
+          setTaskStatusData(taskStatusRes.data);
+          setEmployeeDistributionData(employeeDistRes.data);
+          setRecentActivities(activitiesRes.data);
+        } else {
+          // Manager/Admin dashboard
+          const [kpisRes, taskStatusRes, employeeDistRes, activitiesRes, attendanceRes, leaveRes, overtimeRes, payrollRes] = await Promise.all([
+            api.get('/dashboard/kpis'),
+            api.get('/dashboard/charts/task-status'),
+            api.get('/dashboard/charts/employee-distribution'),
+            api.get('/dashboard/recent-activities'),
+            api.get(`/dashboard/attendance?period=${period}`),
+            api.get(`/dashboard/leaves?period=${period}`),
+            api.get(`/dashboard/overtime?period=${period}`),
+            api.get(`/dashboard/payroll?period=${period}`),
+          ]);
+
+          setKpis(kpisRes.data);
+          setTaskStatusData(taskStatusRes.data);
+          setEmployeeDistributionData(employeeDistRes.data);
+          setRecentActivities(activitiesRes.data);
+          setAttendanceData(attendanceRes.data);
+          setLeaveData(leaveRes.data);
+          setOvertimeData(overtimeRes.data);
+          setPayrollData(payrollRes.data);
+        }
       } catch (err) {
         console.error('Error fetching dashboard data:', err);
         setError('Failed to load dashboard data');
@@ -45,7 +79,7 @@ const Dashboard = () => {
     };
 
     fetchDashboardData();
-  }, []);
+  }, [user, period]);
 
   // Handle card click navigation
   const handleCardClick = (cardType) => {
@@ -60,7 +94,7 @@ const Dashboard = () => {
         navigate('/tasks?filter=completed');
         break;
       case 'pending_approvals':
-        navigate('/approvals');
+        navigate('/manager-approvals');
         break;
       case 'active_teams':
         navigate('/directory'); // Fallback to directory if teams route doesn't exist
@@ -97,6 +131,25 @@ const Dashboard = () => {
       default:
         navigate('/dashboard'); // Fallback for unknown activity types
         break;
+    }
+  };
+
+  // Handle CSV export
+  const handleExport = async (dataType) => {
+    try {
+      const response = await api.get(`/dashboard/export/${dataType}?period=${period}`, {
+        responseType: 'blob',
+      });
+      const url = window.URL.createObjectURL(new Blob([response.data]));
+      const link = document.createElement('a');
+      link.href = url;
+      link.setAttribute('download', `${dataType}_export_${period}.csv`);
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+    } catch (err) {
+      console.error('Error exporting data:', err);
+      alert('Failed to export data');
     }
   };
 
@@ -290,7 +343,133 @@ const Dashboard = () => {
         </div>
       </div>
 
-      {/* Charts */}
+      {/* Period Filter */}
+      <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h3 className="text-lg font-semibold text-neutral-900">Dashboard Period</h3>
+            <p className="text-sm text-neutral-600">Select the time period for analytics</p>
+          </div>
+          <select
+            value={period}
+            onChange={(e) => setPeriod(e.target.value)}
+            className="px-4 py-2 border border-border rounded-linear bg-surface text-neutral-900"
+          >
+            <option value="weekly">Weekly</option>
+            <option value="monthly">Monthly</option>
+          </select>
+        </div>
+      </div>
+
+      {/* New Charts */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Attendance Trend */}
+        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-neutral-900">Attendance Trend</h3>
+            <button
+              onClick={() => handleExport('attendance')}
+              className="px-4 py-2 bg-accent-500 text-white rounded-linear hover:bg-accent-600 transition-colors"
+            >
+              Export CSV
+            </button>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={attendanceData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey={period === 'weekly' ? 'week' : 'month'} />
+                <YAxis />
+                <RechartsTooltip />
+                <RechartsLegend />
+                <Line type="monotone" dataKey="present" stroke="#36A2EB" name="Present" />
+                <Line type="monotone" dataKey="absent" stroke="#FF6384" name="Absent" />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Leave Utilization */}
+        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-neutral-900">Leave Utilization %</h3>
+            <button
+              onClick={() => handleExport('leaves')}
+              className="px-4 py-2 bg-accent-500 text-white rounded-linear hover:bg-accent-600 transition-colors"
+            >
+              Export CSV
+            </button>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <PieChart>
+                <Pie
+                  data={leaveData}
+                  cx="50%"
+                  cy="50%"
+                  labelLine={false}
+                  label={({ utilization_pct }) => `${utilization_pct}%`}
+                  outerRadius={80}
+                  fill="#8884d8"
+                  dataKey="utilization_pct"
+                >
+                  {leaveData.map((entry, index) => (
+                    <Cell key={`cell-${index}`} fill={['#36A2EB', '#FFCE56'][index % 2]} />
+                  ))}
+                </Pie>
+                <RechartsTooltip />
+              </PieChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Overtime Hours */}
+        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-neutral-900">Overtime Hours</h3>
+            <button
+              onClick={() => handleExport('overtime')}
+              className="px-4 py-2 bg-accent-500 text-white rounded-linear hover:bg-accent-600 transition-colors"
+            >
+              Export CSV
+            </button>
+          </div>
+          <div className="h-64">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={overtimeData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="department" />
+                <YAxis />
+                <RechartsTooltip />
+                <RechartsLegend />
+                <Bar dataKey="total_overtime" fill="#FF9F40" name="Overtime Hours" />
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
+        </div>
+
+        {/* Payroll Cost */}
+        <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
+          <div className="flex items-center justify-between mb-6">
+            <h3 className="text-lg font-semibold text-neutral-900">Payroll Cost Estimate</h3>
+            <button
+              onClick={() => handleExport('payroll')}
+              className="px-4 py-2 bg-accent-500 text-white rounded-linear hover:bg-accent-600 transition-colors"
+            >
+              Export CSV
+            </button>
+          </div>
+          <div className="h-64 flex items-center justify-center">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-primary-600">${payrollData.total_estimated_payroll || 0}</p>
+              <p className="text-sm text-neutral-600">Estimated {payrollData.period} payroll</p>
+              <p className="text-sm text-neutral-600">Based on {payrollData.employees_count || 0} employees</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Old Charts - Keep for now */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <div className="bg-surface rounded-linear border border-border shadow-linear p-6">
           <div className="mb-6">
