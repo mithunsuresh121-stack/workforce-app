@@ -8,6 +8,7 @@ class Attendance(Base):
     __tablename__ = "attendance"
 
     id = Column(Integer, primary_key=True, index=True)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     employee_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     clock_in_time = Column(DateTime(timezone=True), nullable=False)
     clock_out_time = Column(DateTime(timezone=True), nullable=True)
@@ -19,6 +20,7 @@ class Attendance(Base):
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
 
     # Relationships
+    company = relationship("Company", back_populates="attendances")
     employee = relationship("User", back_populates="attendance_records")
     breaks = relationship("Break", back_populates="attendance")
 

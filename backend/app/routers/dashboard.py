@@ -1,11 +1,20 @@
 from fastapi import APIRouter, Depends, HTTPException
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
-from datetime import datetime, date
+from sqlalchemy import func, extract, and_, or_, distinct
+from datetime import datetime, date, timedelta
 from ..deps import get_db, get_current_user
-from ..crud import list_users_by_company, list_tasks, list_leaves_by_tenant, list_shifts_by_tenant
+from ..crud import list_users_by_company, list_tasks, list_leaves_by_tenant, list_shifts_by_company
 from ..models.user import User
+from ..models.company import Company
+from ..models.attendance import Attendance
+from ..models.leave import Leave
+from ..models.payroll import Employee
+from ..models.employee_profile import EmployeeProfile
 from ..models.task import TaskStatus
 from ..schemas.schemas import LeaveStatus
+import pandas as pd
+import io
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -104,7 +113,7 @@ def get_dashboard_kpis(
 
             # Get shifts for today
             today = date.today()
-            shifts = list_shifts_by_tenant(db, str(company_id))
+            shifts = list_shifts_by_company(db, company_id)
             shifts_today = 0
             for shift in shifts:
                 start = getattr(shift, "start_at", None)
@@ -557,3 +566,305 @@ def get_productivity_chart(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error fetching productivity data: {str(e)}")
+
+
+def _require_manager_role(current_user: User):
+    """
+    Ensure the current user has Manager, CompanyAdmin, or SuperAdmin role.
+    """
+    if current_user.role not in ["Manager", "CompanyAdmin", "SuperAdmin", "SUPERADMIN", "MANAGER", "COMPANYADMIN"]:
+        raise HTTPException(status_code=403, detail="Access denied. Manager/Admin role required.")
+
+
+@router.get("/attendance")
+def get_attendance_trend(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str = "weekly"  # "daily" or "weekly"
+):
+    """
+    Get attendance trend data: daily/weekly employee attendance counts (Present vs Absent)
+    """
+    try:
+        _require_manager_role(current_user)
+        company_id = _require_company_id(current_user)
+
+        # Get total employees in company
+        total_employees = db.query(func.count(User.id)).filter(User.company_id == company_id).scalar()
+
+        today = date.today()
+        start_date = today - timedelta(days=30 if period == "daily" else 90)
+
+        if period == "daily":
+            trend_data = db.query(
+                func.date(Attendance.clock_in_time).label('date'),
+                func.count(distinct(Attendance.employee_id)).label('present')
+            ).filter(
+                Attendance.company_id == company_id,
+                Attendance.clock_in_time >= start_date,
+                Attendance.status == "active"
+            ).group_by(func.date(Attendance.clock_in_time)).all()
+
+            # Fill missing dates with 0 present
+            data_dict = {row.date: row.present for row in trend_data}
+            result = []
+            current_date = start_date
+            while current_date <= today:
+                present = data_dict.get(current_date, 0)
+                absent = total_employees - present
+                result.append({
+                    "date": current_date.isoformat(),
+                    "present": present,
+                    "absent": absent
+                })
+                current_date += timedelta(days=1)
+            return result
+
+        else:  # weekly
+            trend_data = db.query(
+                extract('year', Attendance.clock_in_time).label('year'),
+                extract('week', Attendance.clock_in_time).label('week'),
+                func.count(distinct(Attendance.employee_id)).label('present')
+            ).filter(
+                Attendance.company_id == company_id,
+                Attendance.clock_in_time >= start_date,
+                Attendance.status == "active"
+            ).group_by(extract('year', Attendance.clock_in_time), extract('week', Attendance.clock_in_time)).all()
+
+            # Process weeks
+            data_dict = {f"{int(row.year)}-{int(row.week):02d}": row.present for row in trend_data}
+            result = []
+            current_date = start_date
+            week_start = current_date - timedelta(days=current_date.weekday())  # Monday
+            while week_start <= today:
+                week_key = week_start.strftime('%Y-%W')
+                present = data_dict.get(week_key, 0)
+                absent = total_employees - present
+                result.append({
+                    "week": week_key,
+                    "present": present,
+                    "absent": absent
+                })
+                current_date += timedelta(weeks=1)
+                week_start = current_date - timedelta(days=current_date.weekday())
+            return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching attendance data: {str(e)}")
+
+
+@router.get("/leaves")
+def get_leave_utilization(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str = "monthly"  # "weekly" or "monthly"
+):
+    """
+    Get leave utilization: % of employees on leave per week/month
+    """
+    try:
+        _require_manager_role(current_user)
+        company_id = _require_company_id(current_user)
+
+        total_employees = db.query(func.count(User.id)).filter(User.company_id == company_id).scalar()
+
+        today = date.today()
+        start_date = today - timedelta(days=30 if period == "weekly" else 90)
+
+        if period == "weekly":
+            leave_data = db.query(
+                extract('year', Leave.start_at).label('year'),
+                extract('week', Leave.start_at).label('week'),
+                func.count(Leave.id).label('on_leave')
+            ).filter(
+                Leave.employee_id.in_(db.query(User.id).filter(User.company_id == company_id)),
+                Leave.status == "Approved",
+                Leave.start_at >= start_date,
+                Leave.end_at >= start_date  # Overlapping leaves
+            ).group_by(extract('year', Leave.start_at), extract('week', Leave.start_at)).all()
+
+            data_dict = {f"{int(row.year)}-{int(row.week):02d}": row.on_leave for row in leave_data}
+            result = []
+            current_date = start_date
+            week_start = current_date - timedelta(days=current_date.weekday())
+            while week_start <= today:
+                week_key = week_start.strftime('%Y-%W')
+                on_leave = data_dict.get(week_key, 0)
+                utilization_pct = (on_leave / total_employees * 100) if total_employees > 0 else 0
+                result.append({
+                    "week": week_key,
+                    "on_leave": on_leave,
+                    "utilization_pct": round(utilization_pct, 2)
+                })
+                current_date += timedelta(weeks=1)
+                week_start = current_date - timedelta(days=current_date.weekday())
+            return result
+
+        else:  # monthly
+            leave_data = db.query(
+                extract('year', Leave.start_at).label('year'),
+                extract('month', Leave.start_at).label('month'),
+                func.count(Leave.id).label('on_leave')
+            ).filter(
+                Leave.employee_id.in_(db.query(User.id).filter(User.company_id == company_id)),
+                Leave.status == "Approved",
+                Leave.start_at >= start_date,
+                Leave.end_at >= start_date
+            ).group_by(extract('year', Leave.start_at), extract('month', Leave.start_at)).all()
+
+            data_dict = {f"{int(row.year)}-{int(row.month):02d}": row.on_leave for row in leave_data}
+            result = []
+            current_date = start_date.replace(day=1)
+            while current_date <= today:
+                month_key = current_date.strftime('%Y-%m')
+                on_leave = data_dict.get(month_key, 0)
+                utilization_pct = (on_leave / total_employees * 100) if total_employees > 0 else 0
+                result.append({
+                    "month": month_key,
+                    "on_leave": on_leave,
+                    "utilization_pct": round(utilization_pct, 2)
+                })
+                if current_date.month == 12:
+                    current_date = current_date.replace(year=current_date.year + 1, month=1)
+                else:
+                    current_date = current_date.replace(month=current_date.month + 1)
+            return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching leave data: {str(e)}")
+
+
+@router.get("/overtime")
+def get_overtime_data(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str = "monthly"  # "weekly" or "monthly"
+):
+    """
+    Get overtime hours: total per department or user
+    """
+    try:
+        _require_manager_role(current_user)
+        company_id = _require_company_id(current_user)
+
+        today = date.today()
+        start_date = today - timedelta(days=30 if period == "weekly" else 90)
+
+        # Join Attendance with EmployeeProfile for department
+        overtime_query = db.query(
+            EmployeeProfile.department.label('department'),
+            func.sum(Attendance.overtime_hours).label('total_overtime')
+        ).outerjoin(
+            Attendance, Attendance.employee_id == EmployeeProfile.user_id
+        ).filter(
+            EmployeeProfile.company_id == company_id,
+            Attendance.clock_in_time >= start_date,
+            Attendance.overtime_hours > 0
+        ).group_by(EmployeeProfile.department).all()
+
+        result = [{"department": row.department or "Unknown", "total_overtime": row.total_overtime or 0} for row in overtime_query]
+        return result
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching overtime data: {str(e)}")
+
+
+@router.get("/payroll")
+def get_payroll_estimates(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str = "monthly"
+):
+    """
+    Get payroll estimates: aggregate salary × attendance for monthly cost
+    """
+    try:
+        _require_manager_role(current_user)
+        company_id = _require_company_id(current_user)
+
+        # Assume 22 working days per month
+        working_days = 22
+
+        # Get employees with base_salary
+        employees_query = db.query(
+            Employee.id,
+            Employee.base_salary
+        ).filter(
+            Employee.tenant_id == str(company_id)
+        ).all()
+
+        total_estimated_payroll = 0
+        for emp in employees_query:
+            # Get attendance days for the period
+            att_days = db.query(func.count(distinct(func.date(Attendance.clock_in_time)))).filter(
+                Attendance.employee_id == emp.id,
+                extract('month', Attendance.clock_in_time) == date.today().month,
+                extract('year', Attendance.clock_in_time) == date.today().year
+            ).scalar() or 0
+
+            attendance_factor = att_days / working_days if working_days > 0 else 0
+            estimated_salary = emp.base_salary * attendance_factor
+            total_estimated_payroll += estimated_salary
+
+        return {
+            "period": period,
+            "working_days": working_days,
+            "total_estimated_payroll": round(total_estimated_payroll, 2),
+            "employees_count": len(employees_query)
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching payroll data: {str(e)}")
+
+
+@router.get("/export/{data_type}")
+def export_dashboard_data(
+    data_type: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str = "weekly"
+):
+    """
+    Export dashboard data as CSV: attendance, leaves, overtime, payroll
+    """
+    try:
+        _require_manager_role(current_user)
+        company_id = _require_company_id(current_user)
+
+        if data_type == "attendance":
+            trend_data = get_attendance_trend(db, current_user, period)
+            df = pd.DataFrame(trend_data)
+        elif data_type == "leaves":
+            trend_data = get_leave_utilization(db, current_user, period)
+            df = pd.DataFrame(trend_data)
+        elif data_type == "overtime":
+            trend_data = get_overtime_data(db, current_user, period)
+            df = pd.DataFrame(trend_data)
+        elif data_type == "payroll":
+            payroll_data = get_payroll_estimates(db, current_user, period)
+            df = pd.DataFrame([payroll_data])  # Single row for summary
+        else:
+            raise HTTPException(status_code=400, detail="Invalid data type")
+
+        output = io.StringIO()
+        df.to_csv(output, index=False)
+        output.seek(0)
+
+        return StreamingResponse(
+            iter([output.getvalue()]),
+            media_type="text/csv",
+            headers={"Content-Disposition": f"attachment; filename={data_type}_export_{period}.csv"}
+        )
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error exporting data: {str(e)}")

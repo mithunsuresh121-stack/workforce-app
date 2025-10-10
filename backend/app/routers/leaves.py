@@ -11,7 +11,9 @@ from ..crud import (
     update_leave_status,
     delete_leave
 )
+from ..crud_notifications import create_notification
 from ..models.user import User
+from ..models.notification import NotificationType
 
 router = APIRouter(prefix="/leaves", tags=["Leaves"])
 
@@ -177,6 +179,21 @@ def update_leave_status_endpoint(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Leave request not found"
         )
+
+    # Create notification for the employee
+    new_status = status_update.status.value
+    try:
+        create_notification(
+            db=db,
+            user_id=leave.employee_id,
+            company_id=int(leave.tenant_id),
+            title="Leave Approved" if new_status == "APPROVED" else "Leave Rejected",
+            message=f"Your leave request ({leave.type}) was {new_status.lower()} by {current_user.full_name}.",
+            type=NotificationType.LEAVE_APPROVED if new_status == "APPROVED" else NotificationType.LEAVE_REJECTED
+        )
+    except Exception as e:
+        print(f"Warning: Failed to create leave notification: {e}")
+
     return updated_leave
 
 @router.delete("/{leave_id}")

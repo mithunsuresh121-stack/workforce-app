@@ -8,7 +8,10 @@ import {
   CalendarIcon,
   XMarkIcon,
   BuildingOfficeIcon,
-  ChartBarIcon
+  ChartBarIcon,
+  ClockIcon,
+  BellIcon,
+  CheckCircleIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -22,12 +25,15 @@ const Sidebar = ({ onClose }) => {
     { path: '/profile', label: 'Profile', icon: UserIcon },
     { path: '/directory', label: 'Directory', icon: UsersIcon },
     { path: '/tasks', label: 'Tasks', icon: ClipboardIcon },
+    { path: '/shifts', label: 'Shifts', icon: ClockIcon },
+    { path: '/notifications', label: 'Notifications', icon: BellIcon },
     { path: '/leave', label: 'Leave', icon: CalendarIcon },
+    { path: '/manager-approvals', label: 'Manager Approvals', icon: CheckCircleIcon },
   ];
 
-  // Only show Directory for non-Employee roles
+  // Only show Directory and Manager Approvals for non-Employee roles
   const menuItems = allMenuItems.filter(item => {
-    if (item.path === '/directory') {
+    if (item.path === '/directory' || item.path === '/manager-approvals') {
       return user?.role !== 'Employee';
     }
     return true;

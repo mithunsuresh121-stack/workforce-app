@@ -7,13 +7,13 @@ def cleanup_active_attendance(base_url, employee_id, employee_jwt, auth_headers)
     """
     Cleans up any active attendance records for the given employee.
     """
-    r = requests.get(f"{base_url}/attendance/active/{employee_id}", headers=auth_headers(employee_jwt))
+    r = requests.get(f"{base_url}/api/attendance/active/{employee_id}", headers=auth_headers(employee_jwt))
     if r.status_code == 200:
         records = r.json()
         for record in records:
             print(f"Cleaning up active record: {record}")
             r_out = requests.put(
-                f"{base_url}/attendance/clock-out",
+                f"{base_url}/api/attendance/clock-out",
                 json={"employee_id": employee_id, "attendance_id": record["id"]},
                 headers=auth_headers(employee_jwt)
             )
@@ -27,14 +27,14 @@ def cleanup_active_breaks(base_url, employee_id, employee_jwt, auth_headers):
     """
     Optional: Cleans up active breaks if the system allows multiple breaks.
     """
-    r = requests.get(f"{base_url}/attendance/active/{employee_id}", headers=auth_headers(employee_jwt))
+    r = requests.get(f"{base_url}/api/attendance/active/{employee_id}", headers=auth_headers(employee_jwt))
     if r.status_code == 200:
         records = r.json()
         for record in records:
             for br in record.get("breaks", []):
                 if not br.get("end_time"):
                     r_out = requests.put(
-                        f"{base_url}/attendance/break-end",
+                        f"{base_url}/api/attendance/break-end",
                         json={"employee_id": employee_id, "attendance_id": record["id"], "break_id": br["id"]},
                         headers=auth_headers(employee_jwt)
                     )
@@ -48,7 +48,7 @@ def pre_post_cleanup(base_url, employee_jwt, auth_headers):
     Runs before and after each test to ensure no leftover attendance or breaks.
     """
     # Get employee ID from JWT (assuming it's 30 for test@company.com)
-    employee_id = 30
+    employee_id = 305  # Employee ID for emp1@techcorp.com
     cleanup_active_attendance(base_url, employee_id, employee_jwt, auth_headers)
     cleanup_active_breaks(base_url, employee_id, employee_jwt, auth_headers)
     yield
@@ -58,11 +58,11 @@ def pre_post_cleanup(base_url, employee_jwt, auth_headers):
 def test_clock_in_and_out(base_url, employee_jwt, auth_headers):
     print("\n=== Testing clock-in and clock-out ===")
 
-    employee_id = 30  # Employee ID for test@company.com
+    employee_id = 305  # Employee ID for emp1@techcorp.com
 
     # Clock-in
     r = requests.post(
-        f"{base_url}/attendance/clock-in",
+        f"{base_url}/api/attendance/clock-in",
         json={"employee_id": employee_id, "notes": "Starting shift"},
         headers=auth_headers(employee_jwt),
     )
@@ -72,7 +72,7 @@ def test_clock_in_and_out(base_url, employee_jwt, auth_headers):
 
     # Clock-out
     r_out = requests.put(
-        f"{base_url}/attendance/clock-out",
+        f"{base_url}/api/attendance/clock-out",
         json={"employee_id": employee_id, "attendance_id": attendance_id},
         headers=auth_headers(employee_jwt),
     )
@@ -82,11 +82,11 @@ def test_clock_in_and_out(base_url, employee_jwt, auth_headers):
 def test_break_start_and_end(base_url, employee_jwt, auth_headers):
     print("\n=== Testing break start and end ===")
 
-    employee_id = 30  # Employee ID for test@company.com
+    employee_id = 305  # Employee ID for emp1@techcorp.com
 
     # Ensure fresh attendance
     r = requests.post(
-        f"{base_url}/attendance/clock-in",
+        f"{base_url}/api/attendance/clock-in",
         json={"employee_id": employee_id, "notes": "Shift for break test"},
         headers=auth_headers(employee_jwt),
     )
@@ -95,7 +95,7 @@ def test_break_start_and_end(base_url, employee_jwt, auth_headers):
 
     # Start break
     r_break_start = requests.post(
-        f"{base_url}/attendance/break-start",
+        f"{base_url}/api/attendance/break-start",
         json={"employee_id": employee_id, "attendance_id": attendance_id, "notes": "Starting break"},
         headers=auth_headers(employee_jwt),
     )
@@ -107,7 +107,7 @@ def test_break_start_and_end(base_url, employee_jwt, auth_headers):
 
     # End break
     r_break_end = requests.post(
-        f"{base_url}/attendance/break-end",
+        f"{base_url}/api/attendance/break-end",
         json={"employee_id": employee_id, "attendance_id": attendance_id, "break_id": break_id},
         headers=auth_headers(employee_jwt),
     )
@@ -116,7 +116,7 @@ def test_break_start_and_end(base_url, employee_jwt, auth_headers):
 
     # Clock-out after break
     r_out = requests.put(
-        f"{base_url}/attendance/clock-out",
+        f"{base_url}/api/attendance/clock-out",
         json={"employee_id": employee_id, "attendance_id": attendance_id},
         headers=auth_headers(employee_jwt),
     )
@@ -126,18 +126,18 @@ def test_break_start_and_end(base_url, employee_jwt, auth_headers):
 def test_active_attendance_retrieval(base_url, employee_jwt, auth_headers):
     print("\n=== Testing active attendance retrieval ===")
 
-    employee_id = 30  # Employee ID for test@company.com
+    employee_id = 305  # Employee ID for emp1@techcorp.com
 
     # Clock-in
     r = requests.post(
-        f"{base_url}/attendance/clock-in",
+        f"{base_url}/api/attendance/clock-in",
         json={"employee_id": employee_id, "notes": "Active attendance test"},
         headers=auth_headers(employee_jwt),
     )
     assert r.status_code == 201, f"Clock-in failed: {r.status_code} - {r.text}"
 
     # Retrieve active attendance
-    r_active = requests.get(f"{base_url}/attendance/active/{employee_id}", headers=auth_headers(employee_jwt))
+    r_active = requests.get(f"{base_url}/api/attendance/active/{employee_id}", headers=auth_headers(employee_jwt))
     assert r_active.status_code == 200, f"Active attendance retrieval failed: {r_active.status_code} - {r_active.text}"
     records = r_active.json()
     assert len(records) > 0, "No active attendance found"
@@ -146,11 +146,11 @@ def test_active_attendance_retrieval(base_url, employee_jwt, auth_headers):
 def test_breaks_retrieval_for_attendance(base_url, employee_jwt, auth_headers):
     print("\n=== Testing retrieval of breaks for attendance ===")
 
-    employee_id = 30  # Employee ID for test@company.com
+    employee_id = 305  # Employee ID for emp1@techcorp.com
 
     # Clock-in
     r = requests.post(
-        f"{base_url}/attendance/clock-in",
+        f"{base_url}/api/attendance/clock-in",
         json={"employee_id": employee_id, "notes": "Break retrieval test"},
         headers=auth_headers(employee_jwt),
     )
@@ -159,14 +159,14 @@ def test_breaks_retrieval_for_attendance(base_url, employee_jwt, auth_headers):
 
     # Start break
     r_break = requests.post(
-        f"{base_url}/attendance/break-start",
+        f"{base_url}/api/attendance/break-start",
         json={"employee_id": employee_id, "attendance_id": attendance_id, "notes": "Testing break retrieval"},
         headers=auth_headers(employee_jwt),
     )
-    assert r_break.status_code == 201, f"Break start failed: {r_break.status_code} - {r_break.text}"
+    assert r_break.status_code == 201, f"Break start failed: {r_break.status_code} - {r_break_start.text}"
 
     # Retrieve breaks for attendance
-    r_breaks = requests.get(f"{base_url}/attendance/breaks/{attendance_id}", headers=auth_headers(employee_jwt))
+    r_breaks = requests.get(f"{base_url}/api/attendance/breaks/{attendance_id}", headers=auth_headers(employee_jwt))
     assert r_breaks.status_code == 200, f"Break retrieval failed: {r_breaks.status_code} - {r_breaks.text}"
     breaks = r_breaks.json()
     assert len(breaks) > 0, "No breaks found"
@@ -174,7 +174,7 @@ def test_breaks_retrieval_for_attendance(base_url, employee_jwt, auth_headers):
 
     # Clock-out
     r_out = requests.put(
-        f"{base_url}/attendance/clock-out",
+        f"{base_url}/api/attendance/clock-out",
         json={"employee_id": employee_id, "attendance_id": attendance_id},
         headers=auth_headers(employee_jwt),
     )

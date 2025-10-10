@@ -1,37 +1,24 @@
-# Profile Update and Approval Testing TODO
+# Phase 4 Verification TODO
 
-## Backend API Testing
-- [ ] Run backend profile tests (test_profile.py)
-- [ ] Test edge cases and error handling for profile update requests
-- [ ] Verify API endpoints for approval/rejection workflow
+## Backend Verification
+- [ ] Confirm endpoints /dashboard/attendance, /leaves, /overtime, /payroll return correct aggregated data.
+- [ ] Test role-based access: managers see full analytics, employees denied (403).
+- [ ] Validate CSV export endpoints /dashboard/export/{type}: files download, correct headers, match DB data.
+- [ ] Run automated tests in tests/test_dashboard_routes.py and report failures/fixtures issues.
 
-## Frontend UI Testing
-- [ ] Run existing frontend tests (Jest/Vitest)
-- [ ] Test profile-related components (ProfileCard, ProfileDetails, EditProfileForm)
-- [ ] Verify form validation and submission flows
+## Frontend Verification
+- [ ] Ensure Dashboard.jsx charts render: Attendance (line), Leave utilization (pie), Overtime (bar), Payroll (card).
+- [ ] Confirm period filter dropdown works and updates charts dynamically.
+- [ ] Test export buttons: CSV downloads for each dataset, content matches backend.
+- [ ] Verify role-based rendering: managers see analytics + exports, employees only KPIs.
 
-## Integration Testing
-- [ ] Run e2e tests for profile update and approval workflow
-- [ ] Test frontend-backend integration for approval workflow
-- [ ] Verify data flow between frontend and backend
+## End-to-End Functional Check
+- [ ] Log in as manager: verify data visibility matches role.
+- [ ] Log in as employee: verify data visibility matches role.
+- [ ] Ensure data fetched matches seeded data (payroll, leaves, attendance, overtime).
+- [ ] Check charts/tables/CSVs update correctly with filters.
 
-## Manual Testing
-- [ ] Manual testing of profile page critical-path flows (view, edit, submit update, approval)
-- [ ] Test SuperAdmin approval/rejection flows
-- [ ] Verify UX and responsiveness
-
-## Performance and Security Testing
-- [ ] Basic performance testing for profile update requests
-- [ ] Security testing for API endpoints (authentication, authorization)
-- [ ] Test for potential vulnerabilities in profile update flow
-
-## Bug Fixes and Updates
-- [ ] Analyze test results and logs for issues
-- [ ] Fix any bugs or UX problems found
-- [ ] Update code based on testing insights
-- [ ] Add missing tests if gaps found
-
-## Finalization
-- [ ] Confirm all tests pass
-- [ ] Verify all flows work correctly
-- [ ] Document any changes made
+## Reporting
+- [ ] Summarize test coverage, CSV verification, chart rendering, role-based access.
+- [ ] Highlight frontend/backend discrepancies or bugs.
+- [ ] Confirm Phase 4 fully operational and ready for deployment.

@@ -9,7 +9,10 @@ import Profile from './pages/Profile';
 import Directory from './pages/Directory';
 import Tasks from './pages/Tasks';
 import Leave from './pages/Leave';
+import Shifts from './pages/Shifts';
+import Notifications from './pages/Notifications';
 import Company from './pages/Company';
+import ManagerApprovals from './pages/ManagerApprovals';
 
 function App() {
   const AppRoutes = () => (
@@ -44,6 +47,16 @@ function App() {
           <Layout><Tasks /></Layout>
         </ProtectedRoute>
       } />
+      <Route path="/shifts" element={
+        <ProtectedRoute>
+          <Layout><Shifts /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/notifications" element={
+        <ProtectedRoute>
+          <Layout><Notifications /></Layout>
+        </ProtectedRoute>
+      } />
       <Route path="/leave" element={
         <ProtectedRoute>
           <Layout><Leave /></Layout>
@@ -52,6 +65,11 @@ function App() {
       <Route path="/company" element={
         <ProtectedRoute>
           <Layout><Company /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/manager-approvals" element={
+        <ProtectedRoute>
+          <Layout><ManagerApprovals /></Layout>
         </ProtectedRoute>
       } />
     </Routes>

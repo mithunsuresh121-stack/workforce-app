@@ -6,7 +6,7 @@ from sqlalchemy.orm import sessionmaker
 
 # Configuration
 BASE_URL = "http://localhost:8000"
-EMPLOYEE_ID = 1
+EMPLOYEE_ID = 318  # ID for demo@company.com user
 
 # Database setup for local PostgreSQL
 DB_USER = os.environ.get('POSTGRES_USER', 'workforce')
@@ -23,7 +23,7 @@ def db_engine():
 @pytest.fixture(scope="session")
 def admin_jwt():
     """Admin JWT token fixture"""
-    r = requests.post(f"{BASE_URL}/auth/login", json={
+    r = requests.post(f"{BASE_URL}/api/auth/login", json={
         "email": "admin@app.com",
         "password": "supersecure123"
     })
@@ -33,8 +33,8 @@ def admin_jwt():
 @pytest.fixture(scope="session")
 def employee_jwt():
     """Employee JWT token fixture"""
-    r = requests.post(f"{BASE_URL}/auth/login", json={
-        "email": "test@company.com",
+    r = requests.post(f"{BASE_URL}/api/auth/login", json={
+        "email": "demo@company.com",
         "password": "password123"
     })
     r.raise_for_status()
@@ -62,20 +62,20 @@ def safe_request(method, url, token, json_data=None):
 def cleanup_attendance(admin_jwt):
     """Auto-cleanup fixture for attendance records"""
     # Cleanup before test
-    r = requests.get(f"{BASE_URL}/attendance/active/{EMPLOYEE_ID}", headers=auth_header(admin_jwt))
+    r = requests.get(f"{BASE_URL}/api/attendance/active/{EMPLOYEE_ID}", headers=auth_header(admin_jwt))
     if r.status_code == 200:
         for rec in r.json():
-            requests.put(f"{BASE_URL}/attendance/clock-out",
+            requests.put(f"{BASE_URL}/api/attendance/clock-out",
                         json={"employee_id": EMPLOYEE_ID, "attendance_id": rec["id"]},
                         headers=auth_header(admin_jwt))
 
     yield
 
     # Cleanup after test
-    r = requests.get(f"{BASE_URL}/attendance/active/{EMPLOYEE_ID}", headers=auth_header(admin_jwt))
+    r = requests.get(f"{BASE_URL}/api/attendance/active/{EMPLOYEE_ID}", headers=auth_header(admin_jwt))
     if r.status_code == 200:
         for rec in r.json():
-            requests.put(f"{BASE_URL}/attendance/clock-out",
+            requests.put(f"{BASE_URL}/api/attendance/clock-out",
                         json={"employee_id": EMPLOYEE_ID, "attendance_id": rec["id"]},
                         headers=auth_header(admin_jwt))
 
@@ -83,7 +83,7 @@ def cleanup_attendance(admin_jwt):
 
 def test_employee_clock_in(employee_jwt):
     """Test employee clock-in functionality"""
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", employee_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", employee_jwt,
                            {"employee_id": EMPLOYEE_ID, "notes": "Employee test clock-in"})
 
     # Employee cannot clock-in for another employee (EMPLOYEE_ID=1, but JWT is for 30)
@@ -93,14 +93,14 @@ def test_employee_clock_in(employee_jwt):
 def test_employee_clock_out(employee_jwt):
     """Test employee clock-out functionality"""
     # First clock in for self
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", employee_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", employee_jwt,
                            {"employee_id": 30, "notes": "Employee test clock-out"})
 
     assert status == 201, f"Clock-in failed: {status} - {r.text}"
     attendance_id = r.json()["id"]
 
     # Then clock out for self
-    status, r = safe_request('PUT', f"{BASE_URL}/attendance/clock-out", employee_jwt,
+    status, r = safe_request('PUT', f"{BASE_URL}/api/attendance/clock-out", employee_jwt,
                            {"employee_id": 30, "attendance_id": attendance_id})
 
     assert status == 200, f"Clock-out failed: {status} - {r.text}"
@@ -109,21 +109,21 @@ def test_employee_clock_out(employee_jwt):
 def test_employee_break_start_and_end(employee_jwt):
     """Test employee break start and end functionality"""
     # Clock in first for self
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", employee_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", employee_jwt,
                            {"employee_id": 30, "notes": "Employee break test"})
 
     assert status == 201, f"Clock-in failed: {status} - {r.text}"
     attendance_id = r.json()["id"]
 
     # Start break
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/breaks/start", employee_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/breaks/start", employee_jwt,
                            {"attendance_id": attendance_id, "break_type": "lunch"})
 
     assert status == 201, f"Break start failed: {status} - {r.text}"
     break_id = r.json()["id"]
 
     # End break
-    status, r = safe_request('PUT', f"{BASE_URL}/attendance/breaks/{break_id}/end", employee_jwt, {})
+    status, r = safe_request('PUT', f"{BASE_URL}/api/attendance/breaks/{break_id}/end", employee_jwt, {})
 
     assert status == 200, f"Break end failed: {status} - {r.text}"
     print(f"✅ Employee break start/end successful: break {break_id}")
@@ -131,7 +131,7 @@ def test_employee_break_start_and_end(employee_jwt):
 def test_employee_active_attendance_retrieval(employee_jwt):
     """Test employee active attendance retrieval"""
     # Retrieve active attendance for self (assuming already clocked in)
-    status, r = safe_request('GET', f"{BASE_URL}/attendance/active/30", employee_jwt)
+    status, r = safe_request('GET', f"{BASE_URL}/api/attendance/active/30", employee_jwt)
 
     assert status == 200, f"Active attendance retrieval failed: {status} - {r.text}"
     records = r.json()
@@ -143,7 +143,7 @@ def test_employee_active_attendance_retrieval(employee_jwt):
 
 def test_admin_clock_in_override(admin_jwt):
     """Test admin clock-in override for employee"""
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", admin_jwt,
                            {"employee_id": EMPLOYEE_ID, "notes": "Admin override clock-in"})
 
     assert status == 201, f"Admin clock-in failed: {status} - {r.text}"
@@ -154,13 +154,13 @@ def test_admin_clock_in_override(admin_jwt):
 def test_admin_clock_out_override(admin_jwt):
     """Test admin clock-out override for employee"""
     # Clock in first
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", admin_jwt,
                            {"employee_id": EMPLOYEE_ID, "notes": "Admin override clock-out"})
 
     attendance_id = r.json()["id"]
 
     # Clock out
-    status, r = safe_request('PUT', f"{BASE_URL}/attendance/clock-out", admin_jwt,
+    status, r = safe_request('PUT', f"{BASE_URL}/api/attendance/clock-out", admin_jwt,
                            {"employee_id": EMPLOYEE_ID, "attendance_id": attendance_id})
 
     assert status == 200, f"Admin clock-out failed: {status} - {r.text}"
@@ -169,19 +169,19 @@ def test_admin_clock_out_override(admin_jwt):
 def test_admin_break_management(admin_jwt):
     """Test admin break management for employee"""
     # Clock in
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", admin_jwt,
                            {"employee_id": EMPLOYEE_ID, "notes": "Admin break test"})
 
     attendance_id = r.json()["id"]
 
     # Start break
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/breaks/start", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/breaks/start", admin_jwt,
                            {"attendance_id": attendance_id, "break_type": "lunch"})
 
     break_id = r.json()["id"]
 
     # End break
-    status, r = safe_request('PUT', f"{BASE_URL}/attendance/breaks/{break_id}/end", admin_jwt, {})
+    status, r = safe_request('PUT', f"{BASE_URL}/api/attendance/breaks/{break_id}/end", admin_jwt, {})
 
     assert status == 200, f"Admin break end failed: {status} - {r.text}"
     print(f"✅ Admin break management successful: break {break_id}")
@@ -189,13 +189,13 @@ def test_admin_break_management(admin_jwt):
 def test_admin_active_attendance_retrieval(admin_jwt):
     """Test admin active attendance retrieval"""
     # Clock in first
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", admin_jwt,
                            {"employee_id": EMPLOYEE_ID, "notes": "Admin active attendance test"})
 
     attendance_id = r.json()["id"]
 
     # Retrieve active attendance
-    status, r = safe_request('GET', f"{BASE_URL}/attendance/active/{EMPLOYEE_ID}", admin_jwt)
+    status, r = safe_request('GET', f"{BASE_URL}/api/attendance/active/{EMPLOYEE_ID}", admin_jwt)
 
     assert status == 200, f"Admin active attendance retrieval failed: {status} - {r.text}"
     records = r.json()
@@ -208,19 +208,19 @@ def test_admin_active_attendance_retrieval(admin_jwt):
 def test_multiple_breaks_without_ending(admin_jwt):
     """Test starting multiple breaks without ending previous ones"""
     # Clock in
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", admin_jwt,
                            {"employee_id": EMPLOYEE_ID, "notes": "Multiple breaks test"})
 
     attendance_id = r.json()["id"]
 
     # Start first break
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/breaks/start", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/breaks/start", admin_jwt,
                            {"attendance_id": attendance_id, "break_type": "lunch"})
 
     break1_id = r.json()["id"]
 
     # Start second break without ending first (should this be allowed?)
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/breaks/start", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/breaks/start", admin_jwt,
                            {"attendance_id": attendance_id, "break_type": "coffee"})
 
     if status == 201:
@@ -232,23 +232,23 @@ def test_multiple_breaks_without_ending(admin_jwt):
 def test_double_break_end(admin_jwt):
     """Test ending the same break twice"""
     # Clock in and start break
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/clock-in", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/clock-in", admin_jwt,
                            {"employee_id": EMPLOYEE_ID, "notes": "Double break end test"})
 
     attendance_id = r.json()["id"]
 
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/breaks/start", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/breaks/start", admin_jwt,
                            {"attendance_id": attendance_id, "break_type": "lunch"})
 
     break_id = r.json()["id"]
 
     # End break first time
-    status, r = safe_request('PUT', f"{BASE_URL}/attendance/breaks/{break_id}/end", admin_jwt, {})
+    status, r = safe_request('PUT', f"{BASE_URL}/api/attendance/breaks/{break_id}/end", admin_jwt, {})
 
     assert status == 200, f"First break end failed: {status} - {r.text}"
 
     # End break second time
-    status, r = safe_request('PUT', f"{BASE_URL}/attendance/breaks/{break_id}/end", admin_jwt, {})
+    status, r = safe_request('PUT', f"{BASE_URL}/api/attendance/breaks/{break_id}/end", admin_jwt, {})
 
     if status == 200:
         print(f"✅ Double break end allowed for break: {break_id}")
@@ -258,7 +258,7 @@ def test_double_break_end(admin_jwt):
 def test_clock_out_without_clock_in(admin_jwt):
     """Test clocking out without an active attendance"""
     # Try to clock out without clocking in first
-    status, r = safe_request('PUT', f"{BASE_URL}/attendance/clock-out", admin_jwt,
+    status, r = safe_request('PUT', f"{BASE_URL}/api/attendance/clock-out", admin_jwt,
                            {"employee_id": EMPLOYEE_ID, "attendance_id": 99999})
 
     if status == 404:
@@ -269,7 +269,7 @@ def test_clock_out_without_clock_in(admin_jwt):
 def test_invalid_attendance_id_operations(admin_jwt):
     """Test operations with invalid attendance IDs"""
     # Try break operations with invalid attendance ID
-    status, r = safe_request('POST', f"{BASE_URL}/attendance/breaks/start", admin_jwt,
+    status, r = safe_request('POST', f"{BASE_URL}/api/attendance/breaks/start", admin_jwt,
                            {"attendance_id": 99999, "break_type": "lunch"})
 
     if status == 404:

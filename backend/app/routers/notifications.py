@@ -11,21 +11,20 @@ router = APIRouter()
 
 @router.get("/notifications/", response_model=List[NotificationOut])
 def get_notifications(
+    type: str = None,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Get all notifications for the current user"""
-    if current_user.company_id is None:
-        # SuperAdmin or no company assigned, fetch all notifications for user regardless of company
-        notifications = db.query(Notification).filter(
-            Notification.user_id == current_user.id
-        ).order_by(Notification.created_at.desc()).all()
-    else:
-        notifications = get_notifications_for_user(
-            db=db,
-            user_id=current_user.id,
-            company_id=current_user.company_id
-        )
+    """Get all notifications for the current user, optionally filtered by type"""
+    query = db.query(Notification).filter(Notification.user_id == current_user.id)
+
+    if current_user.company_id is not None:
+        query = query.filter(Notification.company_id == current_user.company_id)
+
+    if type:
+        query = query.filter(Notification.type == type)
+
+    notifications = query.order_by(Notification.created_at.desc()).all()
     return notifications
 
 @router.post("/notifications/mark-read/{notification_id}")
