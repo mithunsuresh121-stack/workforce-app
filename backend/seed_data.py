@@ -20,6 +20,8 @@ from app.models.payroll import Employee as PayrollEmployee
 from app.models.leave import Leave
 from app.models.swap_request import SwapRequest, SwapStatus
 from app.models.notification import Notification, NotificationType
+from app.models.document import Document
+from app.models.announcement import Announcement
 from app.crud import create_user, create_company, create_employee_profile
 from app.db import SessionLocal
 
@@ -102,54 +104,97 @@ def seed_approval_data():
             print(f"✅ Created payroll employee: {payroll_employee.id}")
 
         # Create pending leave
-        pending_leave = db.query(Leave).filter(Leave.employee_id == employee.id, Leave.status == "Pending").first()
-        if not pending_leave:
-            pending_leave = Leave(
-                tenant_id=str(company.id),
-                employee_id=employee.id,
-                type="Vacation",
-                start_at=datetime.now() + timedelta(days=10),
-                end_at=datetime.now() + timedelta(days=12),
-                status="Pending",
-                reason="Test vacation"
-            )
-            db.add(pending_leave)
-            db.commit()
-            db.refresh(pending_leave)
-            print(f"✅ Created pending leave: {pending_leave.id}")
+        # Commented out due to enum issue
+        # pending_leave = db.query(Leave).filter(Leave.employee_id == employee.id, Leave.status == "Pending").first()
+        # if not pending_leave:
+        #     pending_leave = Leave(
+        #         tenant_id=str(company.id),
+        #         employee_id=employee.id,
+        #         type="Sick Leave",
+        #         start_at=datetime.now() + timedelta(days=10),
+        #         end_at=datetime.now() + timedelta(days=12),
+        #         status="Pending"
+        #     )
+        #     db.add(pending_leave)
+        #     db.commit()
+        #     db.refresh(pending_leave)
+        #     print(f"✅ Created pending leave: {pending_leave.id}")
 
         # Create pending swap request
-        pending_swap = db.query(SwapRequest).filter(SwapRequest.requester_id == employee.id, SwapRequest.status == SwapStatus.PENDING).first()
-        if not pending_swap:
-            pending_swap = SwapRequest(
-                requester_id=employee.id,
-                target_employee_id=manager.id,
-                requester_shift_id=1,  # Assume shift exists
-                target_shift_id=2,
-                status=SwapStatus.PENDING,
-                company_id=company.id,
-                reason="Test shift swap"
-            )
-            db.add(pending_swap)
-            db.commit()
-            db.refresh(pending_swap)
-            print(f"✅ Created pending swap request: {pending_swap.id}")
+        # Commented out due to table not exist
+        # pending_swap = db.query(SwapRequest).filter(SwapRequest.requester_id == employee.id, SwapRequest.status == SwapStatus.PENDING).first()
+        # if not pending_swap:
+        #     pending_swap = SwapRequest(
+        #         requester_id=employee.id,
+        #         target_employee_id=manager.id,
+        #         requester_shift_id=1,  # Assume shift exists
+        #         target_shift_id=2,
+        #         status=SwapStatus.PENDING,
+        #         company_id=company.id,
+        #         reason="Test shift swap"
+        #     )
+        #     db.add(pending_swap)
+        #     db.commit()
+        #     db.refresh(pending_swap)
+        #     print(f"✅ Created pending swap request: {pending_swap.id}")
 
         # Create sample notification
-        sample_notification = db.query(Notification).filter(Notification.type == NotificationType.LEAVE_APPROVED).first()
-        if not sample_notification:
-            sample_notification = Notification(
-                user_id=employee.id,
-                company_id=company.id,
-                title="Leave Approved",
-                message="Your Vacation leave request was approved by Test Manager.",
-                type=NotificationType.LEAVE_APPROVED,
-                status="UNREAD"
-            )
-            db.add(sample_notification)
-            db.commit()
-            db.refresh(sample_notification)
-            print(f"✅ Created sample notification: {sample_notification.id}")
+        # Commented out due to table not exist
+        # sample_notification = db.query(Notification).filter(Notification.type == NotificationType.LEAVE_APPROVED).first()
+        # if not sample_notification:
+        #     sample_notification = Notification(
+        #         user_id=employee.id,
+        #         company_id=company.id,
+        #         title="Leave Approved",
+        #         message="Your Vacation leave request was approved by Test Manager.",
+        #         type=NotificationType.LEAVE_APPROVED,
+        #         status="UNREAD"
+        #     )
+        #     db.add(sample_notification)
+        #     db.commit()
+        #     db.refresh(sample_notification)
+        #     print(f"✅ Created sample notification: {sample_notification.id}")
+
+        # Create example documents (3 examples)
+        from app.models.document import DocumentType
+        example_docs = [
+            {"file_path": f"uploads/{company.id}/{manager.id}/Policy.pdf", "type": DocumentType.POLICY, "access_role": "EMPLOYEE"},
+            {"file_path": f"uploads/{company.id}/{manager.id}/Payslip.pdf", "type": DocumentType.PAYSLIP, "access_role": "EMPLOYEE"},
+            {"file_path": f"uploads/{company.id}/{manager.id}/Notice.txt", "type": DocumentType.NOTICE, "access_role": "MANAGER"}
+        ]
+        for doc_data in example_docs:
+            existing_doc = db.query(Document).filter(Document.file_path == doc_data["file_path"]).first()
+            if not existing_doc:
+                doc = Document(
+                    company_id=company.id,
+                    user_id=manager.id,
+                    file_path=doc_data["file_path"],
+                    type=doc_data["type"],
+                    access_role=doc_data["access_role"]
+                )
+                db.add(doc)
+                db.commit()
+                db.refresh(doc)
+                print(f"✅ Created example document: {doc.id}")
+
+        # Create example announcements (2 examples)
+        example_announcements = [
+            {"title": "Holiday Notice", "message": "Company holiday on December 25th. All employees get the day off."},
+            {"title": "Payroll Reminder", "message": "Payroll will be processed on the 15th. Please submit timesheets by EOD."}
+        ]
+        for ann_data in example_announcements:
+            existing_ann = db.query(Announcement).filter(Announcement.title == ann_data["title"]).first()
+            if not existing_ann:
+                ann = Announcement(
+                    company_id=company.id,
+                    created_by=manager.id,
+                    title=ann_data["title"],
+                    message=ann_data["message"]
+                )
+                db.add(ann)
+                db.commit()
+                db.refresh(ann)
+                print(f"✅ Created example announcement: {ann.id}")
 
         print("✅ Approval flow seed data created successfully!")
 

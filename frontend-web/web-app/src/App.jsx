@@ -13,6 +13,8 @@ import Shifts from './pages/Shifts';
 import Notifications from './pages/Notifications';
 import Company from './pages/Company';
 import ManagerApprovals from './pages/ManagerApprovals';
+import Documents from './pages/Documents';
+import Announcements from './pages/Announcements';
 
 function App() {
   const AppRoutes = () => (
@@ -70,6 +72,16 @@ function App() {
       <Route path="/manager-approvals" element={
         <ProtectedRoute>
           <Layout><ManagerApprovals /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/documents" element={
+        <ProtectedRoute>
+          <Layout><Documents /></Layout>
+        </ProtectedRoute>
+      } />
+      <Route path="/announcements" element={
+        <ProtectedRoute>
+          <Layout><Announcements /></Layout>
         </ProtectedRoute>
       } />
     </Routes>

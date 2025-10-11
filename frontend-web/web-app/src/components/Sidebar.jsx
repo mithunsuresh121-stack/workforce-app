@@ -11,7 +11,9 @@ import {
   ChartBarIcon,
   ClockIcon,
   BellIcon,
-  CheckCircleIcon
+  CheckCircleIcon,
+  DocumentIcon,
+  ChatBubbleLeftIcon
 } from '@heroicons/react/24/outline';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -27,6 +29,8 @@ const Sidebar = ({ onClose }) => {
     { path: '/tasks', label: 'Tasks', icon: ClipboardIcon },
     { path: '/shifts', label: 'Shifts', icon: ClockIcon },
     { path: '/notifications', label: 'Notifications', icon: BellIcon },
+    { path: '/documents', label: 'Documents', icon: DocumentIcon },
+    { path: '/announcements', label: 'Announcements', icon: ChatBubbleLeftIcon },
     { path: '/leave', label: 'Leave', icon: CalendarIcon },
     { path: '/manager-approvals', label: 'Manager Approvals', icon: CheckCircleIcon },
   ];
