@@ -480,3 +480,46 @@ class ProfileUpdateRequestOut(BaseModel):
 class ProfileUpdateRequestReview(BaseModel):
     status: RequestStatus
     review_comment: Optional[str] = None
+
+# Document Schemas
+class DocumentType(str, Enum):
+    POLICY = "POLICY"
+    PAYSLIP = "PAYSLIP"
+    NOTICE = "NOTICE"
+    OTHER = "OTHER"
+
+class DocumentBase(BaseModel):
+    file_path: str
+    type: DocumentType
+    access_role: str  # "EMPLOYEE", "MANAGER", "ADMIN"
+
+class DocumentCreate(DocumentBase):
+    pass
+
+class DocumentOut(DocumentBase):
+    id: int
+    company_id: int
+    user_id: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Announcement Schemas
+class AnnouncementBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=255)
+    message: str = Field(..., min_length=1)
+
+class AnnouncementCreate(AnnouncementBase):
+    pass
+
+class AnnouncementOut(AnnouncementBase):
+    id: int
+    company_id: Optional[int] = None
+    created_by: int
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True

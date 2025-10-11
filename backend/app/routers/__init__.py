@@ -10,3 +10,4 @@ from .payroll import router as payroll_router
 from .attendance import router as attendance_router
 from .notifications import router as notifications_router
 from .notification_preferences import router as notification_preferences_router
+from .documents import router as documents_router

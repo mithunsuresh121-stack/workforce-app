@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings, engine, Base
-from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications, notification_preferences, profile
+from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents
 from .custom_json_response import CustomJSONResponse
 
 # Only create tables when running the app directly, not when imported for testing
@@ -28,9 +28,10 @@ app.include_router(leaves.router, prefix="/api")
 app.include_router(shifts.router, prefix="/api")
 app.include_router(payroll.router, prefix="/api")
 app.include_router(attendance.router, prefix="/api")
-app.include_router(notifications.router, prefix="/api")
+app.include_router(notifications, prefix="/api/notifications")
 app.include_router(notification_preferences.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
+app.include_router(documents, prefix="/api/documents")
 
 from .seed_demo_user import seed_demo_user
 from .deps import get_db
