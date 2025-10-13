@@ -26,16 +26,16 @@ class Task(Base):
     # team_id = Column(Integer, ForeignKey("teams.id"), index=True, nullable=True)  # For future team assignments
     assigned_by = Column(Integer, ForeignKey("users.id"), nullable=True)
     status = Column(
-        String(50),
-        default="Pending",
-        server_default="Pending",
+        Enum(TaskStatus),
+        default=TaskStatus.PENDING,
+        server_default=TaskStatus.PENDING,
         index=True,
         nullable=False,
     )
     priority = Column(
-        String(50),
-        default="Medium",
-        server_default="Medium",
+        Enum(TaskPriority),
+        default=TaskPriority.MEDIUM,
+        server_default=TaskPriority.MEDIUM,
         nullable=False,
     )
     due_at = Column(DateTime, nullable=True)

@@ -6,7 +6,7 @@ from .config import settings, engine, Base
 from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat
 from .custom_json_response import CustomJSONResponse
 
-# Set up structured logging with structlog
+# Set up structured logging with structlog as primary logger
 shared_processors = [
     structlog.stdlib.filter_by_level,
     structlog.stdlib.add_logger_name,
@@ -16,7 +16,10 @@ shared_processors = [
     structlog.processors.StackInfoRenderer(),
     structlog.processors.format_exc_info,
     structlog.processors.UnicodeDecoder(),
-    structlog.processors.JSONRenderer()
+    # Add contextual processors for user_id, endpoint, etc.
+    structlog.processors.add_log_level,
+    structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
+    structlog.processors.JSONRenderer()  # For structured output
 ]
 
 structlog.configure(
@@ -27,8 +30,12 @@ structlog.configure(
     cache_logger_on_first_use=True,
 )
 
-# Set up logging
-logging.basicConfig(level=logging.INFO, format="%(message)s")
+# Set up logging with backward compatibility (console readable)
+logging.basicConfig(
+    level=logging.INFO,
+    format="%(asctime)s - %(levelname)s - %(message)s",
+    handlers=[logging.StreamHandler()]
+)
 logger = structlog.get_logger()
 
 # Only create tables when running the app directly, not when imported for testing
@@ -37,13 +44,20 @@ if __name__ == "__main__":
 
 app = FastAPI(title="Workforce App", version="1.0", default_response_class=CustomJSONResponse)
 
-# Add request logging middleware
+# Add request logging middleware with contextual data
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     import time
     start_time = time.time()
     response = await call_next(request)
     process_time = time.time() - start_time
+
+    # Extract user_id from token if available (simplified for demo)
+    user_id = None
+    auth_header = request.headers.get("authorization")
+    if auth_header and auth_header.startswith("Bearer "):
+        # In real implementation, decode JWT to get user_id
+        user_id = "extracted_user_id"  # Placeholder
 
     logger.info(
         "HTTP Request",
@@ -52,7 +66,10 @@ async def log_requests(request: Request, call_next):
         status_code=response.status_code,
         process_time=f"{process_time:.4f}s",
         user_agent=request.headers.get("user-agent", ""),
-        remote_addr=request.client.host if request.client else None
+        remote_addr=request.client.host if request.client else None,
+        user_id=user_id,
+        endpoint=request.url.path,
+        log_level="INFO"
     )
     return response
 

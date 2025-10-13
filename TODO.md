@@ -1,46 +1,33 @@
-# Phase 7: Monitoring + Finalization - Implementation Plan
+# Phase 7: Monitoring + Finalization TODO
 
-## Data Expansion
-- [x] Extend backend/seed_data.py with realistic sample data:
-  - Leaves: 100+ records across departments with varied statuses
-  - Shifts: 200+ records with different times and locations
-  - Tasks: 150+ records with dependencies and priorities
-  - Documents: 50+ records (policies, payslips, notices)
-  - Notifications: 100+ records for various types (tasks, shifts, leaves, system)
-- [x] Ensure relational integrity: Foreign keys, company isolation, role-based ownership
-- [x] Run and verify seeding: cd backend && python app/seed_data.py
+## 1. Expand seed_data.py
+- [ ] Update backend/seed_data.py to add 8-10 records per model (leaves, shifts, tasks, documents, notifications) with variety in statuses, types, ownership
+- [ ] Ensure no foreign key conflicts and proper relationships
 
-## Structured Logging
-- [x] Add structlog to backend/requirements.txt
-- [x] Integrate structlog in backend/app/main.py for JSON-friendly logging
-- [x] Update middleware and endpoints to capture: event type, user context, timestamp
-- [x] Maintain compatibility with existing logging setup
-- [x] Test logging output in JSON format
+## 2. Integrate structlog
+- [ ] Install structlog: pip install structlog
+- [ ] Update backend/app/__init__.py to use structlog as primary logger with context (timestamp, user_id, endpoint, level)
+- [ ] Maintain backward compatibility and console readability
 
-## Testing & Automation
-- [ ] Add pytest coverage for core workflows:
-  - tests/test_attendance_workflow.py
-  - tests/test_chat_workflow.py
-  - tests/test_announcements_workflow.py
-  - tests/test_documents_workflow.py
-- [ ] Introduce Playwright for frontend flow testing:
-  - Add playwright to frontend-web/web-app/package.json
-  - Create tests for login, dashboard, chat, notifications flows
-  - Ensure tests run locally and in CI/CD
-- [ ] Run all tests: pytest tests/ -v && cd frontend-web/web-app && npx playwright test
+## 3. Add pytest tests
+- [ ] Create/update tests/test_workflows.py for backend workflows: auth, leaves, chat, docs, notifications
+- [ ] Ensure coverage for prioritized flows
 
-## Deployment Readiness
-- [ ] Update Dockerfile and docker-compose.yml for end-to-end setup
-- [ ] Refresh README.md with:
-  - Migration + seeding steps
-  - API documentation links
-  - Testing and build instructions
-- [ ] Verify deployment: docker-compose up --build
+## 4. Add Playwright tests
+- [ ] Install Playwright in frontend-web: npm install playwright
+- [ ] Create frontend-web/playwright.config.js
+- [ ] Create frontend-web/tests/ for login, navigation, CRUD UI flows
 
-## Verification Steps
-- [ ] Backend: Run migrations, seeding, API tests
-- [ ] Frontend: Build, run Playwright tests
-- [ ] End-to-end: docker-compose up, test flows
-- [ ] Documentation: README.md updates verified
+## 5. Update Docker configuration
+- [ ] Update docker-compose.yml for migrations, testing, backend/frontend startup
 
-Progress: 0/4 major sections complete.
+## 6. Update README.md
+- [ ] Add deployment steps, migrations, testing documentation
+
+## 7. Verification and Reporting
+- [ ] Run seeding and verify data
+- [ ] Run backend tests (pytest)
+- [ ] Run frontend tests (Playwright)
+- [ ] Verify structlog output
+- [ ] Test deployment setup
+- [ ] Report completion
