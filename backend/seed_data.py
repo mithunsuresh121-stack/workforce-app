@@ -108,113 +108,126 @@ def seed_approval_data():
             db.refresh(payroll_employee)
             print(f"✅ Created payroll employee: {payroll_employee.id}")
 
-        # Create 100+ leaves across departments
-        leave_types = ["Vacation", "Sick Leave", "Personal Leave", "Maternity Leave", "Paternity Leave"]
+        # Create 8-10 leaves with variety (mix approved/pending/rejected)
+        leave_types = ["ANNUAL", "SICK", "PERSONAL", "MATERNITY", "PATERNITY"]
         leave_statuses = ["Approved", "Pending", "Rejected"]
         departments = ["Engineering", "HR", "Finance", "Marketing", "Operations"]
 
-        for i in range(120):  # 120 leaves
+        for i in range(10):  # 10 leaves
             start_date = datetime.now() + timedelta(days=random.randint(-30, 60))
             end_date = start_date + timedelta(days=random.randint(1, 14))
+            status = "Approved" if i < 4 else "Pending" if i < 7 else "Rejected"
             leave = Leave(
+                company_id=company.id,
                 tenant_id=str(company.id),
                 employee_id=employee.id if i % 2 == 0 else manager.id,
                 type=random.choice(leave_types),
                 start_at=start_date,
                 end_at=end_date,
-                status=random.choice(leave_statuses)
+                status=status
             )
             db.add(leave)
         db.commit()
-        print("✅ Created 120 sample leaves")
+        print("✅ Created 10 sample leaves with status variety")
 
-        # Create 200+ shifts
+        # Create 8-10 shifts with variety (day/night/remote patterns)
         shift_times = [
-            ("09:00", "17:00"), ("08:00", "16:00"), ("10:00", "18:00"),
-            ("14:00", "22:00"), ("22:00", "06:00"), ("06:00", "14:00")
+            ("09:00", "17:00"), ("08:00", "16:00"), ("10:00", "18:00"),  # Day shifts
+            ("14:00", "22:00"), ("22:00", "06:00"), ("06:00", "14:00")  # Night/Other
         ]
         locations = ["Office A", "Office B", "Remote", "Client Site", "Home Office"]
 
-        for i in range(250):  # 250 shifts
+        for i in range(10):  # 10 shifts
             start_time_str, end_time_str = random.choice(shift_times)
             shift_date = datetime.now() + timedelta(days=random.randint(-15, 45))
+            location = "Remote" if i % 3 == 0 else random.choice(locations)
+            status = "Pending" if i < 5 else "Completed"
             shift = Shift(
                 company_id=company.id,
-                employee_id=employee.id if i % 3 != 0 else manager.id,
-                start_time=f"{shift_date.date()} {start_time_str}",
-                end_time=f"{shift_date.date()} {end_time_str}",
-                location=random.choice(locations),
-                status="Scheduled" if random.random() > 0.1 else "Completed",
-                notes=f"Shift {i+1} notes"
+                employee_id=employee.id if i % 2 != 0 else manager.id,
+                start_at=f"{shift_date.date()} {start_time_str}",
+                end_at=f"{shift_date.date()} {end_time_str}",
+                location=location,
+                status=status
             )
             db.add(shift)
         db.commit()
-        print("✅ Created 250 sample shifts")
+        print("✅ Created 10 sample shifts with pattern variety")
 
-        # Create 150+ tasks
+        # Create 8-10 tasks with variety (different statuses)
         task_titles = [
             "Complete project documentation", "Review code changes", "Update database schema",
             "Prepare quarterly report", "Conduct team meeting", "Process payroll",
             "Handle customer inquiry", "Maintain server infrastructure", "Design new feature",
             "Test application functionality"
         ]
-        task_priorities = ["Low", "Medium", "High", "Urgent"]
+        task_priorities = ["LOW", "MEDIUM", "HIGH"]
         task_statuses = ["Pending", "In Progress", "Completed", "Cancelled"]
 
-        for i in range(180):  # 180 tasks
+        for i in range(10):  # 10 tasks
+            status = "PENDING" if i < 3 else "IN_PROGRESS" if i < 6 else "COMPLETED" if i < 8 else "OVERDUE"
             task = Task(
                 company_id=company.id,
-                assigned_to=employee.id if i % 2 == 0 else manager.id,
-                created_by=manager.id,
+                assignee_id=employee.id if i % 2 == 0 else manager.id,
+                assigned_by=manager.id,
                 title=random.choice(task_titles),
                 description=f"Detailed description for task {i+1}",
                 priority=random.choice(task_priorities),
-                status=random.choice(task_statuses),
-                due_date=datetime.now() + timedelta(days=random.randint(1, 30))
+                status=status,
+                due_at=datetime.now() + timedelta(days=random.randint(1, 30))
             )
             db.add(task)
         db.commit()
-        print("✅ Created 180 sample tasks")
+        print("✅ Created 10 sample tasks with status variety")
 
-        # Create 50+ documents
-        doc_types = ["POLICY", "PAYSLIP", "NOTICE", "CONTRACT", "REPORT"]
+        # Create 8-10 documents with variety (company and personal-level)
+        doc_types = ["POLICY", "PAYSLIP", "NOTICE", "OTHER"]
         access_roles = ["EMPLOYEE", "MANAGER", "ADMIN"]
 
-        for i in range(60):  # 60 documents
+        for i in range(10):  # 10 documents
+            user_id = manager.id if i < 5 else employee.id  # Mix company (manager) and personal (employee)
+            access_role = "ADMIN" if i < 3 else "MANAGER" if i < 6 else "EMPLOYEE"
+            doc_type = "POLICY" if i < 4 else random.choice(doc_types)  # More policies for company
             doc = Document(
                 company_id=company.id,
-                user_id=manager.id,
-                file_path=f"uploads/{company.id}/{manager.id}/document_{i+1}.pdf",
-                type=random.choice(doc_types),
-                access_role=random.choice(access_roles)
+                user_id=user_id,
+                file_path=f"uploads/{company.id}/{user_id}/document_{i+1}.pdf",
+                type=doc_type,
+                access_role=access_role
             )
             db.add(doc)
         db.commit()
-        print("✅ Created 60 sample documents")
+        print("✅ Created 10 sample documents with ownership variety")
 
-        # Create 100+ notifications
-        notification_types = ["LEAVE_APPROVED", "LEAVE_REJECTED", "TASK_ASSIGNED", "SHIFT_REMINDER", "ANNOUNCEMENT"]
+        # Create 8-10 notifications with variety (system-generated and user-triggered)
+        notification_types = ["LEAVE_APPROVED", "LEAVE_REJECTED", "TASK_ASSIGNED", "SHIFT_SCHEDULED", "SHIFT_SWAP_REQUESTED", "SYSTEM_MESSAGE", "ADMIN_MESSAGE"]
         notification_titles = {
             "LEAVE_APPROVED": "Leave Approved",
             "LEAVE_REJECTED": "Leave Rejected",
             "TASK_ASSIGNED": "New Task Assigned",
             "SHIFT_REMINDER": "Shift Reminder",
-            "ANNOUNCEMENT": "New Announcement"
+            "ANNOUNCEMENT": "New Announcement",
+            "MESSAGE_RECEIVED": "New Message Received",
+            "SHIFT_SCHEDULED": "Shift Scheduled",
+            "SYSTEM_MESSAGE": "System Message",
+            "ADMIN_MESSAGE": "Admin Message"
         }
 
-        for i in range(120):  # 120 notifications
-            notif_type = random.choice(notification_types)
+        for i in range(10):  # 10 notifications
+            notif_type = "LEAVE_APPROVED" if i < 2 else "TASK_ASSIGNED" if i < 4 else "SHIFT_SCHEDULED" if i < 6 else "SYSTEM_MESSAGE" if i < 8 else "ADMIN_MESSAGE"
+            user_id = employee.id if i % 2 == 0 else manager.id
+            status = "UNREAD" if i < 5 else "READ"
             notification = Notification(
-                user_id=employee.id if i % 2 == 0 else manager.id,
+                user_id=user_id,
                 company_id=company.id,
                 title=notification_titles[notif_type],
                 message=f"Notification message {i+1} for {notif_type}",
                 type=notif_type,
-                status="UNREAD" if random.random() > 0.5 else "READ"
+                status=status
             )
             db.add(notification)
         db.commit()
-        print("✅ Created 120 sample notifications")
+        print("✅ Created 10 sample notifications with type variety")
 
         # Create example documents (3 examples)
         from app.models.document import DocumentType

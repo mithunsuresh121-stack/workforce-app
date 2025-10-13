@@ -14,6 +14,25 @@ services:
     depends_on: [postgres]
     ports: ["8000:8000"]
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    # Add migration command
+    environment:
+      - PYTHONPATH=/app
+
+  backend-migrate:
+    build: ./backend
+    env_file: .env
+    depends_on: [postgres]
+    command: bash -c "alembic upgrade head && python seed_data.py"
+    environment:
+      - PYTHONPATH=/app
+
+  backend-test:
+    build: ./backend
+    env_file: .env
+    depends_on: [postgres, backend-migrate]
+    command: pytest tests/ -v --tb=short
+    environment:
+      - PYTHONPATH=/app
 
   flutter-frontend:
     build: ./frontend
@@ -25,7 +44,7 @@ services:
 
   react-web-app:
     build: ./frontend/web-app
-    ports: ["8080:8080"]
+    ports: ["3000:3000"]
     environment:
       - REACT_APP_API_URL=http://backend:8000
       - CHOKIDAR_USEPOLLING=true
@@ -33,6 +52,14 @@ services:
     volumes:
       - ./frontend/web-app:/app
       - /app/node_modules
+    command: npm start
+
+  react-test:
+    build: ./frontend/web-app
+    depends_on: [react-web-app]
+    command: npm run test:e2e
+    environment:
+      - CI=true
 
 volumes:
   pgdata:
