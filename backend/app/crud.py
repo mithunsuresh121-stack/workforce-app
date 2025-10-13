@@ -728,3 +728,137 @@ def end_break(db: Session, break_id: int):
     db.commit()
     db.refresh(break_record)
     return break_record
+
+# Reports CRUD functions
+from datetime import date, timedelta
+from typing import List, Dict, Any
+from sqlalchemy import func, extract, and_, or_, distinct
+
+def get_attendance_heatmap(db: Session, company_id: int, start_date: date, end_date: date) -> List[Dict[str, Any]]:
+    """
+    Get attendance heatmap data: daily present/absent counts with intensity.
+    """
+    total_employees = db.query(func.count(User.id)).filter(User.company_id == company_id).scalar()
+
+    # Daily attendance counts
+    daily_data = db.query(
+        func.date(Attendance.clock_in_time).label('date'),
+        func.count(distinct(Attendance.employee_id)).label('present')
+    ).filter(
+        Attendance.company_id == company_id,
+        Attendance.clock_in_time >= start_date,
+        Attendance.clock_in_time <= end_date,
+        Attendance.status == "active"
+    ).group_by(func.date(Attendance.clock_in_time)).all()
+
+    # Convert to dict for easy lookup
+    data_dict = {row.date: row.present for row in daily_data}
+    result = []
+
+    current_date = start_date
+    while current_date <= end_date:
+        present = data_dict.get(current_date, 0)
+        absent = total_employees - present
+        intensity = int((present / total_employees) * 100) if total_employees > 0 else 0
+        result.append({
+            "date": current_date.isoformat(),
+            "present": present,
+            "absent": absent,
+            "heatmap_intensity": intensity
+        })
+        current_date += timedelta(days=1)
+
+    return result
+
+def get_payroll_by_dept(db: Session, company_id: int, period: str) -> List[Dict[str, Any]]:
+    """
+    Get payroll projections by department.
+    """
+    from .models.payroll import Employee as PayrollEmployee
+
+    # Assume 22 working days per month
+    working_days = 22
+
+    # Get current month for attendance factor
+    from datetime import datetime
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+
+    # Aggregate by department
+    dept_data = db.query(
+        EmployeeProfile.department.label('dept'),
+        func.count(distinct(PayrollEmployee.id)).label('employees'),
+        func.avg(PayrollEmployee.base_salary).label('avg_salary')
+    ).outerjoin(
+        PayrollEmployee, PayrollEmployee.user_id == EmployeeProfile.user_id
+    ).filter(
+        EmployeeProfile.company_id == company_id,
+        PayrollEmployee.tenant_id == str(company_id)
+    ).group_by(EmployeeProfile.department).all()
+
+    result = []
+    for row in dept_data:
+        dept = row.dept or "Unknown"
+        employees = row.employees or 0
+        avg_salary = row.avg_salary or 0
+
+        # Calculate attendance factor (simplified: assume 80% attendance)
+        attendance_factor = 0.8
+        projected_cost = avg_salary * employees * attendance_factor
+
+        # Forecast next month (assume 5% increase)
+        forecast_next = projected_cost * 1.05
+
+        result.append({
+            "dept": dept,
+            "projected_cost": round(projected_cost, 2),
+            "employees": employees,
+            "forecast_next_month": round(forecast_next, 2)
+        })
+
+    return result
+
+def get_overtime_trend(db: Session, company_id: int, period: str, dept_filter: Optional[str] = None) -> List[Dict[str, Any]]:
+    """
+    Get overtime trends over time by department.
+    """
+    from datetime import datetime
+    now = datetime.now()
+
+    if period == "weekly":
+        # Last 12 weeks
+        start_date = now - timedelta(weeks=12)
+        group_expr = extract('week', Attendance.clock_in_time)
+        label_expr = func.concat(extract('year', Attendance.clock_in_time), '-', func.lpad(extract('week', Attendance.clock_in_time), 2, '0'))
+    else:
+        # Last 12 months
+        start_date = now - timedelta(days=365)
+        group_expr = extract('month', Attendance.clock_in_time)
+        label_expr = func.concat(extract('year', Attendance.clock_in_time), '-', func.lpad(extract('month', Attendance.clock_in_time), 2, '0'))
+
+    query = db.query(
+        label_expr.label('period'),
+        EmployeeProfile.department.label('dept'),
+        func.sum(Attendance.overtime_hours).label('hours')
+    ).outerjoin(
+        EmployeeProfile, EmployeeProfile.user_id == Attendance.employee_id
+    ).filter(
+        Attendance.company_id == company_id,
+        Attendance.clock_in_time >= start_date,
+        Attendance.overtime_hours > 0
+    ).group_by(label_expr, EmployeeProfile.department)
+
+    if dept_filter:
+        query = query.filter(EmployeeProfile.department == dept_filter)
+
+    overtime_data = query.all()
+
+    result = []
+    for row in overtime_data:
+        result.append({
+            "period": row.period,
+            "dept": row.dept or "Unknown",
+            "hours": row.hours or 0.0
+        })
+
+    return result

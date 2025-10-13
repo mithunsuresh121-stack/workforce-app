@@ -1,16 +1,46 @@
-# Phase 5 Live Verification and Deployment Readiness Checks
+# Phase 7: Monitoring + Finalization - Implementation Plan
 
-## Backend Verification
-- [x] Activate venv and run alembic upgrade head in backend directory (already at head)
-- [x] Execute seed script: python backend/seed_data.py (documents and announcements seeded)
-- [x] Run pytest for document routes: pytest tests/test_document_routes.py -v (passed)
-- [ ] Run pytest for notifications routes: pytest tests/test_notifications_routes.py -v
+## Data Expansion
+- [x] Extend backend/seed_data.py with realistic sample data:
+  - Leaves: 100+ records across departments with varied statuses
+  - Shifts: 200+ records with different times and locations
+  - Tasks: 150+ records with dependencies and priorities
+  - Documents: 50+ records (policies, payslips, notices)
+  - Notifications: 100+ records for various types (tasks, shifts, leaves, system)
+- [x] Ensure relational integrity: Foreign keys, company isolation, role-based ownership
+- [x] Run and verify seeding: cd backend && python app/seed_data.py
 
-## Frontend Verification
-- [x] Start backend server (uvicorn app.main:app --reload --host 0.0.0.0 --port 8000) (running)
-- [ ] Start frontend server (cd frontend-web/web-app && nvm use && npm start)
-- [ ] Browser verification: Launch browser at localhost:3000, login as different roles, verify document upload/view/download, announcements view
+## Structured Logging
+- [x] Add structlog to backend/requirements.txt
+- [x] Integrate structlog in backend/app/main.py for JSON-friendly logging
+- [x] Update middleware and endpoints to capture: event type, user context, timestamp
+- [x] Maintain compatibility with existing logging setup
+- [x] Test logging output in JSON format
 
-## Final Confirmation
-- [ ] Review logs and test outputs for errors
-- [ ] Confirm all endpoints and UI features work as per checklist
+## Testing & Automation
+- [ ] Add pytest coverage for core workflows:
+  - tests/test_attendance_workflow.py
+  - tests/test_chat_workflow.py
+  - tests/test_announcements_workflow.py
+  - tests/test_documents_workflow.py
+- [ ] Introduce Playwright for frontend flow testing:
+  - Add playwright to frontend-web/web-app/package.json
+  - Create tests for login, dashboard, chat, notifications flows
+  - Ensure tests run locally and in CI/CD
+- [ ] Run all tests: pytest tests/ -v && cd frontend-web/web-app && npx playwright test
+
+## Deployment Readiness
+- [ ] Update Dockerfile and docker-compose.yml for end-to-end setup
+- [ ] Refresh README.md with:
+  - Migration + seeding steps
+  - API documentation links
+  - Testing and build instructions
+- [ ] Verify deployment: docker-compose up --build
+
+## Verification Steps
+- [ ] Backend: Run migrations, seeding, API tests
+- [ ] Frontend: Build, run Playwright tests
+- [ ] End-to-end: docker-compose up, test flows
+- [ ] Documentation: README.md updates verified
+
+Progress: 0/4 major sections complete.

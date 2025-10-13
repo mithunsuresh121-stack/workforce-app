@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from datetime import datetime, timedelta
+import random
 
 # Add backend to path
 sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
@@ -22,6 +23,10 @@ from app.models.swap_request import SwapRequest, SwapStatus
 from app.models.notification import Notification, NotificationType
 from app.models.document import Document
 from app.models.announcement import Announcement
+from app.models.chat import ChatMessage
+from app.models.task import Task
+from app.models.shift import Shift
+from app.models.attendance import Attendance
 from app.crud import create_user, create_company, create_employee_profile
 from app.db import SessionLocal
 
@@ -103,57 +108,113 @@ def seed_approval_data():
             db.refresh(payroll_employee)
             print(f"✅ Created payroll employee: {payroll_employee.id}")
 
-        # Create pending leave
-        # Commented out due to enum issue
-        # pending_leave = db.query(Leave).filter(Leave.employee_id == employee.id, Leave.status == "Pending").first()
-        # if not pending_leave:
-        #     pending_leave = Leave(
-        #         tenant_id=str(company.id),
-        #         employee_id=employee.id,
-        #         type="Sick Leave",
-        #         start_at=datetime.now() + timedelta(days=10),
-        #         end_at=datetime.now() + timedelta(days=12),
-        #         status="Pending"
-        #     )
-        #     db.add(pending_leave)
-        #     db.commit()
-        #     db.refresh(pending_leave)
-        #     print(f"✅ Created pending leave: {pending_leave.id}")
+        # Create 100+ leaves across departments
+        leave_types = ["Vacation", "Sick Leave", "Personal Leave", "Maternity Leave", "Paternity Leave"]
+        leave_statuses = ["Approved", "Pending", "Rejected"]
+        departments = ["Engineering", "HR", "Finance", "Marketing", "Operations"]
 
-        # Create pending swap request
-        # Commented out due to table not exist
-        # pending_swap = db.query(SwapRequest).filter(SwapRequest.requester_id == employee.id, SwapRequest.status == SwapStatus.PENDING).first()
-        # if not pending_swap:
-        #     pending_swap = SwapRequest(
-        #         requester_id=employee.id,
-        #         target_employee_id=manager.id,
-        #         requester_shift_id=1,  # Assume shift exists
-        #         target_shift_id=2,
-        #         status=SwapStatus.PENDING,
-        #         company_id=company.id,
-        #         reason="Test shift swap"
-        #     )
-        #     db.add(pending_swap)
-        #     db.commit()
-        #     db.refresh(pending_swap)
-        #     print(f"✅ Created pending swap request: {pending_swap.id}")
+        for i in range(120):  # 120 leaves
+            start_date = datetime.now() + timedelta(days=random.randint(-30, 60))
+            end_date = start_date + timedelta(days=random.randint(1, 14))
+            leave = Leave(
+                tenant_id=str(company.id),
+                employee_id=employee.id if i % 2 == 0 else manager.id,
+                type=random.choice(leave_types),
+                start_at=start_date,
+                end_at=end_date,
+                status=random.choice(leave_statuses)
+            )
+            db.add(leave)
+        db.commit()
+        print("✅ Created 120 sample leaves")
 
-        # Create sample notification
-        # Commented out due to table not exist
-        # sample_notification = db.query(Notification).filter(Notification.type == NotificationType.LEAVE_APPROVED).first()
-        # if not sample_notification:
-        #     sample_notification = Notification(
-        #         user_id=employee.id,
-        #         company_id=company.id,
-        #         title="Leave Approved",
-        #         message="Your Vacation leave request was approved by Test Manager.",
-        #         type=NotificationType.LEAVE_APPROVED,
-        #         status="UNREAD"
-        #     )
-        #     db.add(sample_notification)
-        #     db.commit()
-        #     db.refresh(sample_notification)
-        #     print(f"✅ Created sample notification: {sample_notification.id}")
+        # Create 200+ shifts
+        shift_times = [
+            ("09:00", "17:00"), ("08:00", "16:00"), ("10:00", "18:00"),
+            ("14:00", "22:00"), ("22:00", "06:00"), ("06:00", "14:00")
+        ]
+        locations = ["Office A", "Office B", "Remote", "Client Site", "Home Office"]
+
+        for i in range(250):  # 250 shifts
+            start_time_str, end_time_str = random.choice(shift_times)
+            shift_date = datetime.now() + timedelta(days=random.randint(-15, 45))
+            shift = Shift(
+                company_id=company.id,
+                employee_id=employee.id if i % 3 != 0 else manager.id,
+                start_time=f"{shift_date.date()} {start_time_str}",
+                end_time=f"{shift_date.date()} {end_time_str}",
+                location=random.choice(locations),
+                status="Scheduled" if random.random() > 0.1 else "Completed",
+                notes=f"Shift {i+1} notes"
+            )
+            db.add(shift)
+        db.commit()
+        print("✅ Created 250 sample shifts")
+
+        # Create 150+ tasks
+        task_titles = [
+            "Complete project documentation", "Review code changes", "Update database schema",
+            "Prepare quarterly report", "Conduct team meeting", "Process payroll",
+            "Handle customer inquiry", "Maintain server infrastructure", "Design new feature",
+            "Test application functionality"
+        ]
+        task_priorities = ["Low", "Medium", "High", "Urgent"]
+        task_statuses = ["Pending", "In Progress", "Completed", "Cancelled"]
+
+        for i in range(180):  # 180 tasks
+            task = Task(
+                company_id=company.id,
+                assigned_to=employee.id if i % 2 == 0 else manager.id,
+                created_by=manager.id,
+                title=random.choice(task_titles),
+                description=f"Detailed description for task {i+1}",
+                priority=random.choice(task_priorities),
+                status=random.choice(task_statuses),
+                due_date=datetime.now() + timedelta(days=random.randint(1, 30))
+            )
+            db.add(task)
+        db.commit()
+        print("✅ Created 180 sample tasks")
+
+        # Create 50+ documents
+        doc_types = ["POLICY", "PAYSLIP", "NOTICE", "CONTRACT", "REPORT"]
+        access_roles = ["EMPLOYEE", "MANAGER", "ADMIN"]
+
+        for i in range(60):  # 60 documents
+            doc = Document(
+                company_id=company.id,
+                user_id=manager.id,
+                file_path=f"uploads/{company.id}/{manager.id}/document_{i+1}.pdf",
+                type=random.choice(doc_types),
+                access_role=random.choice(access_roles)
+            )
+            db.add(doc)
+        db.commit()
+        print("✅ Created 60 sample documents")
+
+        # Create 100+ notifications
+        notification_types = ["LEAVE_APPROVED", "LEAVE_REJECTED", "TASK_ASSIGNED", "SHIFT_REMINDER", "ANNOUNCEMENT"]
+        notification_titles = {
+            "LEAVE_APPROVED": "Leave Approved",
+            "LEAVE_REJECTED": "Leave Rejected",
+            "TASK_ASSIGNED": "New Task Assigned",
+            "SHIFT_REMINDER": "Shift Reminder",
+            "ANNOUNCEMENT": "New Announcement"
+        }
+
+        for i in range(120):  # 120 notifications
+            notif_type = random.choice(notification_types)
+            notification = Notification(
+                user_id=employee.id if i % 2 == 0 else manager.id,
+                company_id=company.id,
+                title=notification_titles[notif_type],
+                message=f"Notification message {i+1} for {notif_type}",
+                type=notif_type,
+                status="UNREAD" if random.random() > 0.5 else "READ"
+            )
+            db.add(notification)
+        db.commit()
+        print("✅ Created 120 sample notifications")
 
         # Create example documents (3 examples)
         from app.models.document import DocumentType
@@ -195,6 +256,38 @@ def seed_approval_data():
                 db.commit()
                 db.refresh(ann)
                 print(f"✅ Created example announcement: {ann.id}")
+
+        # Create example chat messages (10+ examples for better testing)
+        example_messages = [
+            {"sender_id": manager.id, "receiver_id": employee.id, "message": "Hello, how is the project going?", "is_read": True},
+            {"sender_id": employee.id, "receiver_id": manager.id, "message": "It's going well, thanks for asking!", "is_read": False},
+            {"sender_id": manager.id, "receiver_id": None, "message": "Company meeting at 3 PM today.", "is_read": False},  # Company-wide
+            {"sender_id": employee.id, "receiver_id": manager.id, "message": "I need to discuss my leave request.", "is_read": True},
+            {"sender_id": manager.id, "receiver_id": employee.id, "message": "Sure, let's schedule a call tomorrow.", "is_read": False},
+            {"sender_id": manager.id, "receiver_id": None, "message": "Reminder: Submit timesheets by EOD Friday.", "is_read": False},  # Company-wide
+            {"sender_id": employee.id, "receiver_id": manager.id, "message": "Timesheet submitted. Thanks!", "is_read": True},
+            {"sender_id": manager.id, "receiver_id": employee.id, "message": "Great, I'll review it shortly.", "is_read": False},
+            {"sender_id": manager.id, "receiver_id": None, "message": "Office will be closed for maintenance next Monday.", "is_read": False},  # Company-wide
+            {"sender_id": employee.id, "receiver_id": manager.id, "message": "Noted. Any remote work options?", "is_read": False},
+        ]
+        for msg_data in example_messages:
+            existing_msg = db.query(ChatMessage).filter(
+                ChatMessage.sender_id == msg_data["sender_id"],
+                ChatMessage.receiver_id == msg_data["receiver_id"],
+                ChatMessage.message == msg_data["message"]
+            ).first()
+            if not existing_msg:
+                msg = ChatMessage(
+                    company_id=company.id,
+                    sender_id=msg_data["sender_id"],
+                    receiver_id=msg_data["receiver_id"],
+                    message=msg_data["message"],
+                    is_read=msg_data["is_read"]
+                )
+                db.add(msg)
+                db.commit()
+                db.refresh(msg)
+                print(f"✅ Created example chat message: {msg.id}")
 
         print("✅ Approval flow seed data created successfully!")
 
