@@ -523,3 +523,54 @@ class AnnouncementOut(AnnouncementBase):
 
     class Config:
         from_attributes = True
+
+# Chat Schemas
+class ChatMessageBase(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1000)
+
+class ChatMessageCreate(ChatMessageBase):
+    receiver_id: Optional[int] = None  # None for company-wide
+
+class ChatMessageOut(ChatMessageBase):
+    id: int
+    company_id: int
+    sender_id: int
+    receiver_id: Optional[int]
+    is_read: bool
+    created_at: datetime
+    updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# WebSocket Notification Schema
+class WebSocketNotification(BaseModel):
+    type: str  # e.g., "new_message", "announcement", "system_alert"
+    data: dict  # Flexible data payload
+    timestamp: datetime = Field(default_factory=datetime.utcnow)
+
+# Reports Schemas
+from typing import Dict, Any
+
+class AttendanceHeatmap(BaseModel):
+    date: str  # YYYY-MM-DD
+    present: int
+    absent: int
+    heatmap_intensity: int  # 0-100 based on attendance rate
+
+class PayrollProjection(BaseModel):
+    dept: str
+    projected_cost: float
+    employees: int
+    forecast_next_month: float
+
+class OvertimeTrend(BaseModel):
+    period: str  # e.g., "2024-W01" or "2024-01"
+    dept: str
+    hours: float
+
+class ReportExportResponse(BaseModel):
+    file_url: Optional[str] = None  # For download URL
+    content: Optional[bytes] = None  # For blob download
+    filename: str
+    content_type: str  # "text/csv" or "application/pdf"

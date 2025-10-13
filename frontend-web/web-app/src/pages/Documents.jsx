@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { api, useAuth } from '../contexts/AuthContext';
-import { DocumentIcon, UploadIcon, EyeIcon, DownloadIcon } from '@heroicons/react/24/outline';
+import { DocumentIcon, ArrowUpTrayIcon, EyeIcon, ArrowDownTrayIcon } from '@heroicons/react/24/outline';
 
 const Documents = () => {
   const { user: currentUser } = useAuth();
@@ -88,7 +88,7 @@ const Documents = () => {
             onClick={() => setShowUploadForm(!showUploadForm)}
             className="bg-accent-500 text-white px-4 py-2 rounded-lg hover:bg-accent-600 flex items-center space-x-2"
           >
-            <UploadIcon className="w-4 h-4" />
+            <ArrowUpTrayIcon className="w-4 h-4" />
             <span>{showUploadForm ? 'Cancel' : 'Upload Document'}</span>
           </button>
         )}
@@ -138,7 +138,7 @@ const Documents = () => {
             disabled={uploading}
             className="mt-4 bg-accent-500 text-white px-6 py-2 rounded-lg hover:bg-accent-600 disabled:opacity-50 flex items-center space-x-2"
           >
-            <UploadIcon className="w-4 h-4" />
+            <ArrowUpTrayIcon className="w-4 h-4" />
             <span>{uploading ? 'Uploading...' : 'Upload'}</span>
           </button>
         </form>
@@ -192,7 +192,7 @@ const Documents = () => {
                       className="text-accent-600 hover:text-accent-900 mr-3"
                       title="Download"
                     >
-                      <DownloadIcon className="w-5 h-5" />
+                      <ArrowDownTrayIcon className="w-5 h-5" />
                     </button>
                   </td>
                 </tr>
