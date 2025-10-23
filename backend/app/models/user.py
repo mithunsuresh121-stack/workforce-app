@@ -2,6 +2,7 @@ from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..db import Base
+from .refresh_token import RefreshToken
 
 class User(Base):
     __tablename__ = "users"
@@ -21,6 +22,7 @@ class User(Base):
     employee_profile = relationship("EmployeeProfile", back_populates="user", uselist=False, foreign_keys="[EmployeeProfile.user_id]")
     attendance_records = relationship("Attendance", back_populates="employee")
     shifts = relationship("Shift", back_populates="employee")
+    refresh_tokens = relationship("RefreshToken", back_populates="user")
     
     def __repr__(self):
         return f"<User {self.email}>"

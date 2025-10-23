@@ -2,6 +2,7 @@ import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings, engine, Base
+from .models import *
 from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat
 from .custom_json_response import CustomJSONResponse
 

@@ -22,7 +22,8 @@ from ..crud import (
     get_break_by_id,
     end_break,
     list_breaks_by_attendance,
-    get_attendance_by_id
+    get_attendance_by_id,
+    get_user_by_id
 )
 from ..models.user import User
 

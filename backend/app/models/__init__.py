@@ -16,6 +16,7 @@ from .payroll import (
     PayrollRun,
     PayrollEntry
 )
+from .refresh_token import RefreshToken
 
 __all__ = [
     "Company",
@@ -33,5 +34,6 @@ __all__ = [
     "Deduction",
     "Bonus",
     "PayrollRun",
-    "PayrollEntry"
+    "PayrollEntry",
+    "RefreshToken"
 ]
