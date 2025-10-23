@@ -14,6 +14,7 @@ class Settings(BaseSettings):
     # JWT / App settings
     SECRET_KEY: str = "CHANGE_ME"
     JWT_SECRET: str = "CHANGE_ME"
+    JWT_REFRESH_SECRET: str = "CHANGE_ME_REFRESH"
     JWT_ALG: str = "HS256"
     APP_ENV: str = "dev"
 

@@ -1,4 +1,3 @@
-import logging
 import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
@@ -30,12 +29,6 @@ structlog.configure(
     cache_logger_on_first_use=True,
 )
 
-# Set up logging with backward compatibility (console readable)
-logging.basicConfig(
-    level=logging.INFO,
-    format="%(asctime)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler()]
-)
 logger = structlog.get_logger()
 
 # Only create tables when running the app directly, not when imported for testing

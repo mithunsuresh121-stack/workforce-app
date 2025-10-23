@@ -1,21 +1,43 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiService {
   static const String baseUrl = 'http://localhost:8000';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
+  late FirebaseMessaging _firebaseMessaging;
+  final Connectivity _connectivity = Connectivity();
 
   Future<String?> getToken() async {
     return await _secureStorage.read(key: 'auth_token');
+  }
+
+  Future<String?> getRefreshToken() async {
+    return await _secureStorage.read(key: 'refresh_token');
   }
 
   Future<void> saveToken(String token) async {
     await _secureStorage.write(key: 'auth_token', value: token);
   }
 
+  Future<void> saveRefreshToken(String refreshToken) async {
+    await _secureStorage.write(key: 'refresh_token', value: refreshToken);
+  }
+
   Future<void> deleteToken() async {
     await _secureStorage.delete(key: 'auth_token');
+  }
+
+  Future<void> deleteRefreshToken() async {
+    await _secureStorage.delete(key: 'refresh_token');
+  }
+
+  Future<bool> isConnected() async {
+    var connectivityResult = await _connectivity.checkConnectivity();
+    return connectivityResult != ConnectivityResult.none;
   }
 
   Future<Map<String, String>> _getHeaders() async {
@@ -23,10 +45,25 @@ class ApiService {
     return {
       'Content-Type': 'application/json',
       'Authorization': token != null ? 'Bearer $token' : '',
+      'X-FCM-Token': await _getFCMToken() ?? '',
     };
   }
 
+  Future<String?> _getFCMToken() async {
+    try {
+      await Firebase.initializeApp();
+      _firebaseMessaging = FirebaseMessaging.instance;
+      return await _firebaseMessaging.getToken();
+    } catch (e) {
+      print('Error getting FCM token: $e');
+      return null;
+    }
+  }
+
   Future<http.Response> get(String endpoint) async {
+    if (!await isConnected()) {
+      throw Exception('No internet connection');
+    }
     final headers = await _getHeaders();
     return await http.get(
       Uri.parse('$baseUrl$endpoint'),
@@ -35,6 +72,9 @@ class ApiService {
   }
 
   Future<http.Response> post(String endpoint, dynamic data) async {
+    if (!await isConnected()) {
+      throw Exception('No internet connection');
+    }
     final headers = await _getHeaders();
     return await http.post(
       Uri.parse('$baseUrl$endpoint'),
@@ -44,6 +84,9 @@ class ApiService {
   }
 
   Future<http.Response> put(String endpoint, dynamic data) async {
+    if (!await isConnected()) {
+      throw Exception('No internet connection');
+    }
     final headers = await _getHeaders();
     return await http.put(
       Uri.parse('$baseUrl$endpoint'),
@@ -53,6 +96,9 @@ class ApiService {
   }
 
   Future<http.Response> delete(String endpoint) async {
+    if (!await isConnected()) {
+      throw Exception('No internet connection');
+    }
     final headers = await _getHeaders();
     return await http.delete(
       Uri.parse('$baseUrl$endpoint'),
@@ -61,12 +107,52 @@ class ApiService {
   }
 
   // Auth specific methods
-  Future<http.Response> login(String email, String password, int companyId) async {
-    return await post('/auth/login', {
+  Future<Map<String, dynamic>> login(String email, String password, int companyId) async {
+    final response = await post('/auth/login', {
       'email': email,
       'password': password,
       'company_id': companyId,
     });
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final accessToken = data['access_token'];
+      final refreshToken = data['refresh_token'];
+
+      await saveToken(accessToken);
+      await saveRefreshToken(refreshToken);
+
+      return data;
+    } else {
+      throw Exception('Login failed: ${response.body}');
+    }
+  }
+
+  Future<Map<String, dynamic>> refreshToken() async {
+    final refreshToken = await getRefreshToken();
+    if (refreshToken == null) {
+      throw Exception('No refresh token available');
+    }
+
+    final response = await post('/auth/refresh', {
+      'refresh_token': refreshToken,
+    });
+
+    if (response.statusCode == 200) {
+      final data = json.decode(response.body);
+      final newAccessToken = data['access_token'];
+      final newRefreshToken = data['refresh_token'];
+
+      await saveToken(newAccessToken);
+      await saveRefreshToken(newRefreshToken);
+
+      return data;
+    } else {
+      // If refresh fails, clear tokens
+      await deleteToken();
+      await deleteRefreshToken();
+      throw Exception('Token refresh failed: ${response.body}');
+    }
   }
 
   Future<http.Response> signup(String email, String password, String fullName, String role, int companyId) async {

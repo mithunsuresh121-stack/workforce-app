@@ -2,7 +2,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-import logging
+from structlog import get_logger
 
 from ..models.notification import Notification, NotificationType
 from ..models.notification_digest import NotificationDigest, DigestType, DigestStatus
@@ -10,7 +10,7 @@ from ..models.notification_preferences import NotificationPreferences, DigestMod
 from ..models.user import User
 from ..database import get_db
 
-logger = logging.getLogger(__name__)
+logger = get_logger()
 
 class DigestService:
     def __init__(self, db: Session):

@@ -9,8 +9,12 @@ from .models.profile_update_request import ProfileUpdateRequest, RequestStatus
 from .models.task import Task
 from .models.leave import Leave
 from .models.shift import Shift
+from .models.refresh_token import RefreshToken
 from .schemas import EmployeeProfileUpdate
 from passlib.context import CryptContext
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -282,6 +286,36 @@ def delete_company(db: Session, company_id: int):
     db.delete(company)
     db.commit()
     return True
+
+# Refresh Token CRUD functions
+def create_refresh_token(db: Session, user_id: int, token: str, expires_at):
+    refresh_token = RefreshToken(
+        user_id=user_id,
+        token=token,
+        expires_at=expires_at
+    )
+    db.add(refresh_token)
+    db.commit()
+    db.refresh(refresh_token)
+    logger.info("Refresh token created", user_id=user_id)
+    return refresh_token
+
+def get_refresh_token_by_token(db: Session, token: str) -> Optional[RefreshToken]:
+    return db.query(RefreshToken).filter(RefreshToken.token == token, RefreshToken.revoked == False).first()
+
+def revoke_refresh_token(db: Session, token: str):
+    refresh_token = get_refresh_token_by_token(db, token)
+    if refresh_token:
+        refresh_token.revoked = True
+        db.commit()
+        logger.info("Refresh token revoked", user_id=refresh_token.user_id)
+        return True
+    return False
+
+def revoke_all_user_refresh_tokens(db: Session, user_id: int):
+    db.query(RefreshToken).filter(RefreshToken.user_id == user_id, RefreshToken.revoked == False).update({"revoked": True})
+    db.commit()
+    logger.info("All refresh tokens revoked for user", user_id=user_id)
 
 # Leave CRUD functions
 def create_leave(db: Session, tenant_id: str, employee_id: int, type: str, start_at, end_at, status: str = "Pending"):
@@ -681,6 +715,19 @@ def get_active_attendance_by_employee(db: Session, employee_id: int):
 
 def list_attendance_by_employee(db: Session, employee_id: int, limit: int = 50):
     return db.query(Attendance).filter(Attendance.employee_id == employee_id).order_by(Attendance.created_at.desc()).limit(limit).all()
+
+def get_attendance_records(db: Session, user_id: int, company_id: int, start_date=None, end_date=None):
+    query = db.query(Attendance).filter(
+        Attendance.employee_id == user_id,
+        Attendance.company_id == company_id
+    )
+
+    if start_date:
+        query = query.filter(Attendance.clock_in_time >= start_date)
+    if end_date:
+        query = query.filter(Attendance.clock_in_time <= end_date)
+
+    return query.order_by(Attendance.clock_in_time.desc()).all()
 
 def clock_out_attendance(db: Session, attendance_id: int, notes: str = None):
     attendance = get_attendance_by_id(db, attendance_id)
