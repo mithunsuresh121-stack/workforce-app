@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
-import logging
+from structlog import get_logger
 from typing import List
 from ..deps import get_db, get_current_user
 from ..schemas.attendance import (
@@ -38,6 +38,8 @@ def clock_in(
     """
     Clock in for the specified employee
     """
+    logger = get_logger()
+
     # Check if user already has an active attendance record
     active_attendance = get_active_attendance_by_employee(db, payload.employee_id)
     if active_attendance:
@@ -68,7 +70,7 @@ def clock_in(
         clock_in_time=datetime.now(timezone.utc),
         notes=payload.notes
     )
-    logging.info(f"Attendance clock-in created for employee {payload.employee_id} at {attendance.clock_in_time}")
+    logger.info("Attendance clock-in created", employee_id=payload.employee_id, clock_in_time=str(attendance.clock_in_time), user_id=current_user.id)
     return attendance
 
 

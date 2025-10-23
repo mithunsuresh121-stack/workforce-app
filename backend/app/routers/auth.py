@@ -1,12 +1,15 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from typing import List, Optional
 from sqlalchemy.orm import Session
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 from ..deps import get_db, get_current_user
-from ..schemas import UserCreate, UserUpdate, LoginPayload, Token, UserOut
-from ..crud import create_user, authenticate_user, get_user_by_email, get_company_by_id, list_users_by_company, get_users_by_email, authenticate_user_by_email, get_user_by_email_only
-from ..auth import create_access_token
+from ..schemas import UserCreate, UserUpdate, LoginPayload, Token, UserOut, RefreshTokenRequest
+from ..crud import create_user, authenticate_user, get_user_by_email, get_company_by_id, list_users_by_company, get_users_by_email, authenticate_user_by_email, get_user_by_email_only, create_refresh_token, get_refresh_token_by_token, revoke_refresh_token, revoke_all_user_refresh_tokens
+from ..auth import create_access_token, create_refresh_token as auth_create_refresh_token, verify_refresh_token
+import structlog
+
+logger = structlog.get_logger(__name__)
 
 class Notification(BaseModel):
     id: int
@@ -46,16 +49,28 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
     user = authenticate_user_by_email(db, payload.email, payload.password)
     if not user:
         raise HTTPException(status_code=401, detail="Invalid credentials")
-    
+
     if not user.is_active:
         raise HTTPException(status_code=401, detail="User account is inactive")
-    
+
     access_token = create_access_token(
-        sub=user.email, 
+        sub=user.email,
         company_id=user.company_id,  # May be None for Super Admin
         role=user.role
     )
-    return {"access_token": access_token, "token_type": "bearer"}
+
+    refresh_token_str = auth_create_refresh_token(
+        sub=user.email,
+        company_id=user.company_id,
+        role=user.role
+    )
+
+    # Store refresh token in database
+    expires_at = datetime.utcnow() + timedelta(days=7)
+    create_refresh_token(db, user.id, refresh_token_str, expires_at)
+
+    logger.info("User logged in", user_email=user.email, user_id=user.id)
+    return {"access_token": access_token, "refresh_token": refresh_token_str, "token_type": "bearer"}
 
 @router.get("/users/{company_id}", response_model=List[UserOut])
 def get_users(company_id: int, db: Session = Depends(get_db)):
@@ -157,3 +172,54 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: UserO
     # Delete user
     delete_user(db, user_id)
     return {"message": "User deleted successfully"}
+
+@router.post("/refresh", response_model=Token)
+def refresh_token(payload: RefreshTokenRequest, db: Session = Depends(get_db)):
+    """Refresh access token using refresh token"""
+    try:
+        # Verify refresh token exists in database and is not revoked
+        stored_token = get_refresh_token_by_token(db, payload.refresh_token)
+        if not stored_token:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        # Verify JWT token
+        jwt_payload = verify_refresh_token(payload.refresh_token)
+        if not jwt_payload:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        user_email = jwt_payload.get("sub")
+        company_id = jwt_payload.get("company_id")
+        role = jwt_payload.get("role")
+
+        # Verify user still exists and is active
+        user = get_user_by_email_only(db, user_email)
+        if not user or not user.is_active:
+            raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+        # Revoke old refresh token
+        revoke_refresh_token(db, payload.refresh_token)
+
+        # Create new tokens
+        access_token = create_access_token(
+            sub=user_email,
+            company_id=company_id,
+            role=role
+        )
+        new_refresh_token_str = auth_create_refresh_token(
+            sub=user_email,
+            company_id=company_id,
+            role=role
+        )
+
+        # Store new refresh token
+        expires_at = datetime.utcnow() + timedelta(days=7)
+        create_refresh_token(db, user.id, new_refresh_token_str, expires_at)
+
+        logger.info("Token refreshed", user_email=user_email, user_id=user.id)
+        return {"access_token": access_token, "refresh_token": new_refresh_token_str, "token_type": "bearer"}
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Token refresh failed", error=str(e))
+        raise HTTPException(status_code=401, detail="Invalid refresh token")
