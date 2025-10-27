@@ -84,7 +84,7 @@ tzlocal==5.3.1
 uritemplate==4.2.0
 urllib3==2.5.0
 uvicorn==0.30.6
-uvloop==0.21.0
+uvloop==0.22.1
 pandas==2.2.3
 vine==5.1.0
 watchfiles==1.1.0
