@@ -1,7 +1,7 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
-from structlog import get_logger
 from typing import List
 from ..deps import get_db, get_current_user
 from ..schemas.attendance import (
@@ -27,6 +27,8 @@ from ..crud import (
 )
 from ..models.user import User
 
+logger = structlog.get_logger(__name__)
+
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
 
@@ -39,7 +41,6 @@ def clock_in(
     """
     Clock in for the specified employee
     """
-    logger = get_logger()
 
     # Check if user already has an active attendance record
     active_attendance = get_active_attendance_by_employee(db, payload.employee_id)
@@ -71,7 +72,14 @@ def clock_in(
         clock_in_time=datetime.now(timezone.utc),
         notes=payload.notes
     )
-    logger.info("Attendance clock-in created", employee_id=payload.employee_id, clock_in_time=str(attendance.clock_in_time), user_id=current_user.id)
+    logger.info(
+        "Attendance clock-in created",
+        event="attendance_clock_in",
+        employee_id=payload.employee_id,
+        clock_in_time=str(attendance.clock_in_time),
+        user_id=current_user.id,
+        company_id=employee.company_id
+    )
     return attendance
 
 
@@ -104,7 +112,14 @@ def clock_out(
             detail="Access denied"
         )
 
-    print(f"Clocking out attendance {payload.attendance_id} for employee {payload.employee_id}")
+    logger.info(
+        "Clocking out attendance",
+        event="attendance_clock_out_attempt",
+        attendance_id=payload.attendance_id,
+        employee_id=payload.employee_id,
+        user_id=current_user.id,
+        company_id=attendance.company_id
+    )
 
     updated_attendance = clock_out_attendance(
         db=db,
@@ -112,12 +127,26 @@ def clock_out(
         notes=payload.notes
     )
     if not updated_attendance:
-        print(f"Clock out failed for attendance {payload.attendance_id}")
+        logger.error(
+            "Clock out failed",
+            event="attendance_clock_out_failed",
+            attendance_id=payload.attendance_id,
+            employee_id=payload.employee_id,
+            user_id=current_user.id,
+            company_id=attendance.company_id
+        )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail="Failed to clock out"
         )
-    print(f"Successfully clocked out attendance {updated_attendance.id}")
+    logger.info(
+        "Successfully clocked out attendance",
+        event="attendance_clock_out_success",
+        attendance_id=updated_attendance.id,
+        employee_id=payload.employee_id,
+        user_id=current_user.id,
+        company_id=attendance.company_id
+    )
     return updated_attendance
 
 

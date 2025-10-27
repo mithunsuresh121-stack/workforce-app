@@ -79,3 +79,29 @@ def should_send_notification(db: Session, user_id: int, company_id: int, notific
     # Check if this notification type is enabled
     notification_types = prefs.get("notification_types", {})
     return notification_types.get(notification_type, True)
+
+def should_send_push_notification(db: Session, user_id: int, company_id: int, notification_type: str) -> bool:
+    """Check if a push notification should be sent based on user preferences"""
+    # Get user preferences (company_id needed for consistency with other methods)
+    from .models.notification_preferences import NotificationPreferences
+    preferences = db.query(NotificationPreferences).filter(
+        NotificationPreferences.user_id == user_id,
+        NotificationPreferences.company_id == company_id
+    ).first()
+
+    if not preferences:
+        return True  # Default to sending push if no preferences set
+
+    prefs = preferences.preferences
+
+    # Check if push notifications are enabled globally
+    if not prefs.get("push_enabled", True):
+        return False
+
+    # Check if all notifications are muted
+    if prefs.get("mute_all", False):
+        return False
+
+    # Check if this notification type is enabled
+    notification_types = prefs.get("notification_types", {})
+    return notification_types.get(notification_type, True)

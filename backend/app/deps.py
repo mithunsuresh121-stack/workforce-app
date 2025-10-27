@@ -25,21 +25,21 @@ def get_current_claims(token: HTTPAuthorizationCredentials = Depends(security)):
 def get_current_user(db: Session = Depends(get_db), claims: dict = Depends(get_current_claims)):
     email = claims.get("sub")
     company_id = claims.get("company_id")
-    
+
     if not email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token claims")
-    
+
     from .crud import get_user_by_email_only
-    
+
     if company_id is None:
         user = get_user_by_email_only(db, email)
     else:
         user = get_user_by_email(db, email, company_id)
-    
+
     if not user:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
-    
+
     if not user.is_active:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive")
-    
+
     return user

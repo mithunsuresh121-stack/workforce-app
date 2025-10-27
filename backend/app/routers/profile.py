@@ -1,3 +1,4 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
@@ -12,6 +13,8 @@ from ..crud import (
 )
 from ..models.user import User
 from ..models.profile_update_request import RequestStatus
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 

@@ -1,3 +1,4 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -12,6 +13,8 @@ from ..models.notification import NotificationType
 import os
 import shutil
 from datetime import datetime
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
 

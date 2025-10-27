@@ -1,6 +1,9 @@
+import structlog
 from fastapi import WebSocket
 from typing import Dict, List
 import json
+
+logger = structlog.get_logger(__name__)
 
 class ConnectionManager:
     def __init__(self):

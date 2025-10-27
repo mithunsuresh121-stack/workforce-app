@@ -1,3 +1,4 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import List
@@ -7,6 +8,8 @@ from ..crud_chat import create_chat_message, get_chat_history, get_company_chat_
 from ..deps import get_current_user
 from ..schemas.schemas import ChatMessageCreate, ChatMessageOut
 from ..routers.ws_notifications import manager  # Import WebSocket manager
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 

@@ -1,9 +1,12 @@
+import structlog
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from .models.chat import ChatMessage
 from .schemas.schemas import ChatMessageCreate
 from .models.user import User
 from .models.company import Company
+
+logger = structlog.get_logger(__name__)
 
 def create_chat_message(db: Session, message_create: ChatMessageCreate, sender_id: int, company_id: int) -> ChatMessage:
     """Create a new chat message"""

@@ -1,3 +1,4 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
@@ -8,6 +9,8 @@ from ..crud_notifications import get_notifications_for_user, mark_notification_a
 from ..crud_announcements import create_announcement, get_announcements_for_company
 from ..deps import get_current_user
 from ..schemas.schemas import NotificationOut, AnnouncementCreate, AnnouncementOut
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 

@@ -7,6 +7,7 @@ from ..deps import get_db, get_current_user
 from ..schemas import UserCreate, UserUpdate, LoginPayload, Token, UserOut, RefreshTokenRequest
 from ..crud import create_user, authenticate_user, get_user_by_email, get_company_by_id, list_users_by_company, get_users_by_email, authenticate_user_by_email, get_user_by_email_only, create_refresh_token, get_refresh_token_by_token, revoke_refresh_token, revoke_all_user_refresh_tokens
 from ..auth import create_access_token, create_refresh_token as auth_create_refresh_token, verify_refresh_token
+from ..services.fcm_service import fcm_service
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -223,3 +224,20 @@ def refresh_token(payload: RefreshTokenRequest, db: Session = Depends(get_db)):
     except Exception as e:
         logger.error("Token refresh failed", error=str(e))
         raise HTTPException(status_code=401, detail="Invalid refresh token")
+
+class FCMTokenUpdate(BaseModel):
+    fcm_token: str
+
+@router.post("/update-fcm-token")
+def update_fcm_token(
+    payload: FCMTokenUpdate,
+    db: Session = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user)
+):
+    """Update FCM token for push notifications"""
+    success = fcm_service.update_user_fcm_token(db, current_user.id, payload.fcm_token)
+    if success:
+        logger.info("FCM token updated", user_id=current_user.id)
+        return {"message": "FCM token updated successfully"}
+    else:
+        raise HTTPException(status_code=500, detail="Failed to update FCM token")

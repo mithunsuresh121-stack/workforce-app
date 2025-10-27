@@ -1,3 +1,4 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
 from fastapi.responses import FileResponse
 from sqlalchemy.orm import Session
@@ -9,6 +10,8 @@ from ..models.document import Document, DocumentType
 from ..schemas.schemas import DocumentOut, DocumentCreate
 from ..deps import get_current_user
 from ..models.user import User
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
