@@ -1,3 +1,4 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict, Any
@@ -9,6 +10,8 @@ from ..crud_notification_preferences import (
     get_or_create_user_preferences
 )
 from ..deps import get_current_user
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/notification-preferences", tags=["Notification Preferences"])
 

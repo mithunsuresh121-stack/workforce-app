@@ -14,6 +14,7 @@ class User(Base):
     role = Column(String, default="Employee")  # SuperAdmin, CompanyAdmin, Manager, Employee
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)  # Nullable for Super Admin
     is_active = Column(Boolean, default=True)
+    fcm_token = Column(String, nullable=True)  # Firebase Cloud Messaging token for push notifications
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     

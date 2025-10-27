@@ -19,6 +19,14 @@ shared_processors = [
     # Add contextual processors for user_id, endpoint, etc.
     structlog.processors.add_log_level,
     structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
+    # Add mandatory fields processor
+    lambda logger, method_name, event_dict: event_dict.update({
+        'event': event_dict.get('event', method_name),
+        'timestamp': event_dict.get('timestamp'),
+        'user_id': event_dict.get('user_id', None),
+        'company_id': event_dict.get('company_id', None),
+        'level': event_dict.get('level', 'INFO')
+    }) or event_dict,
     structlog.processors.JSONRenderer()  # For structured output
 ]
 

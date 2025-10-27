@@ -1,16 +1,15 @@
+import structlog
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-from structlog import get_logger
 
 from ..models.notification import Notification, NotificationType
 from ..models.notification_digest import NotificationDigest, DigestType, DigestStatus
 from ..models.notification_preferences import NotificationPreferences, DigestMode
 from ..models.user import User
-from ..database import get_db
 
-logger = get_logger()
+logger = structlog.get_logger(__name__)
 
 class DigestService:
     def __init__(self, db: Session):

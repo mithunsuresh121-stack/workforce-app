@@ -1,46 +1,66 @@
-# Phase 8: Core Completion Phase TODO
+# Structlog Consistency Verification and Setup TODO
 
-## 1. Logging Integration (structlog) - COMPLETED
-- [x] Fully integrate structlog across all backend modules (routers, crud, services, models)
-- [x] Replace standard logging with consistent JSON-style logs
-- [x] Add contextual processors for user_id, endpoint, company_id, etc.
-- [x] Ensure backward compatibility and console readability
+## Overview
+Perform comprehensive verification and continuous validation setup for Structlog consistency across the backend. Ensure all modules use Structlog with JSON structured logging, consistent fields (event, timestamp, user_id, company_id, level), and eliminate print() and logging calls.
 
-## 2. JWT Authentication Refresh - COMPLETED
-- [x] Implement refresh token creation and storage in auth.py
-- [x] Add /api/auth/refresh endpoint in routers/auth.py
-- [x] Update token expiration handling (access: 15min, refresh: 7 days)
-- [x] Update frontend client logic for token refresh
-- [x] Update mobile app for token refresh
+## Steps
 
-## 3. Notifications (Mobile Push) - COMPLETED
-- [x] Add Firebase Cloud Messaging (FCM) to mobile/pubspec.yaml
-- [x] Implement FCM service in mobile/lib/services/
-- [x] Extend backend notifications to send push notifications via FCM
-- [x] Update WebSocket notifications to include mobile push
-- [x] Test push notifications on mobile app
+### 1. Add Structlog Imports and Loggers to Missing Files
+- [ ] Add `import structlog` and `logger = structlog.get_logger(__name__)` to:
+  - `backend/app/routers/companies.py`
+  - `backend/app/routers/dashboard.py`
+  - `backend/app/routers/documents.py`
+  - `backend/app/routers/employees.py`
+  - `backend/app/routers/leaves.py`
+  - `backend/app/routers/notification_preferences.py`
+  - `backend/app/routers/notifications.py`
+  - `backend/app/routers/payroll.py`
+  - `backend/app/routers/profile.py` (merge final/fixed if needed)
+  - `backend/app/routers/shifts.py`
+  - `backend/app/routers/tasks.py`
+  - `backend/app/routers/ws_notifications.py`
+  - `backend/app/routers/chat.py`
+  - `backend/app/crud_announcements.py`
+  - `backend/app/crud_chat.py`
+  - `backend/app/crud_documents.py`
 
-## 4. Analytics Dashboard - COMPLETED
-- [x] Connect dashboard charts to live backend data endpoints
-- [x] Ensure KPIs: attendance stats, task completion, shift coverage, leave summaries
-- [x] Update dashboard.py to use real data queries
-- [x] Verify chart data accuracy and performance
-- [x] Update frontend charts to fetch live data
+### 2. Replace Print Statements with Structlog Calls
+- [ ] Replace all `print()` in:
+  - `backend/app/routers/employees.py` (debug messages)
+  - `backend/app/routers/leaves.py` (warnings)
+  - `backend/app/routers/shifts.py` (warnings)
+  - `backend/app/routers/attendance.py` (partial, clock-out prints)
+  - `backend/app/seed_demo_user.py`
+  - `backend/app/seed_demo_user_fixed.py`
+  - `backend/app/seed_demo_user_final.py`
+- [ ] Use `logger.info()`, `logger.warning()`, or `logger.error()` with consistent fields: `event`, `user_id`, `company_id`, etc.
 
-## 5. Testing Completion - COMPLETED
-- [x] Achieve 100% backend test coverage with pytest (tests run, some import errors for missing CRUD functions)
-- [x] Add missing tests for auth refresh, notifications, dashboard
-- [x] Finalize Playwright frontend tests for login, dashboard, task workflows (tests run, login issues due to backend not running)
-- [x] Run all tests and fix failures
-- [x] Generate test coverage reports
+### 3. Enhance Main.py Configuration for Mandatory Fields
+- [ ] Update `backend/app/main.py` processors to enforce mandatory fields (event, timestamp, user_id, company_id, level) in all logs.
+- [ ] Ensure middleware binds context (user_id, company_id) to logs.
 
-## 6. Documentation Updates - COMPLETED
-- [x] Update README.md with completed features and deployment steps
-- [x] Update TODO.md to reflect completed items
-- [x] Add Implementation Status Report (Phase 8)
+### 4. Create Structlog Consistency Test
+- [ ] Create `backend/tests/test_structlog_consistency.py` with tests to capture log outputs, assert JSON structure, and mandatory fields.
+- [ ] Use caplog fixture to validate logs across modules.
 
-## 7. Verification and Reporting - COMPLETED
-- [x] Run full backend and frontend test suites
-- [x] Verify all features work end-to-end
-- [x] Test deployment setup with docker-compose
-- [x] Generate final Implementation Status Report
+### 5. Integrate Tests into Test Suite
+- [ ] Create `backend/pytest.ini` with addopts for parallel execution and coverage.
+- [ ] Update `backend/tests/conftest.py` if needed for fixtures.
+
+### 6. Update Dependencies
+- [ ] Ensure `pytest` and `pytest-cov` are in `backend/requirements.txt`; install if missing.
+
+### 7. Run Tests and Verify
+- [ ] Activate venv: `source backend/venv/bin/activate`
+- [ ] Run `pytest -v tests/test_structlog_consistency.py --cov` to verify consistency.
+- [ ] If failures, generate `backend/structlog_inconsistencies.log` with details.
+
+### 8. Update Readiness Report
+- [ ] If tests pass: Update report with ✅ Logging consistency: Structlog fully integrated...
+- [ ] If failures: Update with 🔄 Logging consistency: Structlog integrated, but some modules emit inconsistent logs (see auto-generated structlog_inconsistencies.log).
+
+## Notes
+- Prioritize routers, CRUD, and services.
+- Ensure JSON structured logging globally.
+- Use context from current_user where possible for user_id/company_id.
+- Mark seed files as non-prod if prints remain.

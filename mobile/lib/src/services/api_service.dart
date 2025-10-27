@@ -292,4 +292,9 @@ class ApiService {
   Future<http.Response> markNotificationAsRead(int notificationId) async {
     return await post('/notifications/mark-read/$notificationId', {});
   }
+
+  // FCM Token management
+  Future<http.Response> updateFCMToken(String fcmToken) async {
+    return await post('/auth/update-fcm-token', {'fcm_token': fcmToken});
+  }
 }

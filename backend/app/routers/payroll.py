@@ -1,3 +1,4 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
@@ -21,6 +22,8 @@ from ..schemas import (
     PayrollEntryCreate, PayrollEntryOut
 )
 from ..deps import get_current_user
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
