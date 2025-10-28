@@ -1,66 +1,87 @@
-# Structlog Consistency Verification and Setup TODO
+# TODO: Lark-Style Messenger & Meetings Integration for Workforce App
 
-## Overview
-Perform comprehensive verification and continuous validation setup for Structlog consistency across the backend. Ensure all modules use Structlog with JSON structured logging, consistent fields (event, timestamp, user_id, company_id, level), and eliminate print() and logging calls.
+## Backend (FastAPI + PostgreSQL)
+### DB Models & Migrations
+- [ ] Edit `backend/app/models/chat.py`: Add attachments (JSONB for file URLs), reactions (relationship to new MessageReaction model)
+- [ ] Create `backend/app/models/channels.py`: id, name, type (enum: DIRECT/GROUP/PUBLIC), company_id, created_by (user_id), members (many-to-many via new ChannelMember model: channel_id, user_id, joined_at)
+- [ ] Create `backend/app/models/message_reactions.py`: id, message_id (FK ChatMessage), user_id (FK User), emoji (str), created_at
+- [ ] Create `backend/app/models/meetings.py`: id, title, organizer_id (FK User), company_id, start_time/end_time (DateTime), status (enum: SCHEDULED/ACTIVE/ENDED), link (str for WebRTC room)
+- [ ] Create `backend/app/models/meeting_participants.py`: meeting_id (FK), user_id (FK), role (enum: ORGANIZER/PARTICIPANT), join_time/leave_time (DateTime nullable)
+- [ ] Edit `backend/app/models/notification.py`: Add types CHAT_MESSAGE, MEETING_INVITE, MEETING_STARTED
+- [ ] Create Alembic revision: `alembic revision --autogenerate -m "add_chat_meetings"`
+- [ ] Run `alembic upgrade head`
 
-## Steps
+### Services
+- [ ] Create `backend/app/services/chat_service.py`: Extend crud_chat – add create_group_channel, add_member, send_message_to_channel (with attachments JSON, reactions), get_channel_messages, add/remove_reaction, get_typing_users (Redis set), mark_read_receipts (update is_read + broadcast)
+- [ ] Create `backend/app/services/meeting_service.py`: create_meeting, invite_participants (add to MeetingParticipant + FCM notify), join_meeting (update join_time, broadcast presence), end_meeting (update status/leave_times), get_meetings_for_user
+- [ ] Edit `backend/app/services/fcm_service.py`: Add send_meeting_invite (with deep link data: {"type": "MEETING_INVITE", "meeting_id": id, "deep_link": "workforce://meeting/{id}"})
+- [ ] Create `backend/app/services/redis_service.py`: For presence (user:online:{company_id}:{user_id} -> set expire 30s on heartbeat), typing (channel:typing:{channel_id}:{user_id})
 
-### 1. Add Structlog Imports and Loggers to Missing Files
-- [ ] Add `import structlog` and `logger = structlog.get_logger(__name__)` to:
-  - `backend/app/routers/companies.py`
-  - `backend/app/routers/dashboard.py`
-  - `backend/app/routers/documents.py`
-  - `backend/app/routers/employees.py`
-  - `backend/app/routers/leaves.py`
-  - `backend/app/routers/notification_preferences.py`
-  - `backend/app/routers/notifications.py`
-  - `backend/app/routers/payroll.py`
-  - `backend/app/routers/profile.py` (merge final/fixed if needed)
-  - `backend/app/routers/shifts.py`
-  - `backend/app/routers/tasks.py`
-  - `backend/app/routers/ws_notifications.py`
-  - `backend/app/routers/chat.py`
-  - `backend/app/crud_announcements.py`
-  - `backend/app/crud_chat.py`
-  - `backend/app/crud_documents.py`
+### CRUD
+- [ ] Create `backend/app/crud/crud_channels.py`: create/get/update/delete channels, manage members
+- [ ] Create `backend/app/crud/crud_reactions.py`: add/get/remove reactions
+- [ ] Create `backend/app/crud/crud_meetings.py`: create/get/join/end meetings, manage participants
+- [ ] Edit `backend/app/crud/crud_chat.py`: Integrate channels (message.channel_id FK if not direct), attachments, reactions; add typing indicator broadcast
+- [ ] Edit `backend/app/crud/crud_notifications.py`: Add create_chat_notification, create_meeting_notification (types above)
 
-### 2. Replace Print Statements with Structlog Calls
-- [ ] Replace all `print()` in:
-  - `backend/app/routers/employees.py` (debug messages)
-  - `backend/app/routers/leaves.py` (warnings)
-  - `backend/app/routers/shifts.py` (warnings)
-  - `backend/app/routers/attendance.py` (partial, clock-out prints)
-  - `backend/app/seed_demo_user.py`
-  - `backend/app/seed_demo_user_fixed.py`
-  - `backend/app/seed_demo_user_final.py`
-- [ ] Use `logger.info()`, `logger.warning()`, or `logger.error()` with consistent fields: `event`, `user_id`, `company_id`, etc.
+### Routers
+- [ ] Edit `backend/app/routers/chat.py`: Add POST /channels/create, POST /channels/{channel_id}/members, POST /messages/{message_id}/reactions, GET /channels, GET /channels/{id}/messages, WS /ws/chat/{channel_id} (extend for typing/receipts via Redis)
+- [ ] Create `backend/app/routers/meetings.py`: POST /create, GET /my, POST /{id}/invite, POST /{id}/join, GET /{id}/participants, WS /ws/{meeting_id} (signaling: offer/answer/ice-candidate via broadcast)
+- [ ] Edit `backend/app/routers/ws_notifications.py`: Extend ConnectionManager – add user-specific broadcast (dict company:user_id -> WS), presence heartbeat (periodic ping), typing event handling
+- [ ] Edit `backend/app/routers/notifications.py`: Add endpoints for chat/meeting types
 
-### 3. Enhance Main.py Configuration for Mandatory Fields
-- [ ] Update `backend/app/main.py` processors to enforce mandatory fields (event, timestamp, user_id, company_id, level) in all logs.
-- [ ] Ensure middleware binds context (user_id, company_id) to logs.
+### Main App & Infra
+- [ ] Edit `backend/app/main.py`: Add meetings router, WS auth middleware, Redis client init
+- [ ] Edit `backend/requirements.txt`: Add aioredis, python-multipart, alembic, structlog
+- [ ] Edit `docker-compose.yml`: Add Redis service, update backend depends_on
+- [ ] Edit `README.md`: Add setup for Redis, FCM credentials, WebRTC (STUN/TURN servers)
 
-### 4. Create Structlog Consistency Test
-- [ ] Create `backend/tests/test_structlog_consistency.py` with tests to capture log outputs, assert JSON structure, and mandatory fields.
-- [ ] Use caplog fixture to validate logs across modules.
+## Frontend (React)
+### Structure & Components
+- [ ] Create `frontend-web/web/src/features/chat_and_meetings/` folder
+- [ ] Create `ChatPanel.jsx`: List channels/direct, message list (group by date), real-time via useWebSocket hook
+- [ ] Create `MessageInput.jsx`: Textarea + send, emoji picker, file upload, mentions
+- [ ] Create `MeetingRoom.jsx`: Video grid (PeerJS), controls (mute/camera/share screen), participant list
+- [ ] Create `useChatStore.js` (Zustand): activeChannel, messages, typingUsers, unreadCounts
+- [ ] Create `useMeetingStore.js`: activeMeeting, participants, signaling
+- [ ] Edit existing WS hook: Extend for auth, channels, events (typing, receipts)
+- [ ] Create `ChannelList.jsx`: Fetch /channels, join on click
+- [ ] Integrate toasts for new messages/invites
 
-### 5. Integrate Tests into Test Suite
-- [ ] Create `backend/pytest.ini` with addopts for parallel execution and coverage.
-- [ ] Update `backend/tests/conftest.py` if needed for fixtures.
+### Dependencies
+- [ ] Edit `frontend-web/web/package.json`: Add zustand, react-emoji-picker, react-dropzone, peerjs, socket.io-client
 
-### 6. Update Dependencies
-- [ ] Ensure `pytest` and `pytest-cov` are in `backend/requirements.txt`; install if missing.
+## Mobile (Flutter)
+### Structure & Components
+- [ ] Edit `mobile/lib/src/features/chat_screen.dart`: Channel list, message composer (attachments, reactions), real-time WS
+- [ ] Create `mobile/lib/src/features/meeting_screen.dart`: RTCVideoRenderer, controls, participant list
+- [ ] Edit `mobile/lib/src/api_service.dart`: Add methods for /channels, /messages/send (multipart), /meetings/create/join, WS connections
+- [ ] Use Provider/Riverpod for chat/meeting state
+- [ ] Edit FCM handler: Deep links for meeting invites
 
-### 7. Run Tests and Verify
-- [ ] Activate venv: `source backend/venv/bin/activate`
-- [ ] Run `pytest -v tests/test_structlog_consistency.py --cov` to verify consistency.
-- [ ] If failures, generate `backend/structlog_inconsistencies.log` with details.
+### Dependencies
+- [ ] Edit `mobile/pubspec.yaml`: Add flutter_webrtc, web_socket_channel, file_picker, emoji_picker_flutter, firebase_dynamic_links
 
-### 8. Update Readiness Report
-- [ ] If tests pass: Update report with ✅ Logging consistency: Structlog fully integrated...
-- [ ] If failures: Update with 🔄 Logging consistency: Structlog integrated, but some modules emit inconsistent logs (see auto-generated structlog_inconsistencies.log).
+## Testing & Simulation
+### Backend Tests
+- [ ] Create `backend/tests/test_chat_service.py`: Test create_channel, send_message (attachments/reactions), WS broadcast, typing/receipts (mock Redis)
+- [ ] Create `backend/tests/test_meeting_service.py`: Test create/join/end, participant mgmt, signaling events
+- [ ] Edit `backend/tests/test_notifications.py`: Add chat/meeting types, FCM mocks
+- [ ] Create `backend/tests/mock_firebase.py`: Mock FCMService for tests
 
-## Notes
-- Prioritize routers, CRUD, and services.
-- Ensure JSON structured logging globally.
-- Use context from current_user where possible for user_id/company_id.
-- Mark seed files as non-prod if prints remain.
+### Frontend Tests
+- [ ] Create `frontend-web/web/src/tests/chat_integration.test.js`: Render ChatPanel, simulate WS messages, test input/send/reactions (msw for API/WS mocks)
+
+### Infra & Simulation
+- [ ] Edit `docker-compose.yml`: Add services for React (nginx or dev server port 3000), Flutter web if needed
+- [ ] Create `simulation_script.sh`: docker-compose up; curl tests for chat/meetings; simulate WS (wscat) for message flow/signaling
+- [ ] Run local simulation: Backend localhost:8000, Frontend 3000; test end-to-end
+
+### Lint/Format
+- [ ] Run black/isort on backend
+- [ ] Run eslint/prettier on frontend
+- [ ] Run dart format on mobile
+
+## Final Output
+- [ ] Generate `Workforce App Communication Readiness Report.md`: Sections for Messenger/Meetings readiness, Integration health, Logging, Test summary, Score: 85/100
+- [ ] Create `auto_patch_chat_meetings.sh`: Seq of commands: alembic upgrade, pip install, create files, run tests, docker-compose up

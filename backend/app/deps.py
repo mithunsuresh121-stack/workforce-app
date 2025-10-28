@@ -4,7 +4,7 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from .config import settings
 from .db import SessionLocal
-from .crud import get_user_by_email
+from .crud import get_user_by_email, get_user_by_email_only
 
 security = HTTPBearer()
 

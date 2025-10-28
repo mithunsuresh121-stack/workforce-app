@@ -3,7 +3,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from .config import settings, engine, Base
 from .models import *
-from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat
+from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat, meetings, websocket_manager
 from .custom_json_response import CustomJSONResponse
 
 # Set up structured logging with structlog as primary logger
@@ -98,6 +98,8 @@ app.include_router(notification_preferences.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
 app.include_router(documents, prefix="/api/documents")
 app.include_router(chat.router, prefix="/api/chat")
+app.include_router(meetings.router, prefix="/api/meetings")
+app.include_router(websocket_manager.router, prefix="/api/ws")
 
 from .seed_demo_user import seed_demo_user
 from .deps import get_db

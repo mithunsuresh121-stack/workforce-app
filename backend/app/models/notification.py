@@ -16,6 +16,9 @@ class NotificationType(str, enum.Enum):
     LEAVE_REJECTED = "LEAVE_REJECTED"
     SYSTEM_MESSAGE = "SYSTEM_MESSAGE"
     ADMIN_MESSAGE = "ADMIN_MESSAGE"
+    CHAT_MESSAGE = "CHAT_MESSAGE"
+    MEETING_INVITE = "MEETING_INVITE"
+    MEETING_STARTED = "MEETING_STARTED"
 
 class NotificationStatus(str, enum.Enum):
     UNREAD = "UNREAD"

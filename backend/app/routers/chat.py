@@ -1,106 +1,303 @@
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional, Dict, Any
 from ..db import get_db
-from ..models.chat import ChatMessage
-from ..crud_chat import create_chat_message, get_chat_history, get_company_chat_messages, mark_message_as_read
 from ..deps import get_current_user
-from ..schemas.schemas import ChatMessageCreate, ChatMessageOut
-from ..routers.ws_notifications import manager  # Import WebSocket manager
+from ..models.user import User
+from ..models.company import Company
+from ..crud.crud_chat import create_chat_message, get_chat_history, get_channel_messages, mark_message_as_read, get_unread_count
+from ..crud.crud_channels import create_channel, get_channels_for_company, add_member_to_channel, is_user_member_of_channel
+from ..crud.crud_reactions import add_reaction, remove_reaction, get_reactions_for_message
+from ..services.chat_service import chat_service
+from ..services.redis_service import redis_service
+from ..schemas.schemas import ChatMessageCreate, ChatMessageResponse, ChannelCreate, ChannelResponse, ReactionCreate, ChatMessageUpdate
+from ..services.fcm_service import fcm_service
+from ..crud.crud_notifications import create_notification
+from ..models.notification import NotificationType
 
 logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 
-@router.post("/send", response_model=ChatMessageOut)
-async def send_message(
-    message: ChatMessageCreate,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    # Ensure sender and receiver are in the same company
-    if message.receiver_id:
-        # Check if receiver exists and is in same company
-        from ..models.user import User
-        receiver = db.query(User).filter(
-            User.id == message.receiver_id,
-            User.company_id == current_user.company_id
-        ).first()
-        if not receiver:
-            raise HTTPException(status_code=404, detail="Receiver not found in your company")
-    else:
-        # Company-wide message, only admins can send
-        if current_user.role not in ["SUPERADMIN", "COMPANYADMIN"]:
-            raise HTTPException(status_code=403, detail="Only admins can send company-wide messages")
+# WebSocket connections for real-time chat
+active_connections: Dict[int, List[WebSocket]] = {}
 
-    chat_message = create_chat_message(db, message, current_user.id, current_user.company_id)
+@router.websocket("/ws/{user_id}")
+async def websocket_endpoint(websocket: WebSocket, user_id: int, db: Session = Depends(get_db)):
+    """WebSocket endpoint for real-time chat"""
+    await websocket.accept()
+    if user_id not in active_connections:
+        active_connections[user_id] = []
+    active_connections[user_id].append(websocket)
 
-    # Broadcast to WebSocket
-    notification_data = {
-        "type": "new_message",
-        "data": {
-            "id": chat_message.id,
-            "sender_id": chat_message.sender_id,
-            "receiver_id": chat_message.receiver_id,
-            "message": chat_message.message,
-            "created_at": chat_message.created_at.isoformat()
-        }
-    }
-    await manager.broadcast_to_company(current_user.company_id, notification_data)
+    # Set user online
+    await redis_service.set_user_online(1, user_id)  # TODO: Get company_id from token
 
-    return chat_message
-
-@router.get("/history/{user_id}", response_model=List[ChatMessageOut])
-def get_message_history(
-    user_id: int,
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    # Ensure both users are in the same company
-    other_user = db.query(ChatMessage).join(ChatMessage.sender).filter(
-        ChatMessage.id == user_id,
-        ChatMessage.company_id == current_user.company_id
-    ).first()
-    if not other_user:
-        raise HTTPException(status_code=404, detail="User not found in your company")
-
-    messages = get_chat_history(db, current_user.id, user_id, current_user.company_id)
-    return messages
-
-@router.get("/company", response_model=List[ChatMessageOut])
-def get_company_messages(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
-):
-    # Only admins can view company-wide messages
-    if current_user.role not in ["SUPERADMIN", "COMPANYADMIN"]:
-        raise HTTPException(status_code=403, detail="Only admins can view company messages")
-
-    messages = get_company_chat_messages(db, current_user.company_id)
-    return messages
-
-async def get_current_user_from_token(token: str, db: Session):
-    # Placeholder: implement JWT verification
-    # For now, assume token is user_id
-    from ..models.user import User
-    user_id = int(token)  # Simplified
-    user = db.query(User).filter(User.id == user_id).first()
-    return user
-
-@router.websocket("/ws/chat")
-async def websocket_chat(websocket: WebSocket, token: str, db: Session = Depends(get_db)):
-    # Authenticate user from token
-    user = await get_current_user_from_token(token, db)
-    if not user:
-        await websocket.close(code=1008)
-        return
-
-    await manager.connect(websocket, user.company_id)
     try:
         while True:
-            data = await websocket.receive_text()
-            # Handle incoming messages if needed
-            pass
+            data = await websocket.receive_json()
+            # Handle incoming messages
+            if data.get("type") == "typing":
+                await chat_service.handle_typing_indicator(user_id, data.get("is_typing", False))
+            elif data.get("type") == "message":
+                # Create message and broadcast
+                message_data = data.get("message")
+                message = create_chat_message(
+                    db=db,
+                    message_create=ChatMessageCreate(**message_data),
+                    sender_id=user_id,
+                    company_id=1,  # TODO: Get from token
+                    channel_id=message_data.get("channel_id"),
+                    attachments=message_data.get("attachments")
+                )
+                await broadcast_message(message, db)
     except WebSocketDisconnect:
-        manager.disconnect(websocket, user.company_id)
+        active_connections[user_id].remove(websocket)
+        if not active_connections[user_id]:
+            del active_connections[user_id]
+        # Set user offline
+        await redis_service.set_user_offline(1, user_id)
+
+async def broadcast_message(message, db: Session):
+    """Broadcast message to relevant users"""
+    # Get recipients based on message type
+    recipients = []
+    if message.channel_id:
+        # Channel message - get all channel members
+        from ..crud.crud_channels import get_channel_members
+        recipients = [m.user_id for m in get_channel_members(db, message.channel_id)]
+    elif message.receiver_id:
+        # Direct message
+        recipients = [message.receiver_id]
+    else:
+        # Company-wide
+        recipients = []  # TODO: Get all company users
+
+    for recipient_id in recipients:
+        if recipient_id in active_connections:
+            for connection in active_connections[recipient_id]:
+                await connection.send_json({
+                    "type": "message",
+                    "message": {
+                        "id": message.id,
+                        "sender_id": message.sender_id,
+                        "message": message.message,
+                        "attachments": message.attachments,
+                        "created_at": message.created_at.isoformat()
+                    }
+                })
+
+@router.post("/messages/send", response_model=ChatMessageResponse)
+async def send_message(
+    message: ChatMessageCreate,
+    channel_id: Optional[int] = None,
+    attachments: Optional[List[Dict[str, Any]]] = None,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Send a chat message"""
+    try:
+        # Validate channel membership if channel message
+        if channel_id and not is_user_member_of_channel(db, channel_id, current_user.id):
+            raise HTTPException(status_code=403, detail="Not a member of this channel")
+
+        chat_message = create_chat_message(
+            db=db,
+            message_create=message,
+            sender_id=current_user.id,
+            company_id=current_user.company_id,
+            channel_id=channel_id,
+            attachments=attachments
+        )
+
+        # Send FCM notification if direct message
+        if message.receiver_id and message.receiver_id != current_user.id:
+            fcm_service.send_chat_message(db, current_user.id, message.receiver_id, message.message)
+
+        # Create in-app notification
+        if message.receiver_id:
+            create_notification(
+                db=db,
+                user_id=message.receiver_id,
+                company_id=current_user.company_id,
+                title=f"New message from {current_user.first_name}",
+                message=message.message[:100] + "..." if len(message.message) > 100 else message.message,
+                type=NotificationType.CHAT_MESSAGE
+            )
+
+        logger.info("Message sent", message_id=chat_message.id, sender_id=current_user.id)
+        return ChatMessageResponse.from_orm(chat_message)
+    except Exception as e:
+        logger.error("Failed to send message", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to send message")
+
+@router.get("/messages/history", response_model=List[ChatMessageResponse])
+def get_message_history(
+    receiver_id: Optional[int] = None,
+    channel_id: Optional[int] = None,
+    limit: int = 50,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get chat message history"""
+    try:
+        messages = get_chat_history(
+            db=db,
+            sender_id=current_user.id,
+            receiver_id=receiver_id,
+            company_id=current_user.company_id,
+            channel_id=channel_id,
+            limit=limit
+        )
+        return [ChatMessageResponse.from_orm(msg) for msg in messages]
+    except Exception as e:
+        logger.error("Failed to get message history", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to get message history")
+
+@router.post("/messages/{message_id}/read")
+def mark_as_read(
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Mark message as read"""
+    try:
+        message = mark_message_as_read(db, message_id, current_user.id)
+        if not message:
+            raise HTTPException(status_code=404, detail="Message not found")
+        return {"status": "success"}
+    except Exception as e:
+        logger.error("Failed to mark message as read", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to mark message as read")
+
+@router.get("/messages/unread/count")
+def get_unread_message_count(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get unread message count"""
+    try:
+        count = get_unread_count(db, current_user.id, current_user.company_id)
+        return {"unread_count": count}
+    except Exception as e:
+        logger.error("Failed to get unread count", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to get unread count")
+
+@router.post("/channels/create", response_model=ChannelResponse)
+def create_new_channel(
+    channel: ChannelCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new channel"""
+    try:
+        db_channel = create_channel(
+            db=db,
+            name=channel.name,
+            type=channel.type,
+            company_id=current_user.company_id,
+            created_by=current_user.id
+        )
+
+        # Add creator as member
+        add_member_to_channel(db, db_channel.id, current_user.id)
+
+        logger.info("Channel created", channel_id=db_channel.id, creator_id=current_user.id)
+        return ChannelResponse.from_orm(db_channel)
+    except Exception as e:
+        logger.error("Failed to create channel", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to create channel")
+
+@router.get("/channels", response_model=List[ChannelResponse])
+def get_channels(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get channels for company"""
+    try:
+        channels = get_channels_for_company(db, current_user.company_id, current_user.id)
+        return [ChannelResponse.from_orm(ch) for ch in channels]
+    except Exception as e:
+        logger.error("Failed to get channels", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to get channels")
+
+@router.post("/channels/{channel_id}/join")
+def join_channel(
+    channel_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Join a channel"""
+    try:
+        add_member_to_channel(db, channel_id, current_user.id)
+        return {"status": "success"}
+    except Exception as e:
+        logger.error("Failed to join channel", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to join channel")
+
+@router.post("/messages/{message_id}/reactions", response_model=dict)
+def add_message_reaction(
+    message_id: int,
+    reaction: ReactionCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Add reaction to message"""
+    try:
+        db_reaction = add_reaction(db, message_id, current_user.id, reaction.emoji)
+        return {"status": "success", "reaction_id": db_reaction.id}
+    except Exception as e:
+        logger.error("Failed to add reaction", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to add reaction")
+
+@router.delete("/messages/{message_id}/reactions/{emoji}")
+def remove_message_reaction(
+    message_id: int,
+    emoji: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Remove reaction from message"""
+    try:
+        success = remove_reaction(db, message_id, current_user.id, emoji)
+        if not success:
+            raise HTTPException(status_code=404, detail="Reaction not found")
+        return {"status": "success"}
+    except Exception as e:
+        logger.error("Failed to remove reaction", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to remove reaction")
+
+@router.get("/messages/{message_id}/reactions")
+def get_message_reactions(
+    message_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get reactions for message"""
+    try:
+        reactions = get_reactions_for_message(db, message_id)
+        return {"reactions": [{"emoji": r.emoji, "user_id": r.user_id} for r in reactions]}
+    except Exception as e:
+        logger.error("Failed to get reactions", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to get reactions")
+
+@router.put("/messages/{message_id}", response_model=ChatMessageResponse)
+def update_message(
+    message_id: int,
+    message_update: ChatMessageUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Update a chat message"""
+    try:
+        from ..crud.crud_chat import update_message as crud_update_message
+        updated_message = crud_update_message(db, message_id, current_user.id, message_update.message)
+        if not updated_message:
+            raise HTTPException(status_code=404, detail="Message not found or not authorized to edit")
+        return ChatMessageResponse.from_orm(updated_message)
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to update message", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to update message")

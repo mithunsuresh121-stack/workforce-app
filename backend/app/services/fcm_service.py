@@ -36,6 +36,27 @@ class FCMService:
             logger.error(f"Failed to initialize Firebase Admin SDK: {str(e)}")
             self._initialized = False
 
+    def send_meeting_invite(self, db: Session, user_id: int, meeting_id: int, meeting_title: str) -> bool:
+        """
+        Send meeting invite push notification with deep link
+        """
+        fcm_token = self.get_user_fcm_token(db, user_id)
+        if not fcm_token:
+            return False
+
+        data = {
+            "type": "MEETING_INVITE",
+            "meeting_id": str(meeting_id),
+            "deep_link": f"workforce://meeting/{meeting_id}"
+        }
+
+        return self.send_push_notification(
+            token=fcm_token,
+            title=f"Meeting Invitation: {meeting_title}",
+            body="You have been invited to a meeting. Tap to join.",
+            data=data
+        )
+
     def send_push_notification(self, token: str, title: str, body: str, data: Optional[Dict[str, str]] = None) -> bool:
         """
         Send a push notification to a specific FCM token
