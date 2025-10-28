@@ -1,0 +1,29 @@
+from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+from enum import Enum as PyEnum
+from ..db import Base
+
+class MeetingStatus(str, PyEnum):
+    SCHEDULED = "SCHEDULED"
+    ACTIVE = "ACTIVE"
+    ENDED = "ENDED"
+
+class Meeting(Base):
+    __tablename__ = "meetings"
+
+    id = Column(Integer, primary_key=True, index=True)
+    title = Column(String(255), nullable=False)
+    organizer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    start_time = Column(DateTime, nullable=False)
+    end_time = Column(DateTime, nullable=False)
+    status = Column(Enum(MeetingStatus), nullable=False)
+    link = Column(String(500), nullable=True)
+    created_at = Column(DateTime, server_default=func.now())
+    updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
+
+    # Relationships
+    organizer = relationship("User", foreign_keys=[organizer_id])
+    company = relationship("Company")
+    participants = relationship("MeetingParticipant", back_populates="meeting")

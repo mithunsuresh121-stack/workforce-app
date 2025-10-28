@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text
+from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey, Text, JSON
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from ..db import Base
@@ -10,7 +10,9 @@ class ChatMessage(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     receiver_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # None for company-wide messages
+    channel_id = Column(Integer, ForeignKey("channels.id"), nullable=True)  # For channel messages
     message = Column(Text, nullable=False)
+    attachments = Column(JSON, nullable=True)  # JSON array of file URLs/metadata
     is_read = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -19,6 +21,8 @@ class ChatMessage(Base):
     company = relationship("Company")
     sender = relationship("User", foreign_keys=[sender_id])
     receiver = relationship("User", foreign_keys=[receiver_id])
+    channel = relationship("Channel", back_populates="messages")
+    reactions = relationship("MessageReaction", back_populates="message")
 
     def __repr__(self):
         return f"<ChatMessage {self.id} from {self.sender_id} to {self.receiver_id or 'company'}>"

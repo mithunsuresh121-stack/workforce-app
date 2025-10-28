@@ -39,7 +39,6 @@ def seed_demo_user(db: Session):
     if existing_super_admin:
         logger.info(
             "Super Admin user already exists",
-            event="super_admin_exists",
             email=super_admin_email
         )
     else:
@@ -48,7 +47,6 @@ def seed_demo_user(db: Session):
                    full_name="Super Administrator", role="SUPERADMIN", company_id=None)
         logger.info(
             "Super Admin user created successfully",
-            event="super_admin_created",
             email=super_admin_email
         )
     
@@ -58,7 +56,6 @@ def seed_demo_user(db: Session):
     if not company:
         logger.info(
             "Creating demo company",
-            event="demo_company_creation_started",
             company_name=demo_company_name
         )
         company = create_company(
@@ -75,7 +72,6 @@ def seed_demo_user(db: Session):
         )
         logger.info(
             "Demo company created successfully",
-            event="demo_company_created",
             company_id=company.id,
             company_name=demo_company_name
         )
@@ -86,7 +82,6 @@ def seed_demo_user(db: Session):
     if existing_user:
         logger.info(
             "Demo user already exists",
-            event="demo_user_exists",
             email=demo_email,
             company_id=company.id
         )
@@ -96,7 +91,6 @@ def seed_demo_user(db: Session):
             db.commit()
             logger.info(
                 "Fixed demo user role to EMPLOYEE",
-                event="demo_user_role_fixed",
                 user_id=existing_user.id,
                 email=demo_email,
                 company_id=company.id
@@ -105,7 +99,6 @@ def seed_demo_user(db: Session):
         create_user(db, demo_email, demo_password, full_name="Demo User", role="EMPLOYEE", company_id=company.id)
         logger.info(
             "Demo user created successfully",
-            event="demo_user_created",
             email=demo_email,
             company_id=company.id
         )
@@ -117,7 +110,6 @@ def seed_demo_user(db: Session):
     if existing_manager:
         logger.info(
             "Demo manager already exists",
-            event="demo_manager_exists",
             email=manager_email,
             company_id=company.id
         )
@@ -127,7 +119,6 @@ def seed_demo_user(db: Session):
             db.commit()
             logger.info(
                 "Fixed demo manager role to MANAGER",
-                event="demo_manager_role_fixed",
                 user_id=existing_manager.id,
                 email=manager_email,
                 company_id=company.id
@@ -136,7 +127,6 @@ def seed_demo_user(db: Session):
         create_user(db, manager_email, manager_password, full_name="Demo Manager", role="MANAGER", company_id=company.id)
         logger.info(
             "Demo manager created successfully",
-            event="demo_manager_created",
             email=manager_email,
             company_id=company.id
         )

@@ -1,6 +1,6 @@
 
 from pydantic import BaseModel, EmailStr, Field, validator
-from typing import Optional, List
+from typing import Optional, List, Dict, Any
 from datetime import datetime
 from enum import Enum
 
@@ -535,14 +535,88 @@ class ChatMessageBase(BaseModel):
 class ChatMessageCreate(ChatMessageBase):
     receiver_id: Optional[int] = None  # None for company-wide
 
-class ChatMessageOut(ChatMessageBase):
+class ChatMessageResponse(ChatMessageBase):
     id: int
     company_id: int
     sender_id: int
     receiver_id: Optional[int]
+    channel_id: Optional[int]
+    attachments: List[Dict[str, Any]] = []
     is_read: bool
+    edited_at: Optional[datetime]
     created_at: datetime
     updated_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class ChatMessageUpdate(BaseModel):
+    message: str = Field(..., min_length=1, max_length=1000)
+
+# Channel Schemas
+class ChannelType(str, Enum):
+    DIRECT = "direct"
+    GROUP = "group"
+    PUBLIC = "public"
+
+class ChannelBase(BaseModel):
+    name: str = Field(..., min_length=1, max_length=100)
+    type: ChannelType
+
+class ChannelCreate(ChannelBase):
+    pass
+
+class ChannelResponse(ChannelBase):
+    id: int
+    company_id: int
+    created_by: int
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+# Reaction Schemas
+class ReactionCreate(BaseModel):
+    emoji: str = Field(..., min_length=1, max_length=10)
+
+# Meeting Schemas
+class MeetingStatus(str, Enum):
+    SCHEDULED = "scheduled"
+    ACTIVE = "active"
+    ENDED = "ended"
+    CANCELLED = "cancelled"
+
+class ParticipantRole(str, Enum):
+    ORGANIZER = "organizer"
+    PARTICIPANT = "participant"
+
+class MeetingBase(BaseModel):
+    title: str = Field(..., min_length=1, max_length=200)
+    start_time: datetime
+    end_time: datetime
+    participant_ids: List[int] = []
+
+class MeetingCreate(MeetingBase):
+    pass
+
+class MeetingResponse(MeetingBase):
+    id: int
+    organizer_id: int
+    company_id: int
+    status: MeetingStatus
+    link: Optional[str]
+    created_at: datetime
+
+    class Config:
+        from_attributes = True
+
+class MeetingParticipantResponse(BaseModel):
+    id: int
+    meeting_id: int
+    user_id: int
+    role: ParticipantRole
+    join_time: Optional[datetime]
+    leave_time: Optional[datetime]
 
     class Config:
         from_attributes = True

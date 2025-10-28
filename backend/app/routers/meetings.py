@@ -1,0 +1,156 @@
+import structlog
+from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
+from sqlalchemy.orm import Session
+from datetime import datetime
+from typing import List, Optional
+from ..db import get_db
+from ..deps import get_current_user
+from ..models.user import User
+from ..crud.crud_meetings import create_meeting, get_meeting, get_meetings_for_company, add_participant_to_meeting, get_meeting_participants, is_user_participant
+from ..services.meeting_service import meeting_service
+from ..schemas.schemas import MeetingCreate, MeetingResponse, MeetingParticipantResponse
+from ..services.redis_service import redis_service
+
+logger = structlog.get_logger(__name__)
+
+router = APIRouter()
+
+# WebRTC signaling connections
+meeting_connections: dict = {}  # meeting_id -> {user_id: websocket}
+
+@router.websocket("/ws/{meeting_id}/{user_id}")
+async def meeting_websocket_endpoint(websocket: WebSocket, meeting_id: int, user_id: int, db: Session = Depends(get_db)):
+    """WebRTC signaling WebSocket for meetings"""
+    await websocket.accept()
+
+    if meeting_id not in meeting_connections:
+        meeting_connections[meeting_id] = {}
+    meeting_connections[meeting_id][user_id] = websocket
+
+    try:
+        while True:
+            data = await websocket.receive_json()
+            # Handle WebRTC signaling
+            if data.get("type") in ["offer", "answer", "ice-candidate"]:
+                # Forward to other participants
+                for participant_id, conn in meeting_connections[meeting_id].items():
+                    if participant_id != user_id:
+                        await conn.send_json({
+                            "type": data["type"],
+                            "from": user_id,
+                            "data": data.get("data")
+                        })
+    except WebSocketDisconnect:
+        if meeting_id in meeting_connections and user_id in meeting_connections[meeting_id]:
+            del meeting_connections[meeting_id][user_id]
+            if not meeting_connections[meeting_id]:
+                del meeting_connections[meeting_id]
+
+@router.post("/create", response_model=MeetingResponse)
+def create_new_meeting(
+    meeting: MeetingCreate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Create a new meeting"""
+    try:
+        db_meeting = meeting_service.create_meeting(
+            db=db,
+            title=meeting.title,
+            organizer_id=current_user.id,
+            company_id=current_user.company_id,
+            start_time=meeting.start_time,
+            end_time=meeting.end_time,
+            participant_ids=meeting.participant_ids
+        )
+        logger.info("Meeting created via API", meeting_id=db_meeting.id, organizer_id=current_user.id)
+        return MeetingResponse.from_orm(db_meeting)
+    except Exception as e:
+        logger.error("Failed to create meeting", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to create meeting")
+
+@router.get("/", response_model=List[MeetingResponse])
+def get_user_meetings(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get meetings for current user"""
+    try:
+        meetings = meeting_service.get_meetings_for_user(current_user.id, current_user.company_id, db)
+        return [MeetingResponse.from_orm(m) for m in meetings]
+    except Exception as e:
+        logger.error("Failed to get meetings", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to get meetings")
+
+@router.post("/{meeting_id}/join")
+def join_meeting(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Join a meeting"""
+    try:
+        if not is_user_participant(db, meeting_id, current_user.id):
+            raise HTTPException(status_code=403, detail="Not invited to this meeting")
+
+        participant = meeting_service.join_meeting(db, meeting_id, current_user.id)
+        return {"status": "success", "participant_id": participant.id}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to join meeting", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to join meeting")
+
+@router.post("/{meeting_id}/end")
+def end_meeting(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """End a meeting (organizer only)"""
+    try:
+        meeting_service.end_meeting(db, meeting_id, current_user.id)
+        return {"status": "success"}
+    except ValueError as e:
+        raise HTTPException(status_code=403, detail=str(e))
+    except Exception as e:
+        logger.error("Failed to end meeting", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to end meeting")
+
+@router.get("/{meeting_id}/participants", response_model=List[MeetingParticipantResponse])
+def get_meeting_participants_list(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get participants for a meeting"""
+    try:
+        if not is_user_participant(db, meeting_id, current_user.id):
+            raise HTTPException(status_code=403, detail="Not a participant in this meeting")
+
+        participants = meeting_service.get_meeting_participants(db, meeting_id)
+        return [MeetingParticipantResponse.from_orm(p) for p in participants]
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get participants", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to get participants")
+
+@router.get("/{meeting_id}/online")
+async def get_online_participants(
+    meeting_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    """Get online participants for a meeting"""
+    try:
+        if not is_user_participant(db, meeting_id, current_user.id):
+            raise HTTPException(status_code=403, detail="Not a participant in this meeting")
+
+        online_users = await meeting_service.get_online_participants(meeting_id, current_user.company_id)
+        return {"online_participants": online_users}
+    except HTTPException:
+        raise
+    except Exception as e:
+        logger.error("Failed to get online participants", error=str(e), user_id=current_user.id)
+        raise HTTPException(status_code=500, detail="Failed to get online participants")
