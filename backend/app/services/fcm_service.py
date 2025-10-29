@@ -47,13 +47,36 @@ class FCMService:
         data = {
             "type": "MEETING_INVITE",
             "meeting_id": str(meeting_id),
-            "deep_link": f"workforce://meeting/{meeting_id}"
+            "deep_link": f"workforce://meeting/{meeting_id}",
+            "click_action": "FLUTTER_NOTIFICATION_CLICK"  # For Flutter deep linking
         }
 
         return self.send_push_notification(
             token=fcm_token,
             title=f"Meeting Invitation: {meeting_title}",
             body="You have been invited to a meeting. Tap to join.",
+            data=data
+        )
+
+    def send_chat_notification(self, db: Session, user_id: int, channel_id: int, sender_name: str, message: str) -> bool:
+        """
+        Send chat message push notification
+        """
+        fcm_token = self.get_user_fcm_token(db, user_id)
+        if not fcm_token:
+            return False
+
+        data = {
+            "type": "CHAT_MESSAGE",
+            "channel_id": str(channel_id),
+            "deep_link": f"workforce://chat/{channel_id}",
+            "click_action": "FLUTTER_NOTIFICATION_CLICK"
+        }
+
+        return self.send_push_notification(
+            token=fcm_token,
+            title=f"New message from {sender_name}",
+            body=message[:100] + "..." if len(message) > 100 else message,
             data=data
         )
 

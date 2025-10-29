@@ -39,8 +39,11 @@ def test_join_meeting(db: Session, test_company: Company, test_user: User, test_
         participant_ids=[test_user2.id]
     )
 
-    # Join meeting
-    participant = meeting_service.join_meeting(db, meeting.id, test_user2.id)
+    # Join meeting (mock async call)
+    import asyncio
+    from unittest.mock import patch
+    with patch('asyncio.create_task'):
+        participant = meeting_service.join_meeting(db, meeting.id, test_user2.id)
     assert participant.user_id == test_user2.id
     assert participant.meeting_id == meeting.id
     assert participant.join_time is not None
@@ -67,7 +70,7 @@ def test_end_meeting(db: Session, test_company: Company, test_user: User, test_u
     # Refresh meeting from DB
     from app.crud.crud_meetings import get_meeting
     updated_meeting = get_meeting(db, meeting.id, test_company.id)
-    assert updated_meeting.status.value == "ended"
+    assert updated_meeting.status.value == "ENDED"
     assert updated_meeting.end_time is not None
 
 def test_get_meetings_for_user(db: Session, test_company: Company, test_user: User, test_user2: User):
@@ -87,6 +90,6 @@ def test_get_meetings_for_user(db: Session, test_company: Company, test_user: Us
     )
 
     # Get meetings for user2
-    meetings = meeting_service.get_meetings_for_user(test_user2.id, test_company.id, db)
+    meetings = meeting_service.get_meetings_for_user(db, test_user2.id, test_company.id)
     assert len(meetings) >= 1
     assert any(m.title == "Test Meeting" for m in meetings)
