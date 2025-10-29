@@ -103,11 +103,29 @@ app.include_router(websocket_manager.router, prefix="/api/ws")
 
 from .seed_demo_user import seed_demo_user
 from .deps import get_db
+from .services.redis_service import redis_service
+from prometheus_fastapi_instrumentator import Instrumentator
+from .metrics import registry
 
 @app.on_event("startup")
 async def startup_event():
+    # Initialize Redis with health check
+    try:
+        await redis_service.initialize()
+        healthy = await redis_service.health_check()
+        if not healthy:
+            raise RuntimeError("Redis health check failed")
+        logger.info("Redis initialized and healthy on startup")
+    except Exception as e:
+        logger.error("Failed to initialize Redis on startup", error=str(e), exc_info=True)
+        raise
+
+    # Seed demo user
     db = next(get_db())
     seed_demo_user(db)
+
+    # Initialize Prometheus metrics
+    Instrumentator().instrument(app).expose(app, registry=registry)
 
 app.include_router(dashboard.router, prefix="/api")
 @app.get("/")

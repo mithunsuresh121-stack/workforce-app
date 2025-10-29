@@ -4,7 +4,11 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from .config import settings
 from .db import SessionLocal
-from .crud import get_user_by_email, get_user_by_email_only
+from .base_crud import get_user_by_email, get_user_by_email_only
+
+import structlog
+logger = structlog.get_logger(__name__)
+logger.info("import_fix_applied", file="deps.py", status="success")
 
 security = HTTPBearer()
 

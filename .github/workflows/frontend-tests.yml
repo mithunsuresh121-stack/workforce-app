@@ -30,3 +30,14 @@ jobs:
         run: |
           cd frontend-web/web-app
           npm run build
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          file: ./frontend-web/web-app/coverage/lcov.info
+          flags: frontend
+      - name: Run e2e WebSocket tests
+        run: |
+          cd frontend-web/web-app
+          npm install --save-dev playwright
+          npx playwright install
+          npx playwright test websocket-reconnect.spec.js --headed=false

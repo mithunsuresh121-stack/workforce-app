@@ -10,12 +10,12 @@ from app.schemas.schemas import ChatMessageCreate
 
 def test_create_channel(db: Session, test_company: Company, test_user: User):
     """Test creating a channel"""
-    channel = chat_service.create_channel(
+    channel = chat_service.create_group_channel(
         db=db,
         name="Test Channel",
-        type=ChannelType.GROUP,
         company_id=test_company.id,
-        created_by=test_user.id
+        created_by=test_user.id,
+        member_ids=[test_user.id]
     )
     assert channel.name == "Test Channel"
     assert channel.type == ChannelType.GROUP
@@ -24,16 +24,16 @@ def test_create_channel(db: Session, test_company: Company, test_user: User):
 def test_send_channel_message(db: Session, test_company: Company, test_user: User):
     """Test sending a message to a channel"""
     # Create channel first
-    channel = chat_service.create_channel(
+    channel = chat_service.create_group_channel(
         db=db,
         name="Test Channel",
-        type=ChannelType.GROUP,
         company_id=test_company.id,
-        created_by=test_user.id
+        created_by=test_user.id,
+        member_ids=[test_user.id]
     )
 
     # Send message
-    message = chat_service.send_channel_message(
+    message = chat_service.send_message_to_channel(
         db=db,
         channel_id=channel.id,
         sender_id=test_user.id,
@@ -55,7 +55,7 @@ def test_add_reaction(db: Session, test_company: Company, test_user: User):
     )
 
     # Add reaction
-    reaction = chat_service.add_reaction(
+    reaction = chat_service.add_reaction_to_message(
         db=db,
         message_id=message.id,
         user_id=test_user.id,
@@ -69,5 +69,5 @@ def test_typing_indicator(db: Session, test_company: Company, test_user: User):
     import asyncio
     # This would typically test Redis operations
     # For now, just ensure the method exists and doesn't crash
-    asyncio.run(chat_service.handle_typing_indicator(test_user.id, True))
+    asyncio.run(chat_service.set_typing_indicator(1, test_user.id, True))
     assert True  # If we get here, the method executed without error

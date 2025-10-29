@@ -10,10 +10,7 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
-  const [reconnecting, setReconnecting] = useState(false);
   const reconnectTimeoutRef = useRef(null);
-  const heartbeatIntervalRef = useRef(null);
-  const reconnectDelayRef = useRef(1000); // Start with 1s delay
 
   const connectWebSocket = () => {
     if (!meetingId) return;
@@ -23,29 +20,12 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
     const websocket = new WebSocket(wsUrl);
 
     websocket.onopen = () => {
-      console.log("Connected to meeting WebSocket");
-      setReconnecting(false);
-      reconnectDelayRef.current = 1000; // Reset backoff delay on successful connection
-      // Start heartbeat
-      heartbeatIntervalRef.current = setInterval(() => {
-        if (websocket.readyState === WebSocket.OPEN) {
-          websocket.send(JSON.stringify({ type: "ping" }));
-        }
-      }, 30000); // Every 30 seconds
-      // Send join meeting message
-      websocket.send(JSON.stringify({ type: 'join_meeting' }));
-    };
       console.log('Connected to meeting WebSocket');
       // Send join meeting message
       websocket.send(JSON.stringify({ type: 'join_meeting' }));
     };
 
     websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "pong") {
-        // Heartbeat response - connection is alive
-        return;
-      }
       const data = JSON.parse(event.data);
       if (data.type === 'presence_update') {
         setParticipants(data.online_users || []);
@@ -61,16 +41,6 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
     };
 
     websocket.onclose = () => {
-      console.log("Meeting WebSocket disconnected, reconnecting...");
-      setReconnecting(true);
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
-      reconnectTimeoutRef.current = setTimeout(() => {
-        reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, 30000); // Exponential backoff, max 30s
-        connectWebSocket();
-      }, reconnectDelayRef.current);
-    };
       console.log('Meeting WebSocket disconnected, reconnecting...');
       reconnectTimeoutRef.current = setTimeout(connectWebSocket, 3000);
     };
@@ -114,8 +84,6 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
         peerConnectionRef.current.close();
       }
       if (ws) ws.close();
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
     };
   }, [meetingId]);
@@ -198,14 +166,6 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
   const leaveMeeting = async () => {
     try {
       // Send leave message via WebSocket
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'leave_meeting' }));
-      } else {
-        // Queue leave event if disconnected
-        const pendingEvents = JSON.parse(localStorage.getItem("pending_meeting_events") || "[]");
-        pendingEvents.push({ type: "leave_meeting" });
-        localStorage.setItem("pending_meeting_events", JSON.stringify(pendingEvents));
-      }
       if (ws) {
         ws.send(JSON.stringify({ type: 'leave_meeting' }));
       }
@@ -224,7 +184,6 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
     <div className="meeting-room">
       <div className="meeting-header">
         <h2>Meeting Room</h2>
-        {reconnecting <h2>Meeting Room</h2><h2>Meeting Room</h2> <span className="reconnecting-indicator">Reconnecting...</span>}
         <div className="meeting-info">
           <span>Meeting ID: {meetingId}</span>
           <span>Participants: {participants.length}</span>
@@ -309,15 +268,3 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
 };
 
 export default MeetingRoom;
-  // Send queued messages on reconnect
-  useEffect(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const pendingMessages = JSON.parse(localStorage.getItem("pending_meeting_events") || "[]");
-      if (pendingMessages.length > 0) {
-        pendingMessages.forEach(msg => {
-          ws.send(JSON.stringify(msg));
-        });
-        localStorage.removeItem("pending_meeting_events");
-      }
-    }
-  }, [ws?.readyState]);

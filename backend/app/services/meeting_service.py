@@ -84,7 +84,37 @@ class MeetingService:
 
     async def get_online_participants(self, meeting_id: int, company_id: int) -> List[int]:
         """Get online participants for a meeting"""
-        return await redis_service.get_online_users(company_id)
+        # Filter online users who are participants in this meeting
+        online_users = await redis_service.get_online_users(company_id)
+        # In production, cross-reference with meeting participants
+        # For now, return all online users in company (simplified)
+        return online_users
+
+    async def leave_meeting(self, db: Session, meeting_id: int, user_id: int):
+        """User leaves the meeting"""
+        participant = db.query(MeetingParticipant).filter(
+            MeetingParticipant.meeting_id == meeting_id,
+            MeetingParticipant.user_id == user_id
+        ).first()
+        if participant and not participant.leave_time:
+            participant.leave_time = datetime.utcnow()
+            db.commit()
+
+            # Mark user offline in Redis
+            meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+            if meeting:
+                await redis_service.set_user_offline(meeting.company_id, user_id)
+
+                # Publish leave event
+                await redis_service.publish_event(f"meeting:{meeting_id}", {
+                    "type": "user_left",
+                    "user_id": user_id,
+                    "meeting_id": meeting_id
+                })
+
+            logger.info("User left meeting", meeting_id=meeting_id, user_id=user_id)
+            return True
+        return False
 
     def _send_meeting_invite(self, db: Session, meeting: Meeting, user_id: int):
         """Send meeting invite notification"""

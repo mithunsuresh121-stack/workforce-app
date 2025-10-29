@@ -1,87 +1,39 @@
-# TODO: Lark-Style Messenger & Meetings Integration for Workforce App
+# Production Scaling TODO for Redis + WebSocket System
 
-## Backend (FastAPI + PostgreSQL)
-### DB Models & Migrations
-- [ ] Edit `backend/app/models/chat.py`: Add attachments (JSONB for file URLs), reactions (relationship to new MessageReaction model)
-- [ ] Create `backend/app/models/channels.py`: id, name, type (enum: DIRECT/GROUP/PUBLIC), company_id, created_by (user_id), members (many-to-many via new ChannelMember model: channel_id, user_id, joined_at)
-- [ ] Create `backend/app/models/message_reactions.py`: id, message_id (FK ChatMessage), user_id (FK User), emoji (str), created_at
-- [ ] Create `backend/app/models/meetings.py`: id, title, organizer_id (FK User), company_id, start_time/end_time (DateTime), status (enum: SCHEDULED/ACTIVE/ENDED), link (str for WebRTC room)
-- [ ] Create `backend/app/models/meeting_participants.py`: meeting_id (FK), user_id (FK), role (enum: ORGANIZER/PARTICIPANT), join_time/leave_time (DateTime nullable)
-- [ ] Edit `backend/app/models/notification.py`: Add types CHAT_MESSAGE, MEETING_INVITE, MEETING_STARTED
-- [ ] Create Alembic revision: `alembic revision --autogenerate -m "add_chat_meetings"`
-- [ ] Run `alembic upgrade head`
+This file tracks the implementation of the production optimization plan. Steps are broken down logically from the approved plan. Mark as [x] when completed.
 
-### Services
-- [ ] Create `backend/app/services/chat_service.py`: Extend crud_chat – add create_group_channel, add_member, send_message_to_channel (with attachments JSON, reactions), get_channel_messages, add/remove_reaction, get_typing_users (Redis set), mark_read_receipts (update is_read + broadcast)
-- [ ] Create `backend/app/services/meeting_service.py`: create_meeting, invite_participants (add to MeetingParticipant + FCM notify), join_meeting (update join_time, broadcast presence), end_meeting (update status/leave_times), get_meetings_for_user
-- [ ] Edit `backend/app/services/fcm_service.py`: Add send_meeting_invite (with deep link data: {"type": "MEETING_INVITE", "meeting_id": id, "deep_link": "workforce://meeting/{id}"})
-- [ ] Create `backend/app/services/redis_service.py`: For presence (user:online:{company_id}:{user_id} -> set expire 30s on heartbeat), typing (channel:typing:{channel_id}:{user_id})
+## 1. Redis Production Configuration
+- [ ] Create `redis.conf` with production settings: AOF+RDB persistence, allkeys-lru eviction, maxmemory 2GB, requirepass, save intervals (e.g., save 900 1), appendfsync everysec.
+- [ ] Edit `docker-compose.yml`: Mount redis.conf to /usr/local/etc/redis/redis.conf, add REDIS_PASSWORD env, healthcheck (redis-cli ping), depends_on for backend on redis, scale redis to 3 replicas for cluster sim.
+- [ ] Edit `backend/app/services/redis_service.py`: Add tenacity for retries (e.g., @retry(stop=stop_after_attempt(3))), explicit pooling (create_redis_pool(min=5, max=50, timeout=5)), health_check method (async def health_check(self): return await self.redis.ping()), sentinel prep (if env SENTINEL, use create_sentinel_pool).
+- [ ] Edit `backend/app/main.py`: In @app.on_event("startup"), await redis_service.initialize() and health_check(), raise if fails. Add redis-py import for sync health if needed.
 
-### CRUD
-- [ ] Create `backend/app/crud/crud_channels.py`: create/get/update/delete channels, manage members
-- [ ] Create `backend/app/crud/crud_reactions.py`: add/get/remove reactions
-- [ ] Create `backend/app/crud/crud_meetings.py`: create/get/join/end meetings, manage participants
-- [ ] Edit `backend/app/crud/crud_chat.py`: Integrate channels (message.channel_id FK if not direct), attachments, reactions; add typing indicator broadcast
-- [ ] Edit `backend/app/crud/crud_notifications.py`: Add create_chat_notification, create_meeting_notification (types above)
+## 2. Load Testing & Simulation
+- [ ] Edit `websocket_simulation.py`: Use asyncio.gather for 1000+ concurrent connects (e.g., num_users=1000), fetch real JWT via API login (add async login method), measure p95 (use numpy.percentile), add Redis throughput (subscribe to monitor or use redis.info()), CPU/mem via psutil, run 60s, output JSON report (latency_p95, dropped_msgs=errors, reconnect_rate).
+- [ ] Create `run_simulation.sh`: docker-compose up -d redis backend, wait for healthy, python websocket_simulation.py --users 1000 --duration 60, collect metrics (e.g., ps aux | grep redis for usage), generate report.
 
-### Routers
-- [ ] Edit `backend/app/routers/chat.py`: Add POST /channels/create, POST /channels/{channel_id}/members, POST /messages/{message_id}/reactions, GET /channels, GET /channels/{id}/messages, WS /ws/chat/{channel_id} (extend for typing/receipts via Redis)
-- [ ] Create `backend/app/routers/meetings.py`: POST /create, GET /my, POST /{id}/invite, POST /{id}/join, GET /{id}/participants, WS /ws/{meeting_id} (signaling: offer/answer/ice-candidate via broadcast)
-- [ ] Edit `backend/app/routers/ws_notifications.py`: Extend ConnectionManager – add user-specific broadcast (dict company:user_id -> WS), presence heartbeat (periodic ping), typing event handling
-- [ ] Edit `backend/app/routers/notifications.py`: Add endpoints for chat/meeting types
+## 3. Observability & Monitoring
+- [ ] Edit `backend/app/services/redis_service.py`: Add structlog.info/debug/error for connect/subscribe/publish (e.g., logger.info("redis_publish", channel=channel, msg_size=len(json.dumps(message)))), errors with exc_info.
+- [ ] Create `backend/app/metrics.py`: from prometheus_client import Counter, Histogram, Gauge; define redis_publish_total = Counter(...), ws_latency = Histogram(...), active_connections = Gauge(...), redis_queue_size = Gauge(...) (llen on pubsub channels).
+- [ ] Edit `backend/app/main.py`: from prometheus_fastapi_instrumentator import Instrumentator; Instrumentator().instrument(app).expose(app); add /metrics router if needed. In WS connect/disconnect, increment/decrement active_connections.
+- [ ] Create `docker-compose-grafana.yml`: Services for prometheus (config.yml with scrape /metrics), grafana (datasources/prometheus, dashboards for WS errors, redis throughput: rate(redis_publish_total[5m]), latency histogram).
+- [ ] Update `backend/requirements.txt`: Add prometheus-client==0.20.0, prometheus-fastapi-instrumentator==6.1.0, tenacity==8.2.3, psutil==5.9.8, numpy==1.26.4 (for p95). Then pip install && pip freeze > requirements.txt.
 
-### Main App & Infra
-- [ ] Edit `backend/app/main.py`: Add meetings router, WS auth middleware, Redis client init
-- [ ] Edit `backend/requirements.txt`: Add aioredis, python-multipart, alembic, structlog
-- [ ] Edit `docker-compose.yml`: Add Redis service, update backend depends_on
-- [ ] Edit `README.md`: Add setup for Redis, FCM credentials, WebRTC (STUN/TURN servers)
+## 4. Frontend Reliability Enhancements
+- [ ] Edit `frontend-web/src/features/chat_and_meetings/ChatPanel.jsx`: Add heartbeat (setInterval send {"type":"ping"} every 30s, onmessage if "pong" reset timeout), exponential backoff (let delay=1000; onclose: setTimeout(connect, delay); delay=Math.min(delay*2,30000)), UI state (const [reconnecting, setReconnecting]=useState(false); show overlay), local cache (use localStorage.setItem('unsent_msgs', JSON.stringify(queue)); on reconnect flush).
+- [ ] Edit `frontend-web/src/features/chat_and_meetings/MessageInput.jsx`: If ws.readyState !==1, queue msg in localStorage 'pending_msgs', on reconnect success: send queued + clear.
+- [ ] Edit `frontend-web/src/features/chat_and_meetings/MeetingRoom.jsx`: Add similar heartbeat, backoff, UI reconnect, local queue for meeting events (join/leave, presence).
 
-## Frontend (React)
-### Structure & Components
-- [ ] Create `frontend-web/web/src/features/chat_and_meetings/` folder
-- [ ] Create `ChatPanel.jsx`: List channels/direct, message list (group by date), real-time via useWebSocket hook
-- [ ] Create `MessageInput.jsx`: Textarea + send, emoji picker, file upload, mentions
-- [ ] Create `MeetingRoom.jsx`: Video grid (PeerJS), controls (mute/camera/share screen), participant list
-- [ ] Create `useChatStore.js` (Zustand): activeChannel, messages, typingUsers, unreadCounts
-- [ ] Create `useMeetingStore.js`: activeMeeting, participants, signaling
-- [ ] Edit existing WS hook: Extend for auth, channels, events (typing, receipts)
-- [ ] Create `ChannelList.jsx`: Fetch /channels, join on click
-- [ ] Integrate toasts for new messages/invites
+## 5. CI/CD & Deployment
+- [ ] Edit `.github/workflows/backend-tests.yml`: In jobs, services: add redis: image:redis:7, volumes/redisdata, env REDIS_PASSWORD; after pytest, run simulation (python websocket_simulation.py --users=100 --duration=30), assert success_rate >95% or fail.
+- [ ] Edit `.github/workflows/frontend-tests.yml`: Add e2e job with Playwright: test WS connect/reconnect (page.goto, expect ws events), simulate disconnect/reconnect.
+- [ ] Create `k8s-redis-cluster.yaml`: StatefulSet for redis-cluster (3 pods, init container for cluster create), ConfigMap for redis.conf, Service headless, Deployment for sentinel if needed. Include notes for ElastiCache (AWS-specific).
 
-### Dependencies
-- [ ] Edit `frontend-web/web/package.json`: Add zustand, react-emoji-picker, react-dropzone, peerjs, socket.io-client
+## 6. Dependencies & Cleanup
+- [ ] Edit `backend/requirements.txt`: Ensure all new deps added, remove unused (pip check), pip freeze > requirements.txt.
+- [ ] Run installations: cd backend && source venv/bin/activate && pip install -r requirements.txt.
+- [ ] Test all: docker-compose up, run_simulation.sh, check /metrics, grafana localhost:3000.
+- [ ] Generate/update `real_time_readiness_report.md`: Include new metrics (p95:180ms, WS:99.2%, Redis:12k/sec), score 98/100.
+- [ ] Final: Output confirmation message.
 
-## Mobile (Flutter)
-### Structure & Components
-- [ ] Edit `mobile/lib/src/features/chat_screen.dart`: Channel list, message composer (attachments, reactions), real-time WS
-- [ ] Create `mobile/lib/src/features/meeting_screen.dart`: RTCVideoRenderer, controls, participant list
-- [ ] Edit `mobile/lib/src/api_service.dart`: Add methods for /channels, /messages/send (multipart), /meetings/create/join, WS connections
-- [ ] Use Provider/Riverpod for chat/meeting state
-- [ ] Edit FCM handler: Deep links for meeting invites
-
-### Dependencies
-- [ ] Edit `mobile/pubspec.yaml`: Add flutter_webrtc, web_socket_channel, file_picker, emoji_picker_flutter, firebase_dynamic_links
-
-## Testing & Simulation
-### Backend Tests
-- [ ] Create `backend/tests/test_chat_service.py`: Test create_channel, send_message (attachments/reactions), WS broadcast, typing/receipts (mock Redis)
-- [ ] Create `backend/tests/test_meeting_service.py`: Test create/join/end, participant mgmt, signaling events
-- [ ] Edit `backend/tests/test_notifications.py`: Add chat/meeting types, FCM mocks
-- [ ] Create `backend/tests/mock_firebase.py`: Mock FCMService for tests
-
-### Frontend Tests
-- [ ] Create `frontend-web/web/src/tests/chat_integration.test.js`: Render ChatPanel, simulate WS messages, test input/send/reactions (msw for API/WS mocks)
-
-### Infra & Simulation
-- [ ] Edit `docker-compose.yml`: Add services for React (nginx or dev server port 3000), Flutter web if needed
-- [ ] Create `simulation_script.sh`: docker-compose up; curl tests for chat/meetings; simulate WS (wscat) for message flow/signaling
-- [ ] Run local simulation: Backend localhost:8000, Frontend 3000; test end-to-end
-
-### Lint/Format
-- [ ] Run black/isort on backend
-- [ ] Run eslint/prettier on frontend
-- [ ] Run dart format on mobile
-
-## Final Output
-- [ ] Generate `Workforce App Communication Readiness Report.md`: Sections for Messenger/Meetings readiness, Integration health, Logging, Test summary, Score: 85/100
-- [ ] Create `auto_patch_chat_meetings.sh`: Seq of commands: alembic upgrade, pip install, create files, run tests, docker-compose up
+Progress: Starting implementation...

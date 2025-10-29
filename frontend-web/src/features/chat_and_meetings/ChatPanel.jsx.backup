@@ -7,11 +7,7 @@ const ChatPanel = ({ activeChat, userId, companyId }) => {
   const [isTyping, setIsTyping] = useState(false);
   const [typingUsers, setTypingUsers] = useState([]);
   const [ws, setWs] = useState(null);
-  const [reconnecting, setReconnecting] = useState(false);
   const messagesEndRef = useRef(null);
-  const reconnectTimeoutRef = useRef(null);
-  const heartbeatIntervalRef = useRef(null);
-  const reconnectDelayRef = useRef(1000); // Start with 1s delay
   const reconnectTimeoutRef = useRef(null);
 
   const connectWebSocket = () => {
@@ -22,25 +18,10 @@ const ChatPanel = ({ activeChat, userId, companyId }) => {
     const websocket = new WebSocket(wsUrl);
 
     websocket.onopen = () => {
-      console.log("Connected to chat WebSocket");
-      setReconnecting(false);
-      reconnectDelayRef.current = 1000; // Reset backoff delay on successful connection
-      // Start heartbeat
-      heartbeatIntervalRef.current = setInterval(() => {
-        if (websocket.readyState === WebSocket.OPEN) {
-          websocket.send(JSON.stringify({ type: "ping" }));
-        }
-      }, 30000); // Every 30 seconds
-    };
       console.log('Connected to chat WebSocket');
     };
 
     websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "pong") {
-        // Heartbeat response - connection is alive
-        return;
-      }
       const data = JSON.parse(event.data);
       if (data.type === 'message') {
         setMessages(prev => [...prev, data.message]);
@@ -61,16 +42,6 @@ const ChatPanel = ({ activeChat, userId, companyId }) => {
     };
 
     websocket.onclose = () => {
-      console.log("Chat WebSocket disconnected, reconnecting...");
-      setReconnecting(true);
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
-      reconnectTimeoutRef.current = setTimeout(() => {
-        reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, 30000); // Exponential backoff, max 30s
-        connectWebSocket();
-      }, reconnectDelayRef.current);
-    };
       console.log('Chat WebSocket disconnected, reconnecting...');
       reconnectTimeoutRef.current = setTimeout(connectWebSocket, 3000);
     };
@@ -85,10 +56,6 @@ const ChatPanel = ({ activeChat, userId, companyId }) => {
   useEffect(() => {
     connectWebSocket();
     return () => {
-      if (ws) ws.close();
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
-    };
       if (ws) ws.close();
       if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
     };
@@ -110,27 +77,6 @@ const ChatPanel = ({ activeChat, userId, companyId }) => {
   }, [messages]);
 
   const handleSendMessage = (messageText, attachments = []) => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const messageData = {
-        type: "message",
-        message: {
-          message: messageText,
-          channel_id: activeChat.id,
-          attachments
-        }
-      };
-      ws.send(JSON.stringify(messageData));
-    } else {
-      const pendingMessages = JSON.parse(localStorage.getItem("pending_messages") || "[]");
-      pendingMessages.push({
-        message: messageText,
-        channel_id: activeChat.id,
-        attachments,
-        timestamp: Date.now()
-      });
-      localStorage.setItem("pending_messages", JSON.stringify(pendingMessages));
-    }
-  };
     if (ws && activeChat) {
       const messageData = {
         type: 'message',
@@ -157,7 +103,6 @@ const ChatPanel = ({ activeChat, userId, companyId }) => {
     <div className="chat-panel">
       <div className="chat-header">
         <h3>{activeChat?.name || 'Chat'}</h3>
-        {reconnecting <h3>{activeChat?.name || 'Chat'}</h3><h3>{activeChat?.name || 'Chat'}</h3> <span className="reconnecting-indicator">Reconnecting...</span>}
         {typingUsers.length > 0 && (
           <span className="typing-indicator">
             {typingUsers.length === 1 ? 'Someone is typing...' : `${typingUsers.length} people are typing...`}
@@ -191,15 +136,3 @@ const ChatPanel = ({ activeChat, userId, companyId }) => {
 };
 
 export default ChatPanel;
-  // Send queued messages on reconnect
-  useEffect(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const pendingMessages = JSON.parse(localStorage.getItem("pending_messages") || "[]");
-      if (pendingMessages.length > 0) {
-        pendingMessages.forEach(msg => {
-          ws.send(JSON.stringify({ type: "message", message: msg }));
-        });
-        localStorage.removeItem("pending_messages");
-      }
-    }
-  }, [ws?.readyState]);

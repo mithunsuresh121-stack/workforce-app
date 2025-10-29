@@ -104,18 +104,54 @@ class ChatService:
         """Get users currently typing in channel"""
         return await redis_service.get_typing_users(channel_id)
 
-    async def set_typing_indicator(self, channel_id: int, user_id: int):
+    async def set_typing_indicator(self, channel_id: int, user_id: int, is_typing: bool = True):
         """Set typing indicator for user"""
-        await redis_service.set_typing_indicator(channel_id, user_id)
+        if is_typing:
+            await redis_service.set_typing_indicator(channel_id, user_id)
+            # Publish typing event
+            await redis_service.publish_event(f"channel:{channel_id}", {
+                "type": "typing",
+                "user_id": user_id,
+                "channel_id": channel_id,
+                "is_typing": True
+            })
+        else:
+            await redis_service.clear_typing_indicator(channel_id, user_id)
+            # Publish typing stopped event
+            await redis_service.publish_event(f"channel:{channel_id}", {
+                "type": "typing",
+                "user_id": user_id,
+                "channel_id": channel_id,
+                "is_typing": False
+            })
 
     def mark_channel_messages_read(self, db: Session, channel_id: int, user_id: int):
         """Mark all messages in channel as read for user"""
-        db.query(ChatMessage).filter(
-            ChatMessage.channel_id == channel_id,
-            ChatMessage.sender_id != user_id,
-            ChatMessage.is_read == False
-        ).update({"is_read": True})
-        db.commit()
+        # Get the latest message ID
+        latest_message = db.query(ChatMessage).filter(
+            ChatMessage.channel_id == channel_id
+        ).order_by(ChatMessage.id.desc()).first()
+
+        if latest_message:
+            db.query(ChatMessage).filter(
+                ChatMessage.channel_id == channel_id,
+                ChatMessage.sender_id != user_id,
+                ChatMessage.is_read == False
+            ).update({"is_read": True})
+            db.commit()
+
+            # Store read receipt in Redis
+            import asyncio
+            asyncio.create_task(redis_service.store_read_receipt(channel_id, user_id, latest_message.id))
+
+            # Publish read receipt event
+            asyncio.create_task(redis_service.publish_event(f"channel:{channel_id}", {
+                "type": "read_receipt",
+                "user_id": user_id,
+                "channel_id": channel_id,
+                "last_read_message_id": latest_message.id
+            }))
+
         logger.info("Channel messages marked as read", channel_id=channel_id, user_id=user_id)
 
     def _notify_channel_members(self, db: Session, channel_id: int, sender_id: int, message: ChatMessage):

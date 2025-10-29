@@ -1,3 +1,10 @@
+import sys
+from pathlib import Path
+import os
+
+# Fix for module discovery when running from backend/
+sys.path.insert(0, str(Path(__file__).parent.parent))
+
 import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
@@ -35,25 +42,32 @@ def db():
 
 @pytest.fixture(scope="function")
 def test_company(db):
-    company_data = CompanyCreate(name="Test Company")
-    company = create_company(db, obj_in=company_data)
-    db.commit()
-    db.refresh(company)
+    company = create_company(db, name="Test Company", contact_email="test@company.com")
     return company
 
 
 @pytest.fixture(scope="function")
 def test_user(db, test_company):
-    user_data = UserCreate(
+    user = create_user(
+        db=db,
         email="test@example.com",
+        password="testpass",
         full_name="Test User",
-        company_id=test_company.id,
         role="EMPLOYEE",
-        password="testpass"
+        company_id=test_company.id
     )
-    user = create_user(db, obj_in=user_data)
-    db.commit()
-    db.refresh(user)
+    return user
+
+@pytest.fixture(scope="function")
+def test_user2(db, test_company):
+    user = create_user(
+        db=db,
+        email="test2@example.com",
+        password="testpass",
+        full_name="Test User 2",
+        role="EMPLOYEE",
+        company_id=test_company.id
+    )
     return user
 
 

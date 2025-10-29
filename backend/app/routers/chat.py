@@ -13,7 +13,7 @@ from ..services.chat_service import chat_service
 from ..services.redis_service import redis_service
 from ..schemas.schemas import ChatMessageCreate, ChatMessageResponse, ChannelCreate, ChannelResponse, ReactionCreate, ChatMessageUpdate
 from ..services.fcm_service import fcm_service
-from ..crud.crud_notifications import create_notification
+from ..crud import create_notification
 from ..models.notification import NotificationType
 
 logger = structlog.get_logger(__name__)
