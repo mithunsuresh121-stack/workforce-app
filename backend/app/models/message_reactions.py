@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from ..db import Base
+from app.db import Base
 
 class MessageReaction(Base):
     __tablename__ = "message_reactions"

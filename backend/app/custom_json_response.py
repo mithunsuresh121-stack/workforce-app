@@ -1,6 +1,6 @@
 from typing import Any
 from starlette.responses import JSONResponse
-from .custom_json_encoder import custom_json_dumps
+from app.custom_json_encoder import custom_json_dumps
 
 class CustomJSONResponse(JSONResponse):
     def render(self, content: Any) -> bytes:

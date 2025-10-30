@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from ..db import Base
+from app.db import Base
 from enum import Enum
 
 class RequestStatus(str, Enum):

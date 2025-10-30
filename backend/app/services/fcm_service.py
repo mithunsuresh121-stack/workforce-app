@@ -162,7 +162,7 @@ class FCMService:
         Update FCM token for a user
         """
         try:
-            from ..models.user import User
+            from app.models.user import User
             user = db.query(User).filter(User.id == user_id).first()
             if user:
                 user.fcm_token = fcm_token
@@ -182,7 +182,7 @@ class FCMService:
         Get FCM token for a user
         """
         try:
-            from ..models.user import User
+            from app.models.user import User
             user = db.query(User).filter(User.id == user_id).first()
             return user.fcm_token if user else None
         except Exception as e:

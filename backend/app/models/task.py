@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from ..db import Base
-from ..models.attachment import Attachment
+from app.db import Base
+from app.models.attachment import Attachment
 import enum
 
 class TaskStatus(str, enum.Enum):

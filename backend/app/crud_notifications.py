@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
-from .models.notification import Notification, NotificationStatus
-from .services.fcm_service import fcm_service
+from app.models.notification import Notification, NotificationStatus
+from app.services.fcm_service import fcm_service
 from typing import List, Optional
 from structlog import get_logger
 
@@ -26,7 +26,7 @@ def mark_notification_as_read(db: Session, notification_id: int, user_id: int, c
 
 def create_notification(db: Session, user_id: int, company_id: int, title: str, message: str, type: str) -> Optional[Notification]:
     # Check user preferences before creating notification
-    from .crud_notification_preferences import should_send_notification
+    from app.crud_notification_preferences import should_send_notification
     if not should_send_notification(db, user_id, company_id, type):
         return None  # User has disabled this type of notification
 
@@ -57,7 +57,7 @@ def _send_push_notification_if_enabled(db: Session, user_id: int, company_id: in
             return  # No FCM token, skip push notification
 
         # Check if push notifications are enabled for this user and notification type
-        from .crud_notification_preferences import should_send_push_notification
+        from app.crud_notification_preferences import should_send_push_notification
         if not should_send_push_notification(db, user_id, company_id, notification_type):
             return  # Push notifications disabled for this type
 

@@ -1,9 +1,9 @@
 import structlog
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ..models.channels import Channel, ChannelMember, ChannelType
-from ..models.user import User
-from ..models.company import Company
+from app.models.channels import Channel, ChannelMember, ChannelType
+from app.models.user import User
+from app.models.company import Company
 
 logger = structlog.get_logger(__name__)
 

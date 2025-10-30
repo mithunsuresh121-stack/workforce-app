@@ -2,10 +2,10 @@ import structlog
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional
-from ..models.meetings import Meeting, MeetingStatus
-from ..models.meeting_participants import MeetingParticipant, ParticipantRole
-from ..models.user import User
-from ..models.company import Company
+from app.models.meetings import Meeting, MeetingStatus
+from app.models.meeting_participants import MeetingParticipant, ParticipantRole
+from app.models.user import User
+from app.models.company import Company
 
 logger = structlog.get_logger(__name__)
 

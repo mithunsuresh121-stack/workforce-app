@@ -3,8 +3,8 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from datetime import datetime, timezone
 from typing import List
-from ..deps import get_db, get_current_user
-from ..schemas.attendance import (
+from app.deps import get_db, get_current_user
+from app.schemas.attendance import (
     Attendance,
     Break,
     ClockInRequest,
@@ -13,7 +13,7 @@ from ..schemas.attendance import (
     BreakEndRequest,
     AttendanceSummary
 )
-from ..crud import (
+from app.crud import (
     create_attendance,
     get_active_attendance_by_employee,
     clock_out_attendance,
@@ -25,7 +25,7 @@ from ..crud import (
     get_attendance_by_id,
     get_user_by_id
 )
-from ..models.user import User
+from app.models.user import User
 
 logger = structlog.get_logger(__name__)
 
@@ -435,6 +435,6 @@ def get_all_active_attendances(
         )
 
     # Get all active attendances by querying the database directly
-    from ..models.attendance import Attendance as AttendanceModel
+    from app.models.attendance import Attendance as AttendanceModel
     active_attendances = db.query(AttendanceModel).filter(AttendanceModel.clock_out_time.is_(None)).all()
     return active_attendances

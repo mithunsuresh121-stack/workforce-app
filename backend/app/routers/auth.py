@@ -3,11 +3,11 @@ from typing import List, Optional
 from sqlalchemy.orm import Session
 from datetime import datetime, timedelta
 from pydantic import BaseModel
-from ..deps import get_db, get_current_user
-from ..schemas import UserCreate, UserUpdate, LoginPayload, Token, UserOut, RefreshTokenRequest
-from ..crud import create_user, authenticate_user, get_user_by_email, get_company_by_id, list_users_by_company, get_users_by_email, authenticate_user_by_email, get_user_by_email_only, create_refresh_token, get_refresh_token_by_token, revoke_refresh_token, revoke_all_user_refresh_tokens
-from ..auth import create_access_token, create_refresh_token as auth_create_refresh_token, verify_refresh_token
-from ..services.fcm_service import fcm_service
+from app.deps import get_db, get_current_user
+from app.schemas import UserCreate, UserUpdate, LoginPayload, Token, UserOut, RefreshTokenRequest
+from app.crud import create_user, authenticate_user, get_user_by_email, get_company_by_id, list_users_by_company, get_users_by_email, authenticate_user_by_email, get_user_by_email_only, create_refresh_token, get_refresh_token_by_token, revoke_refresh_token, revoke_all_user_refresh_tokens
+from app.auth import create_access_token, create_refresh_token as auth_create_refresh_token, verify_refresh_token
+from app.services.fcm_service import fcm_service
 import structlog
 
 logger = structlog.get_logger(__name__)
@@ -90,8 +90,8 @@ def get_current_user_profile(response: Response, current_user: UserOut = Depends
 
     # Include company information if user has a company_id
     if current_user.company_id:
-        from ..crud import get_company_by_id
-        from ..deps import get_db
+        from app.crud import get_company_by_id
+        from app.deps import get_db
         from sqlalchemy.orm import Session
 
         # Create a new session to get company data
@@ -141,7 +141,7 @@ def get_notifications(current_user: UserOut = Depends(get_current_user)):
 @router.put("/users/{user_id}", response_model=UserOut)
 def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db), current_user: UserOut = Depends(get_current_user)):
     """Update user information"""
-    from ..crud import get_user_by_id, update_user
+    from app.crud import get_user_by_id, update_user
 
     # Check if user exists
     user = get_user_by_id(db, user_id)
@@ -163,7 +163,7 @@ def update_user(user_id: int, payload: UserUpdate, db: Session = Depends(get_db)
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db), current_user: UserOut = Depends(get_current_user)):
     """Delete user"""
-    from ..crud import get_user_by_id, delete_user
+    from app.crud import get_user_by_id, delete_user
 
     # Check if user exists
     user = get_user_by_id(db, user_id)

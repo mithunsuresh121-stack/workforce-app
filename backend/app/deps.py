@@ -2,9 +2,9 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
-from .config import settings
-from .db import SessionLocal
-from .base_crud import get_user_by_email, get_user_by_email_only
+from app.config import settings
+from app.db import SessionLocal
+from app.base_crud import get_user_by_email, get_user_by_email_only
 
 import structlog
 logger = structlog.get_logger(__name__)
@@ -33,7 +33,7 @@ def get_current_user(db: Session = Depends(get_db), claims: dict = Depends(get_c
     if not email:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token claims")
 
-    from .crud import get_user_by_email_only
+    from app.crud import get_user_by_email_only
 
     if company_id is None:
         user = get_user_by_email_only(db, email)

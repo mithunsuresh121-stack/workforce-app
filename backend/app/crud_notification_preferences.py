@@ -1,5 +1,5 @@
 from sqlalchemy.orm import Session
-from .models.notification_preferences import NotificationPreferences
+from app.models.notification_preferences import NotificationPreferences
 from typing import Optional, Dict, Any
 
 def get_user_preferences(db: Session, user_id: int, company_id: int) -> Optional[NotificationPreferences]:
@@ -83,7 +83,7 @@ def should_send_notification(db: Session, user_id: int, company_id: int, notific
 def should_send_push_notification(db: Session, user_id: int, company_id: int, notification_type: str) -> bool:
     """Check if a push notification should be sent based on user preferences"""
     # Get user preferences (company_id needed for consistency with other methods)
-    from .models.notification_preferences import NotificationPreferences
+    from app.models.notification_preferences import NotificationPreferences
     preferences = db.query(NotificationPreferences).filter(
         NotificationPreferences.user_id == user_id,
         NotificationPreferences.company_id == company_id

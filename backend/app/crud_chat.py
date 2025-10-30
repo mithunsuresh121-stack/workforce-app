@@ -1,11 +1,11 @@
 import structlog
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from .models.chat import ChatMessage
-from .schemas.schemas import ChatMessageCreate
-from .models.user import User
-from .models.company import Company
-from .models.channels import Channel
+from app.models.chat import ChatMessage
+from app.schemas.schemas import ChatMessageCreate
+from app.models.user import User
+from app.models.company import Company
+from app.models.channels import Channel
 
 logger = structlog.get_logger(__name__)
 

@@ -1,9 +1,9 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List
-from ..deps import get_db, get_current_user
-from ..schemas import ProfileUpdateRequestCreate, ProfileUpdateRequestOut, ProfileUpdateRequestReview, EmployeeProfileOut
-from ..crud import (
+from app.deps import get_db, get_current_user
+from app.schemas import ProfileUpdateRequestCreate, ProfileUpdateRequestOut, ProfileUpdateRequestReview, EmployeeProfileOut
+from app.crud import (
     get_employee_profile_by_user_id,
     create_profile_update_request,
     list_profile_update_requests,
@@ -11,8 +11,8 @@ from ..crud import (
     update_employee_profile,
     create_employee_profile
 )
-from ..models.user import User
-from ..models.profile_update_request import RequestStatus
+from app.models.user import User
+from app.models.profile_update_request import RequestStatus
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 

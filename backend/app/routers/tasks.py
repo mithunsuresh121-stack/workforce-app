@@ -2,14 +2,14 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
 from sqlalchemy.orm import Session
 from typing import List, Optional
-from ..deps import get_db, get_current_user
-from ..schemas import TaskCreate, TaskOut, AttachmentOut
-from ..crud import list_tasks, create_task, get_task_by_id, update_task, delete_task, create_attachment, delete_attachment, list_attachments_by_task
-from ..crud_notifications import create_notification
-from ..models.user import User
-from ..models.task import Task, TaskStatus, TaskPriority
-from ..models.attachment import Attachment
-from ..models.notification import NotificationType
+from app.deps import get_db, get_current_user
+from app.schemas import TaskCreate, TaskOut, AttachmentOut
+from app.crud import list_tasks, create_task, get_task_by_id, update_task, delete_task, create_attachment, delete_attachment, list_attachments_by_task
+from app.crud_notifications import create_notification
+from app.models.user import User
+from app.models.task import Task, TaskStatus, TaskPriority
+from app.models.attachment import Attachment
+from app.models.notification import NotificationType
 import os
 import shutil
 from datetime import datetime

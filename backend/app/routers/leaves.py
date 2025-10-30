@@ -2,9 +2,9 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-from ..deps import get_db, get_current_user
-from ..schemas import LeaveCreate, LeaveOut, LeaveStatus
-from ..crud import (
+from app.deps import get_db, get_current_user
+from app.schemas import LeaveCreate, LeaveOut, LeaveStatus
+from app.crud import (
     create_leave,
     get_leave_by_id,
     list_leaves_by_employee,
@@ -12,9 +12,9 @@ from ..crud import (
     update_leave_status,
     delete_leave
 )
-from ..crud_notifications import create_notification
-from ..models.user import User
-from ..models.notification import NotificationType
+from app.crud_notifications import create_notification
+from app.models.user import User
+from app.models.notification import NotificationType
 
 logger = structlog.get_logger(__name__)
 

@@ -4,16 +4,16 @@ from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.orm import Session
 from typing import Dict, List, Optional
 import time
-from ..db import get_db
-from ..deps import get_current_user
-from ..services.redis_service import redis_service
-from ..services.chat_service import chat_service
-from ..services.meeting_service import meeting_service
-from ..models.user import User
-from ..crud.crud_channels import is_user_member_of_channel
-from ..crud.crud_meetings import is_user_participant
-from ..models.company import Company
-from ..metrics import increment_ws_connections, decrement_ws_connections, record_ws_message, record_ws_error, record_ws_latency
+from app.db import get_db
+from app.deps import get_current_user
+from app.services.redis_service import redis_service
+from app.services.chat_service import chat_service
+from app.services.meeting_service import meeting_service
+from app.models.user import User
+from app.crud.crud_channels import is_user_member_of_channel
+from app.crud.crud_meetings import is_user_participant
+from app.models.company import Company
+from app.metrics import increment_ws_connections, decrement_ws_connections, record_ws_message, record_ws_error, record_ws_latency
 
 logger = structlog.get_logger(__name__)
 
@@ -107,11 +107,11 @@ class WebSocketManager:
                 # Handle reaction add/remove via service
                 reaction_data = data.get("reaction")
                 if reaction_data.get("action") == "add":
-                    from ..crud.crud_reactions import add_reaction
+                    from app.crud.crud_reactions import add_reaction
                     db_reaction = add_reaction(db, reaction_data["message_id"], user.id, reaction_data["emoji"])
                     await self.broadcast(websocket, {"type": "reaction_added", "reaction": {"id": db_reaction.id, "message_id": reaction_data["message_id"], "user_id": user.id, "emoji": reaction_data["emoji"]}}, room_type, room_id, user.id)
                 elif reaction_data.get("action") == "remove":
-                    from ..crud.crud_reactions import remove_reaction
+                    from app.crud.crud_reactions import remove_reaction
                     success = remove_reaction(db, reaction_data["message_id"], user.id, reaction_data["emoji"])
                     if success:
                         await self.broadcast(websocket, {"type": "reaction_removed", "reaction": {"message_id": reaction_data["message_id"], "user_id": user.id, "emoji": reaction_data["emoji"]}}, room_type, room_id, user.id)

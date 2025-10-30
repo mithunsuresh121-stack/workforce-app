@@ -1,7 +1,7 @@
 from datetime import datetime, timedelta
 import bcrypt
 from jose import jwt
-from .config import settings
+from app.config import settings
 import structlog
 
 logger = structlog.get_logger(__name__)

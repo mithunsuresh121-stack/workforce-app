@@ -2,19 +2,19 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from ..db import get_db
-from ..deps import get_current_user
-from ..models.user import User
-from ..models.company import Company
-from ..crud.crud_chat import create_chat_message, get_chat_history, get_channel_messages, mark_message_as_read, get_unread_count
-from ..crud.crud_channels import create_channel, get_channels_for_company, add_member_to_channel, is_user_member_of_channel
-from ..crud.crud_reactions import add_reaction, remove_reaction, get_reactions_for_message
-from ..services.chat_service import chat_service
-from ..services.redis_service import redis_service
-from ..schemas.schemas import ChatMessageCreate, ChatMessageResponse, ChannelCreate, ChannelResponse, ReactionCreate, ChatMessageUpdate
-from ..services.fcm_service import fcm_service
-from ..crud import create_notification
-from ..models.notification import NotificationType
+from app.db import get_db
+from app.deps import get_current_user
+from app.models.user import User
+from app.models.company import Company
+from app.crud.crud_chat import create_chat_message, get_chat_history, get_channel_messages, mark_message_as_read, get_unread_count
+from app.crud.crud_channels import create_channel, get_channels_for_company, add_member_to_channel, is_user_member_of_channel
+from app.crud.crud_reactions import add_reaction, remove_reaction, get_reactions_for_message
+from app.services.chat_service import chat_service
+from app.services.redis_service import redis_service
+from app.schemas.schemas import ChatMessageCreate, ChatMessageResponse, ChannelCreate, ChannelResponse, ReactionCreate, ChatMessageUpdate
+from app.services.fcm_service import fcm_service
+from app.crud import create_notification
+from app.models.notification import NotificationType
 
 logger = structlog.get_logger(__name__)
 
@@ -65,7 +65,7 @@ async def broadcast_message(message, db: Session):
     recipients = []
     if message.channel_id:
         # Channel message - get all channel members
-        from ..crud.crud_channels import get_channel_members
+        from app.crud.crud_channels import get_channel_members
         recipients = [m.user_id for m in get_channel_members(db, message.channel_id)]
     elif message.receiver_id:
         # Direct message
@@ -291,7 +291,7 @@ def update_message(
 ):
     """Update a chat message"""
     try:
-        from ..crud.crud_chat import update_message as crud_update_message
+        from app.crud.crud_chat import update_message as crud_update_message
         updated_message = crud_update_message(db, message_id, current_user.id, message_update.message)
         if not updated_message:
             raise HTTPException(status_code=404, detail="Message not found or not authorized to edit")
