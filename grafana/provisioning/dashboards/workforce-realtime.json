@@ -82,6 +82,56 @@
             "refId": "A"
           }
         ]
+      },
+      {
+        "id": 7,
+        "title": "Messages Sent Total",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "workforce_messages_sent_total",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "title": "Meetings Joined Total",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "workforce_meetings_joined_total",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "title": "Redis Pub/Sub Messages Rate",
+        "type": "graph",
+        "targets": [
+          {
+            "expr": "rate(workforce_redis_pubsub_messages_total[5m])",
+            "refId": "A"
+          }
+        ]
+      },
+      {
+        "id": 10,
+        "title": "API Uptime",
+        "type": "stat",
+        "targets": [
+          {
+            "expr": "workforce_api_uptime_seconds",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "s",
+            "mappings": []
+          }
+        }
       }
     ],
     "time": {

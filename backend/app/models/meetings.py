@@ -24,6 +24,6 @@ class Meeting(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    organizer = relationship("User", foreign_keys=[organizer_id])
-    company = relationship("Company")
-    participants = relationship("MeetingParticipant", back_populates="meeting")
+    organizer = relationship("User", foreign_keys=[organizer_id], back_populates="organized_meetings")
+    company = relationship("Company", back_populates="meetings")
+    participants = relationship("MeetingParticipant", back_populates="meeting", cascade="all, delete-orphan")

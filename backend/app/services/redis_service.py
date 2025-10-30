@@ -3,6 +3,7 @@ import structlog
 from typing import Optional, List
 import os
 import json
+import asyncio
 from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
 
 logger = structlog.get_logger(__name__)
@@ -11,6 +12,10 @@ class RedisService:
     def __init__(self):
         self.redis: Optional[aioredis.Redis] = None
         self._initialized = False
+        self._reconnect_task: Optional[asyncio.Task] = None
+        self._reconnect_attempts = 0
+        self._max_reconnect_attempts = 10
+        self._base_reconnect_delay = 1.0
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10), retry=retry_if_exception_type(aioredis.RedisError))
     async def initialize(self):
@@ -45,9 +50,68 @@ class RedisService:
 
     async def close(self):
         """Close Redis connection"""
+        if self._reconnect_task and not self._reconnect_task.done():
+            self._reconnect_task.cancel()
+            try:
+                await self._reconnect_task
+            except asyncio.CancelledError:
+                pass
         if self.redis:
             await self.redis.close()
             self._initialized = False
+
+    async def _auto_reconnect(self):
+        """Auto-reconnect to Redis with exponential backoff"""
+        while self._reconnect_attempts < self._max_reconnect_attempts:
+            try:
+                delay = self._base_reconnect_delay * (2 ** self._reconnect_attempts)
+                logger.info(f"Attempting Redis reconnection in {delay:.1f}s (attempt {self._reconnect_attempts + 1}/{self._max_reconnect_attempts})")
+                await asyncio.sleep(delay)
+
+                redis_url = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', 'workforce_redis_pw')}@localhost:6379")
+                self.redis = await aioredis.create_redis_pool(
+                    redis_url,
+                    encoding='utf-8',
+                    minsize=5,
+                    maxsize=50,
+                    timeout=5.0
+                )
+
+                # Test connection
+                pong = await self.redis.ping()
+                if pong == 'PONG':
+                    self._initialized = True
+                    self._reconnect_attempts = 0
+                    from app.metrics import record_redis_reconnection
+                    record_redis_reconnection()
+                    logger.info("Redis reconnected successfully")
+                    return
+                else:
+                    raise Exception("Ping failed")
+
+            except Exception as e:
+                self._reconnect_attempts += 1
+                logger.error(f"Redis reconnection attempt {self._reconnect_attempts} failed", error=str(e))
+
+        logger.error("Max Redis reconnection attempts reached, giving up")
+        self._initialized = False
+
+    async def ensure_connection(self):
+        """Ensure Redis connection is alive, trigger reconnect if needed"""
+        if not self._initialized:
+            if not self._reconnect_task or self._reconnect_task.done():
+                self._reconnect_task = asyncio.create_task(self._auto_reconnect())
+            return False
+
+        try:
+            pong = await self.redis.ping()
+            return pong == 'PONG'
+        except Exception as e:
+            logger.warning("Redis connection lost, triggering reconnect", error=str(e))
+            self._initialized = False
+            if not self._reconnect_task or self._reconnect_task.done():
+                self._reconnect_task = asyncio.create_task(self._auto_reconnect())
+            return False
 
     async def set_user_online(self, company_id: int, user_id: int, expire_seconds: int = 30):
         """Mark user as online with expiration"""
@@ -122,14 +186,17 @@ class RedisService:
         await self.remove_typing_indicator(channel_id, user_id)
 
     async def publish_event(self, channel: str, message: dict):
-        """Publish event to Redis pub/sub channel"""
+        """Publish event to Redis pub/sub channel with connection health check"""
+        await self.ensure_connection()
         if not self._initialized:
             return
         try:
             await self.redis.publish(channel, json.dumps(message))
             logger.info("Published event to Redis", channel=channel, message_size=len(json.dumps(message)), event_type=message.get('type', 'unknown'))
-            from app.metrics import record_redis_publish
+            from app.metrics import record_redis_publish, redis_pubsub_messages_total
             record_redis_publish(channel.split(':')[0])  # chat or meeting
+            channel_type = channel.split(':')[0]  # e.g., 'chat' or 'meeting'
+            redis_pubsub_messages_total.labels(channel_type=channel_type).inc()
         except Exception as e:
             from app.metrics import record_redis_error
             record_redis_error()

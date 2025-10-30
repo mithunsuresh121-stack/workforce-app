@@ -107,6 +107,9 @@ from app.services.redis_service import redis_service
 from prometheus_fastapi_instrumentator import Instrumentator
 from app.metrics import registry, initialize_counters_from_redis
 
+# Initialize Prometheus instrumentation
+instrumentator = Instrumentator().instrument(app)
+
 @app.on_event("startup")
 async def startup_event():
     # Initialize Redis with health check
@@ -154,3 +157,10 @@ def welcome_endpoint(request: Request):
         remote_addr=request.client.host if request.client else None
     )
     return {"message": "Welcome to the Workforce App!"}
+
+@app.get("/metrics")
+def metrics_endpoint():
+    """Expose Prometheus metrics from FastAPI app"""
+    from prometheus_client import generate_latest
+    from app.metrics import registry
+    return Response(content=generate_latest(registry), media_type="text/plain; charset=utf-8")

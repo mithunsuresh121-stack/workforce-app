@@ -17,14 +17,16 @@ class Channel(Base):
     type = Column(Enum(ChannelType), nullable=False)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
     created_by = Column(Integer, ForeignKey("users.id"), nullable=False)
+    last_message_at = Column(DateTime, nullable=True)  # Track last message timestamp
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    company = relationship("Company")
-    creator = relationship("User", foreign_keys=[created_by])
-    members = relationship("User", secondary="channel_members")
-    messages = relationship("ChatMessage", back_populates="channel")
+    company = relationship("Company", back_populates="channels")
+    creator = relationship("User", foreign_keys=[created_by], back_populates="created_channels")
+    members = relationship("User", secondary="channel_members", back_populates="channel_memberships")
+    messages = relationship("ChatMessage", back_populates="channel", cascade="all, delete-orphan")
+    channel_members = relationship("ChannelMember", back_populates="channel", cascade="all, delete-orphan")
 
 class ChannelMember(Base):
     __tablename__ = "channel_members"
@@ -33,5 +35,5 @@ class ChannelMember(Base):
     user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
     joined_at = Column(DateTime, server_default=func.now())
 
-    channel = relationship("Channel")
-    user = relationship("User")
+    channel = relationship("Channel", back_populates="channel_members")
+    user = relationship("User", back_populates="channel_memberships")

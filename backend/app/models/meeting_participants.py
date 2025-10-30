@@ -19,4 +19,4 @@ class MeetingParticipant(Base):
 
     # Relationships
     meeting = relationship("Meeting", back_populates="participants")
-    user = relationship("User")
+    user = relationship("User", back_populates="meeting_participations")
