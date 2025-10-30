@@ -18,11 +18,11 @@ class ChatMessage(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    company = relationship("Company")
-    sender = relationship("User", foreign_keys=[sender_id])
-    receiver = relationship("User", foreign_keys=[receiver_id])
+    company = relationship("Company", back_populates="chat_messages")
+    sender = relationship("User", foreign_keys=[sender_id], back_populates="sent_messages")
+    receiver = relationship("User", foreign_keys=[receiver_id], back_populates="received_messages")
     channel = relationship("Channel", back_populates="messages")
-    reactions = relationship("MessageReaction", back_populates="message")
+    reactions = relationship("MessageReaction", back_populates="message", cascade="all, delete-orphan")
 
     def __repr__(self):
         return f"<ChatMessage {self.id} from {self.sender_id} to {self.receiver_id or 'company'}>"

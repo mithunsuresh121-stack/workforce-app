@@ -14,4 +14,4 @@ class MessageReaction(Base):
 
     # Relationships
     message = relationship("ChatMessage", back_populates="reactions")
-    user = relationship("User")
+    user = relationship("User", back_populates="message_reactions")

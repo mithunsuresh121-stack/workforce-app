@@ -75,6 +75,10 @@ jobs:
         run: |
           curl -f http://localhost:9090/metrics
           echo "Metrics exporter verified"
+      - name: Verify FastAPI /metrics endpoint
+        run: |
+          curl -f http://localhost:8000/metrics
+          echo "FastAPI /metrics endpoint verified"
       - name: Run WebSocket simulation
         run: |
           cd backend

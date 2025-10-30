@@ -55,6 +55,49 @@ redis_connection_errors_total = Counter(
     registry=registry
 )
 
+# Redis pub/sub counters
+redis_pubsub_messages_total = Counter(
+    'workforce_redis_pubsub_messages_total',
+    'Total number of Redis pub/sub messages',
+    ['channel_type'],
+    registry=registry
+)
+
+redis_pubsub_subscribers_active = Gauge(
+    'workforce_redis_pubsub_subscribers_active',
+    'Number of active Redis pub/sub subscribers',
+    ['channel_type'],
+    registry=registry
+)
+
+# Reliability Metrics
+ws_reconnects_total = Counter(
+    'workforce_ws_reconnects_total',
+    'Total number of WebSocket reconnections',
+    ['room_type'],
+    registry=registry
+)
+
+ws_timeouts_total = Counter(
+    'workforce_ws_timeouts_total',
+    'Total number of WebSocket timeouts',
+    ['room_type'],
+    registry=registry
+)
+
+redis_reconnections_total = Counter(
+    'workforce_redis_reconnections_total',
+    'Total number of Redis reconnections',
+    registry=registry
+)
+
+ws_backpressure_queue_size = Gauge(
+    'workforce_ws_backpressure_queue_size',
+    'Current size of WebSocket backpressure queue',
+    ['room_type'],
+    registry=registry
+)
+
 # Chat/Messaging Metrics
 chat_messages_total = Counter(
     'workforce_chat_messages_total',
@@ -119,6 +162,18 @@ def set_typing_indicators(channel_id: int, count: int):
 
 def set_meeting_participants(meeting_id: int, count: int):
     meeting_participants_active.labels(meeting_id=str(meeting_id)).set(count)
+
+def record_ws_reconnect(room_type: str):
+    ws_reconnects_total.labels(room_type=room_type).inc()
+
+def record_ws_timeout(room_type: str):
+    ws_timeouts_total.labels(room_type=room_type).inc()
+
+def record_redis_reconnection():
+    redis_reconnections_total.inc()
+
+def set_ws_backpressure_queue_size(room_type: str, size: int):
+    ws_backpressure_queue_size.labels(room_type=room_type).set(size)
 
 async def increment_messages_sent():
     """Increment messages sent counter with Redis persistence"""
