@@ -1,7 +1,7 @@
 import structlog
 from sqlalchemy.orm import Session
-from .models.document import Document
-from .schemas.schemas import DocumentCreate
+from app.models.document import Document
+from app.schemas.schemas import DocumentCreate
 
 logger = structlog.get_logger(__name__)
 

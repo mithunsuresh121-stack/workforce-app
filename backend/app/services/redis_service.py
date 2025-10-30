@@ -38,7 +38,7 @@ class RedisService:
         try:
             pong = await self.redis.ping()
             logger.debug("Redis health check passed", pong=pong)
-            return pong == b'PONG'
+            return pong == 'PONG'
         except Exception as e:
             logger.error("Redis health check failed", error=str(e))
             return False
@@ -128,10 +128,10 @@ class RedisService:
         try:
             await self.redis.publish(channel, json.dumps(message))
             logger.info("Published event to Redis", channel=channel, message_size=len(json.dumps(message)), event_type=message.get('type', 'unknown'))
-            from .metrics import record_redis_publish
+            from app.metrics import record_redis_publish
             record_redis_publish(channel.split(':')[0])  # chat or meeting
         except Exception as e:
-            from .metrics import record_redis_error
+            from app.metrics import record_redis_error
             record_redis_error()
             logger.error("Failed to publish event to Redis", channel=channel, error=str(e), exc_info=True)
 

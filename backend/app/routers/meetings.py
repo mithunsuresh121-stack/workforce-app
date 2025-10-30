@@ -3,13 +3,13 @@ from fastapi import APIRouter, Depends, HTTPException, WebSocket, WebSocketDisco
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional
-from ..db import get_db
-from ..deps import get_current_user
-from ..models.user import User
-from ..crud.crud_meetings import create_meeting, get_meeting, get_meetings_for_company, add_participant_to_meeting, get_meeting_participants, is_user_participant
-from ..services.meeting_service import meeting_service
-from ..schemas.schemas import MeetingCreate, MeetingResponse, MeetingParticipantResponse
-from ..services.redis_service import redis_service
+from app.db import get_db
+from app.deps import get_current_user
+from app.models.user import User
+from app.crud.crud_meetings import create_meeting, get_meeting, get_meetings_for_company, add_participant_to_meeting, get_meeting_participants, is_user_participant
+from app.services.meeting_service import meeting_service
+from app.schemas.schemas import MeetingCreate, MeetingResponse, MeetingParticipantResponse
+from app.services.redis_service import redis_service
 
 logger = structlog.get_logger(__name__)
 

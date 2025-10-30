@@ -2,13 +2,14 @@ import structlog
 from sqlalchemy.orm import Session
 from datetime import datetime
 from typing import List, Optional
-from ..models.meetings import Meeting, MeetingStatus
-from ..models.meeting_participants import MeetingParticipant, ParticipantRole
-from ..crud.crud_meetings import create_meeting, add_participant_to_meeting, update_participant_join_time
-from ..services.fcm_service import fcm_service
-from ..crud_notifications import create_notification
-from ..models.notification import NotificationType
-from ..services.redis_service import redis_service
+from app.models.meetings import Meeting, MeetingStatus
+from app.models.meeting_participants import MeetingParticipant, ParticipantRole
+from app.crud.crud_meetings import create_meeting, add_participant_to_meeting, update_participant_join_time
+from app.services.fcm_service import fcm_service
+from app.crud_notifications import create_notification
+from app.models.notification import NotificationType
+from app.services.redis_service import redis_service
+from app.metrics import increment_meetings_joined
 
 logger = structlog.get_logger(__name__)
 
@@ -35,6 +36,10 @@ class MeetingService:
     def join_meeting(self, db: Session, meeting_id: int, user_id: int) -> MeetingParticipant:
         """User joins the meeting"""
         participant = update_participant_join_time(db, meeting_id, user_id, datetime.utcnow())
+
+        # Increment metrics counter
+        import asyncio
+        asyncio.create_task(increment_meetings_joined())
 
         # Update meeting status if needed
         meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()

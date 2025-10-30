@@ -1,8 +1,8 @@
 import structlog
 from sqlalchemy.orm import Session
 from typing import List
-from ..models.message_reactions import MessageReaction
-from ..models.chat import ChatMessage
+from app.models.message_reactions import MessageReaction
+from app.models.chat import ChatMessage
 
 logger = structlog.get_logger(__name__)
 

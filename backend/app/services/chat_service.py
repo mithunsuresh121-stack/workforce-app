@@ -1,16 +1,17 @@
 import structlog
 from sqlalchemy.orm import Session
 from typing import List, Optional, Dict, Any
-from ..models.chat import ChatMessage
-from ..models.channels import Channel, ChannelMember, ChannelType
-from ..models.message_reactions import MessageReaction
-from ..crud_chat import create_chat_message, get_chat_history
-from ..crud.crud_channels import create_channel, add_member_to_channel
-from ..crud.crud_reactions import add_reaction, remove_reaction
-from ..services.redis_service import redis_service
-from ..services.fcm_service import fcm_service
-from ..crud_notifications import create_notification
-from ..models.notification import NotificationType
+from app.models.chat import ChatMessage
+from app.models.channels import Channel, ChannelMember, ChannelType
+from app.models.message_reactions import MessageReaction
+from app.crud_chat import create_chat_message, get_chat_history
+from app.crud.crud_channels import create_channel, add_member_to_channel
+from app.crud.crud_reactions import add_reaction, remove_reaction
+from app.services.redis_service import redis_service
+from app.services.fcm_service import fcm_service
+from app.crud_notifications import create_notification
+from app.models.notification import NotificationType
+from app.metrics import increment_messages_sent
 
 logger = structlog.get_logger(__name__)
 
@@ -69,6 +70,10 @@ class ChatService:
         db.add(chat_message)
         db.commit()
         db.refresh(chat_message)
+
+        # Increment metrics counter
+        import asyncio
+        asyncio.create_task(increment_messages_sent())
 
         # Create notifications for other members
         self._notify_channel_members(db, channel_id, sender_id, chat_message)

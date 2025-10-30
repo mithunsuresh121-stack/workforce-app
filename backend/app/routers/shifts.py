@@ -3,9 +3,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
-from ..deps import get_db, get_current_user
-from ..schemas import ShiftCreate, ShiftOut
-from ..crud import (
+from app.deps import get_db, get_current_user
+from app.schemas import ShiftCreate, ShiftOut
+from app.crud import (
     create_shift,
     get_shift_by_id,
     list_shifts_by_employee,
@@ -13,11 +13,11 @@ from ..crud import (
     update_shift,
     delete_shift
 )
-from ..crud_notifications import create_notification
-from ..models.user import User
-from ..models.notification import NotificationType
-from ..models.swap_request import SwapRequest, SwapStatus
-from ..schemas.swap_request import SwapRequestCreate, SwapRequestOut
+from app.crud_notifications import create_notification
+from app.models.user import User
+from app.models.notification import NotificationType
+from app.models.swap_request import SwapRequest, SwapStatus
+from app.schemas.swap_request import SwapRequestCreate, SwapRequestOut
 
 logger = structlog.get_logger(__name__)
 

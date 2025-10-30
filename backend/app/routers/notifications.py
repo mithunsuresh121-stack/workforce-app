@@ -2,13 +2,13 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
-from ..db import get_db
-from ..models.notification import Notification, NotificationStatus
-from ..models.announcement import Announcement
-from ..crud_notifications import get_notifications_for_user, mark_notification_as_read
-from ..crud_announcements import create_announcement, get_announcements_for_company
-from ..deps import get_current_user
-from ..schemas.schemas import NotificationOut, AnnouncementCreate, AnnouncementOut
+from app.db import get_db
+from app.models.notification import Notification, NotificationStatus
+from app.models.announcement import Announcement
+from app.crud_notifications import get_notifications_for_user, mark_notification_as_read
+from app.crud_announcements import create_announcement, get_announcements_for_company
+from app.deps import get_current_user
+from app.schemas.schemas import NotificationOut, AnnouncementCreate, AnnouncementOut
 
 logger = structlog.get_logger(__name__)
 

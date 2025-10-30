@@ -1,5 +1,7 @@
 from prometheus_client import Counter, Histogram, Gauge, CollectorRegistry
 import time
+import asyncio
+from app.services.redis_service import redis_service
 
 # Create registry for metrics
 registry = CollectorRegistry()
@@ -76,6 +78,14 @@ meeting_participants_active = Gauge(
     registry=registry
 )
 
+# Application Counters for external exporter - Redis-backed
+messages_sent_total = Counter('workforce_messages_sent_total', 'Total messages sent', registry=registry)
+meetings_joined_total = Counter('workforce_meetings_joined_total', 'Total meetings joined', registry=registry)
+
+# Redis keys for persistent counters
+MESSAGES_SENT_KEY = "metrics:messages_sent_total"
+MEETINGS_JOINED_KEY = "metrics:meetings_joined_total"
+
 # Helper functions
 def increment_ws_connections():
     ws_connections_active.inc()
@@ -109,3 +119,39 @@ def set_typing_indicators(channel_id: int, count: int):
 
 def set_meeting_participants(meeting_id: int, count: int):
     meeting_participants_active.labels(meeting_id=str(meeting_id)).set(count)
+
+async def increment_messages_sent():
+    """Increment messages sent counter with Redis persistence"""
+    try:
+        # Increment in Redis for persistence
+        current = await redis_service.redis.incr(MESSAGES_SENT_KEY)
+        # Update in-memory counter to match
+        messages_sent_total._value.set(current)
+    except Exception:
+        # Fallback to in-memory only
+        messages_sent_total.inc()
+
+async def increment_meetings_joined():
+    """Increment meetings joined counter with Redis persistence"""
+    try:
+        # Increment in Redis for persistence
+        current = await redis_service.redis.incr(MEETINGS_JOINED_KEY)
+        # Update in-memory counter to match
+        meetings_joined_total._value.set(current)
+    except Exception:
+        # Fallback to in-memory only
+        meetings_joined_total.inc()
+
+async def initialize_counters_from_redis():
+    """Initialize counters from Redis on startup"""
+    try:
+        messages_count = await redis_service.redis.get(MESSAGES_SENT_KEY)
+        if messages_count:
+            messages_sent_total._value.set(int(messages_count))
+
+        meetings_count = await redis_service.redis.get(MEETINGS_JOINED_KEY)
+        if meetings_count:
+            meetings_joined_total._value.set(int(meetings_count))
+    except Exception:
+        # Redis not available, start from 0
+        pass

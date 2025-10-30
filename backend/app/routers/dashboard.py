@@ -4,16 +4,16 @@ from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, and_, or_, distinct
 from datetime import datetime, date, timedelta
-from ..deps import get_db, get_current_user
-from ..crud import list_users_by_company, list_tasks, list_leaves_by_tenant, list_shifts_by_company
-from ..models.user import User
-from ..models.company import Company
-from ..models.attendance import Attendance
-from ..models.leave import Leave
-from ..models.payroll import Employee
-from ..models.employee_profile import EmployeeProfile
-from ..models.task import TaskStatus
-from ..schemas.schemas import LeaveStatus
+from app.deps import get_db, get_current_user
+from app.crud import list_users_by_company, list_tasks, list_leaves_by_tenant, list_shifts_by_company
+from app.models.user import User
+from app.models.company import Company
+from app.models.attendance import Attendance
+from app.models.leave import Leave
+from app.models.payroll import Employee
+from app.models.employee_profile import EmployeeProfile
+from app.models.task import TaskStatus
+from app.schemas.schemas import LeaveStatus
 import pandas as pd
 import io
 
@@ -297,7 +297,7 @@ def get_reports_chart(
         user_role = getattr(current_user, "role", "Employee").strip()
 
         # Import the profile update request model
-        from ..models.profile_update_request import ProfileUpdateRequest
+        from app.models.profile_update_request import ProfileUpdateRequest
 
         # Employee-specific: only show their own requests
         if user_role == "Employee":

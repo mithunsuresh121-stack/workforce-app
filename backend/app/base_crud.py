@@ -2,15 +2,15 @@ import json
 from sqlalchemy.orm import Session
 from sqlalchemy.sql import func
 from typing import Optional
-from .models.user import User
-from .models.company import Company
-from .models.employee_profile import EmployeeProfile
-from .models.profile_update_request import ProfileUpdateRequest, RequestStatus
-from .models.task import Task
-from .models.leave import Leave
-from .models.shift import Shift
-from .models.refresh_token import RefreshToken
-from .schemas import EmployeeProfileUpdate
+from app.models.user import User
+from app.models.company import Company
+from app.models.employee_profile import EmployeeProfile
+from app.models.profile_update_request import ProfileUpdateRequest, RequestStatus
+from app.models.task import Task
+from app.models.leave import Leave
+from app.models.shift import Shift
+from app.models.refresh_token import RefreshToken
+from app.schemas import EmployeeProfileUpdate
 from passlib.context import CryptContext
 import structlog
 
@@ -226,7 +226,7 @@ def delete_task(db: Session, task_id: int):
     return True
 
 # Attachment CRUD functions
-from .models.attachment import Attachment
+from app.models.attachment import Attachment
 
 def create_attachment(db: Session, task_id: int, file_path: str, file_type: str, file_size: float, uploaded_by: int):
     attachment = Attachment(
@@ -399,8 +399,8 @@ def delete_shift(db: Session, shift_id: int):
 
 def list_shifts_by_company(db: Session, company_id: int):
     return db.query(Shift).filter(Shift.company_id == company_id).all()
-from .models.payroll import Employee as PayrollEmployee, Salary, Allowance, Deduction, Bonus, PayrollRun, PayrollEntry
-from .models.attendance import Attendance, Break
+from app.models.payroll import Employee as PayrollEmployee, Salary, Allowance, Deduction, Bonus, PayrollRun, PayrollEntry
+from app.models.attendance import Attendance, Break
 
 # Payroll CRUD functions
 def create_payroll_employee(db: Session, tenant_id: str, user_id: int, employee_id: str, department: str = None, position: str = None, hire_date = None, base_salary: float = 0.0, status: str = "Active"):
@@ -821,7 +821,7 @@ def get_payroll_by_dept(db: Session, company_id: int, period: str) -> List[Dict[
     """
     Get payroll projections by department.
     """
-    from .models.payroll import Employee as PayrollEmployee
+    from app.models.payroll import Employee as PayrollEmployee
 
     # Assume 22 working days per month
     working_days = 22

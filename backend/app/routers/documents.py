@@ -5,11 +5,11 @@ from sqlalchemy.orm import Session
 from typing import List
 import os
 import shutil
-from ..db import get_db
-from ..models.document import Document, DocumentType
-from ..schemas.schemas import DocumentOut, DocumentCreate
-from ..deps import get_current_user
-from ..models.user import User
+from app.db import get_db
+from app.models.document import Document, DocumentType
+from app.schemas.schemas import DocumentOut, DocumentCreate
+from app.deps import get_current_user
+from app.models.user import User
 
 logger = structlog.get_logger(__name__)
 

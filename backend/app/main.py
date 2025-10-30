@@ -1,10 +1,10 @@
 import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from .config import settings, engine, Base
-from .models import *
-from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat, meetings, websocket_manager
-from .custom_json_response import CustomJSONResponse
+from app.config import settings, engine, Base
+from app.models import *
+from app.routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat, meetings, websocket_manager
+from app.custom_json_response import CustomJSONResponse
 
 # Set up structured logging with structlog as primary logger
 shared_processors = [
@@ -101,11 +101,11 @@ app.include_router(chat.router, prefix="/api/chat")
 app.include_router(meetings.router, prefix="/api/meetings")
 app.include_router(websocket_manager.router, prefix="/api/ws")
 
-from .seed_demo_user import seed_demo_user
-from .deps import get_db
-from .services.redis_service import redis_service
+from app.seed_demo_user import seed_demo_user
+from app.deps import get_db
+from app.services.redis_service import redis_service
 from prometheus_fastapi_instrumentator import Instrumentator
-from .metrics import registry
+from app.metrics import registry, initialize_counters_from_redis
 
 @app.on_event("startup")
 async def startup_event():
@@ -120,12 +120,16 @@ async def startup_event():
         logger.error("Failed to initialize Redis on startup", error=str(e), exc_info=True)
         raise
 
+    # Initialize metrics counters from Redis
+    try:
+        await initialize_counters_from_redis()
+        logger.info("Metrics counters initialized from Redis")
+    except Exception as e:
+        logger.warning("Failed to initialize metrics counters from Redis", error=str(e))
+
     # Seed demo user
     db = next(get_db())
     seed_demo_user(db)
-
-    # Initialize Prometheus metrics
-    Instrumentator().instrument(app).expose(app, registry=registry)
 
 app.include_router(dashboard.router, prefix="/api")
 @app.get("/")

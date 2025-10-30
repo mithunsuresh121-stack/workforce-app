@@ -2,7 +2,7 @@ from sqlalchemy import Column, Integer, DateTime, Enum, ForeignKey
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 from enum import Enum as PyEnum
-from ..db import Base
+from app.db import Base
 
 class ParticipantRole(str, PyEnum):
     ORGANIZER = "ORGANIZER"

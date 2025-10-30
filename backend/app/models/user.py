@@ -1,8 +1,8 @@
 from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from ..db import Base
-from .refresh_token import RefreshToken
+from app.db import Base
+from app.refresh_token import RefreshToken
 
 class User(Base):
     __tablename__ = "users"

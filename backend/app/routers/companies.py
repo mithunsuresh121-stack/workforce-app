@@ -2,10 +2,10 @@ import structlog
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from typing import List
-from ..deps import get_db, get_current_user
-from ..schemas import CompanyCreate, CompanyOut
-from ..crud import create_company, list_companies, get_company_by_id, get_company_by_name, delete_company
-from ..models.user import User
+from app.deps import get_db, get_current_user
+from app.schemas import CompanyCreate, CompanyOut
+from app.crud import create_company, list_companies, get_company_by_id, get_company_by_name, delete_company
+from app.models.user import User
 
 logger = structlog.get_logger(__name__)
 

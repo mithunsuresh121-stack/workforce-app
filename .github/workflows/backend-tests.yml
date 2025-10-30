@@ -66,6 +66,15 @@ jobs:
           cd backend
           uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload &
           sleep 5
+      - name: Start metrics exporter
+        run: |
+          cd backend
+          python app/monitoring/metrics_exporter.py &
+          sleep 5
+      - name: Verify metrics exporter
+        run: |
+          curl -f http://localhost:9090/metrics
+          echo "Metrics exporter verified"
       - name: Run WebSocket simulation
         run: |
           cd backend

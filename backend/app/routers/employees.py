@@ -3,16 +3,16 @@ from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List
-from ..deps import get_db, get_current_user
-from ..schemas import EmployeeProfileCreate, EmployeeProfileOut, EmployeeProfileUpdate
-from ..crud import (
+from app.deps import get_db, get_current_user
+from app.schemas import EmployeeProfileCreate, EmployeeProfileOut, EmployeeProfileUpdate
+from app.crud import (
     list_employee_profiles_by_company,
     create_employee_profile,
     get_employee_profile_by_user_id,
     update_employee_profile,
     delete_employee_profile
 )
-from ..models.user import User
+from app.models.user import User
 
 logger = structlog.get_logger(__name__)
 

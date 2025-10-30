@@ -1,4 +1,4 @@
-from .schemas import (
+from app.schemas import (
     # Enums
     Role,
     TaskStatus,
@@ -57,7 +57,7 @@ from .schemas import (
     PayrollEntryCreate,
     PayrollEntryOut,
 )
-from .attendance import (
+from app.attendance import (
     Attendance,
     Break,
     ClockInRequest,
