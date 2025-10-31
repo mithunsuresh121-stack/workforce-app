@@ -24,9 +24,9 @@ class Channel(Base):
     # Relationships
     company = relationship("Company", back_populates="channels")
     creator = relationship("User", foreign_keys=[created_by], back_populates="created_channels")
-    members = relationship("User", secondary="channel_members")
+    members = relationship("User", secondary="channel_members", overlaps="channel_memberships")
     messages = relationship("ChatMessage", back_populates="channel", cascade="all, delete-orphan")
-    channel_members = relationship("ChannelMember", back_populates="channel", cascade="all, delete-orphan")
+    channel_members = relationship("ChannelMember", back_populates="channel", cascade="all, delete-orphan", overlaps="members")
 
 class ChannelMember(Base):
     __tablename__ = "channel_members"
@@ -35,5 +35,5 @@ class ChannelMember(Base):
     user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     joined_at = Column(DateTime, server_default=func.now())
 
-    channel = relationship("Channel", back_populates="channel_members")
-    user = relationship("User", back_populates="channel_memberships")
+    channel = relationship("Channel", back_populates="channel_members", overlaps="members")
+    user = relationship("User", back_populates="channel_memberships", overlaps="members")
