@@ -272,7 +272,7 @@ class WebSocketSimulator:
                     self.tokens.append(f"mock_token_{i}")
 
     def get_stats(self) -> Dict[str, Any]:
-        """Get simulation statistics including reliability metrics"""
+        """Get simulation statistics including reliability metrics and Redis pub/sub monitoring"""
         duration = time.time() - self.start_time
         throughput = self.redis_publish_count / duration if duration > 0 else 0
 
@@ -286,6 +286,10 @@ class WebSocketSimulator:
         if self.delivery_guarantees:
             successful_deliveries = sum(1 for success in self.delivery_guarantees if success)
             delivery_rate = (successful_deliveries / len(self.delivery_guarantees)) * 100
+
+        # Redis pub/sub stats (would need to be collected during simulation)
+        redis_pubsub_channels = getattr(self, 'redis_pubsub_channels', 0)
+        redis_pubsub_messages = getattr(self, 'redis_pubsub_messages', 0)
 
         if not self.latencies:
             return {
@@ -301,7 +305,10 @@ class WebSocketSimulator:
                 "reconnect_storms": self.reconnect_storms,
                 "delivery_guarantee_rate": delivery_rate,
                 "heartbeat_failures": self.heartbeat_failures,
-                "backpressure_events": self.backpressure_events
+                "backpressure_events": self.backpressure_events,
+                # Redis pub/sub metrics
+                "redis_pubsub_channels": redis_pubsub_channels,
+                "redis_pubsub_messages": redis_pubsub_messages
             }
 
         return {
@@ -325,7 +332,10 @@ class WebSocketSimulator:
             "reconnect_storms": self.reconnect_storms,
             "delivery_guarantee_rate": delivery_rate,
             "heartbeat_failures": self.heartbeat_failures,
-            "backpressure_events": self.backpressure_events
+            "backpressure_events": self.backpressure_events,
+            # Redis pub/sub metrics
+            "redis_pubsub_channels": redis_pubsub_channels,
+            "redis_pubsub_messages": redis_pubsub_messages
         }
 
 async def main():

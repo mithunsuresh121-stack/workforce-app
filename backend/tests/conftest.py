@@ -42,7 +42,7 @@ def db():
 
 @pytest.fixture(scope="function")
 def test_company(db):
-    company = create_company(db, name="Test Company", contact_email="test@company.com")
+    company = create_company(db, name="Test Company")
     return company
 
 
