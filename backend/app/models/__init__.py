@@ -25,7 +25,7 @@ from .chat import ChatMessage
 from .announcement import Announcement
 from .document import Document
 from .attachment import Attachment
-from .channels import Channel
+from .channels import Channel, ChannelMember
 from .message_reactions import MessageReaction
 from .meetings import Meeting
 from .meeting_participants import MeetingParticipant
@@ -57,6 +57,7 @@ __all__ = [
     "Document",
     "Attachment",
     "Channel",
+    "ChannelMember",
     "MessageReaction",
     "Meeting",
     "MeetingParticipant"

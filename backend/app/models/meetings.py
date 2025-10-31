@@ -14,8 +14,8 @@ class Meeting(Base):
 
     id = Column(Integer, primary_key=True, index=True)
     title = Column(String(255), nullable=False)
-    organizer_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
+    organizer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     status = Column(Enum(MeetingStatus), nullable=False)

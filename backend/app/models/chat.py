@@ -7,10 +7,10 @@ class ChatMessage(Base):
     __tablename__ = "chat_messages"
 
     id = Column(Integer, primary_key=True, index=True)
-    company_id = Column(Integer, ForeignKey("companies.id"), nullable=False)
-    sender_id = Column(Integer, ForeignKey("users.id"), nullable=False)
-    receiver_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # None for company-wide messages
-    channel_id = Column(Integer, ForeignKey("channels.id"), nullable=True)  # For channel messages
+    company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    sender_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
+    receiver_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=True)  # None for company-wide messages
+    channel_id = Column(Integer, ForeignKey("channels.id", ondelete="CASCADE"), nullable=True)  # For channel messages
     message = Column(Text, nullable=False)
     attachments = Column(JSON, nullable=True)  # JSON array of file URLs/metadata
     is_read = Column(Boolean, default=False, nullable=False)

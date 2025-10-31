@@ -15,6 +15,7 @@ class Company(Base):
     users = relationship("User", back_populates="company", cascade="all, delete-orphan")
     shifts = relationship("Shift", back_populates="company", cascade="all, delete-orphan")
     employee_profiles = relationship("EmployeeProfile", back_populates="company", cascade="all, delete-orphan")
+    attendances = relationship("Attendance", back_populates="company", cascade="all, delete-orphan")
     channels = relationship("Channel", back_populates="company", cascade="all, delete-orphan")
     meetings = relationship("Meeting", back_populates="company", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessage", back_populates="company", cascade="all, delete-orphan")
