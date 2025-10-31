@@ -1,86 +1,47 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { FaMicrophone, FaMicrophoneSlash, FaVideo, FaVideoSlash, FaPhone, FaUsers } from 'react-icons/fa';
+import useWebSocket from '../../../web-app/src/hooks/useWebSocket';
 
 const MeetingRoom = ({ meetingId, userId, onLeave }) => {
   const [isMuted, setIsMuted] = useState(false);
   const [isVideoOff, setIsVideoOff] = useState(false);
   const [participants, setParticipants] = useState([]);
   const [isScreenSharing, setIsScreenSharing] = useState(false);
-  const [ws, setWs] = useState(null);
   const localVideoRef = useRef(null);
   const remoteVideoRef = useRef(null);
   const peerConnectionRef = useRef(null);
-  const [reconnecting, setReconnecting] = useState(false);
-  const reconnectTimeoutRef = useRef(null);
   const heartbeatIntervalRef = useRef(null);
-  const reconnectDelayRef = useRef(1000); // Start with 1s delay
+  const token = localStorage.getItem('token');
+  const { send, connected } = useWebSocket(`/api/ws/meetings/${meetingId}`, token, (msg) => {
+    if (msg.type === 'pong') {
+      // Heartbeat response
+      return;
+    } else if (msg.type === 'meeting_join') {
+      setParticipants(prev => [...prev.filter(p => p.user_id !== msg.data.user_id), { user_id: msg.data.user_id, online: true }]);
+    } else if (msg.type === 'meeting_leave') {
+      setParticipants(prev => prev.filter(p => p.user_id !== msg.data.user_id));
+    } else if (msg.type === 'presence_update') {
+      setParticipants(msg.data.online_users || []);
+    } else if (msg.type === 'meeting_signal') {
+      handleWebRTCSignaling(msg.data);
+    }
+  });
 
-  const connectWebSocket = () => {
-    if (!meetingId) return;
+  useEffect(() => {
+    if (connected) {
+      send({ type: 'meeting_join' });
+    }
+  }, [connected, send]);
 
-    const token = localStorage.getItem('token');
-    const wsUrl = `ws://localhost:8000/ws/meetings/${meetingId}?token=${token}`;
-    const websocket = new WebSocket(wsUrl);
-
-    websocket.onopen = () => {
-      console.log("Connected to meeting WebSocket");
-      setReconnecting(false);
-      reconnectDelayRef.current = 1000; // Reset backoff delay on successful connection
-      // Start heartbeat
-      heartbeatIntervalRef.current = setInterval(() => {
-        if (websocket.readyState === WebSocket.OPEN) {
-          websocket.send(JSON.stringify({ type: "ping" }));
-        }
-      }, 30000); // Every 30 seconds
-      // Send join meeting message
-      websocket.send(JSON.stringify({ type: 'join_meeting' }));
-    };
-      console.log('Connected to meeting WebSocket');
-      // Send join meeting message
-      websocket.send(JSON.stringify({ type: 'join_meeting' }));
-    };
-
-    websocket.onmessage = (event) => {
-      const data = JSON.parse(event.data);
-      if (data.type === "pong") {
-        // Heartbeat response - connection is alive
-        return;
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (connected) {
+        send({ type: 'ping' });
       }
-      const data = JSON.parse(event.data);
-      if (data.type === 'presence_update') {
-        setParticipants(data.online_users || []);
-      } else if (data.type === 'user_joined') {
-        setParticipants(prev => [...prev.filter(p => p.user_id !== data.user_id), { user_id: data.user_id }]);
-      } else if (data.type === 'user_left') {
-        setParticipants(prev => prev.filter(p => p.user_id !== data.user_id));
-      }
-      // Handle WebRTC signaling messages
-      else if (['offer', 'answer', 'ice-candidate'].includes(data.type)) {
-        handleWebRTCSignaling(data);
-      }
-    };
+    }, 30000);
 
-    websocket.onclose = () => {
-      console.log("Meeting WebSocket disconnected, reconnecting...");
-      setReconnecting(true);
-      if (heartbeatIntervalRef.current) {
-        clearInterval(heartbeatIntervalRef.current);
-      }
-      reconnectTimeoutRef.current = setTimeout(() => {
-        reconnectDelayRef.current = Math.min(reconnectDelayRef.current * 2, 30000); // Exponential backoff, max 30s
-        connectWebSocket();
-      }, reconnectDelayRef.current);
-    };
-      console.log('Meeting WebSocket disconnected, reconnecting...');
-      reconnectTimeoutRef.current = setTimeout(connectWebSocket, 3000);
-    };
-
-    websocket.onerror = (error) => {
-      console.error('WebSocket error:', error);
-    };
-
-    setWs(websocket);
-  };
+    return () => clearInterval(interval);
+  }, [connected, send]);
 
   const handleWebRTCSignaling = (data) => {
     // Handle WebRTC signaling (offer, answer, ice-candidate)
@@ -90,7 +51,7 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
         // Create and send answer
         peerConnectionRef.current.createAnswer().then(answer => {
           peerConnectionRef.current.setLocalDescription(answer);
-          ws.send(JSON.stringify({ type: 'answer', data: answer }));
+          send({ type: 'meeting_signal', data: { type: 'answer', data: answer } });
         });
       } else if (data.type === 'answer') {
         peerConnectionRef.current.setRemoteDescription(new RTCSessionDescription(data.data));
@@ -103,8 +64,6 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
   useEffect(() => {
     // Initialize WebRTC
     initializeWebRTC();
-    // Connect WebSocket
-    connectWebSocket();
     // Load participants
     fetchParticipants();
 
@@ -113,10 +72,9 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
       if (peerConnectionRef.current) {
         peerConnectionRef.current.close();
       }
-      if (ws) ws.close();
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
-      if (heartbeatIntervalRef.current) clearInterval(heartbeatIntervalRef.current);
-      if (reconnectTimeoutRef.current) clearTimeout(reconnectTimeoutRef.current);
+      if (heartbeatIntervalRef.current) {
+        clearInterval(heartbeatIntervalRef.current);
+      }
     };
   }, [meetingId]);
 
@@ -163,7 +121,7 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
     const stream = localVideoRef.current?.srcObject;
     if (stream) {
       stream.getAudioTracks().forEach(track => {
-        track.enabled = isMuted;
+        track.enabled = !isMuted;
       });
     }
   };
@@ -198,16 +156,8 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
   const leaveMeeting = async () => {
     try {
       // Send leave message via WebSocket
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(JSON.stringify({ type: 'leave_meeting' }));
-      } else {
-        // Queue leave event if disconnected
-        const pendingEvents = JSON.parse(localStorage.getItem("pending_meeting_events") || "[]");
-        pendingEvents.push({ type: "leave_meeting" });
-        localStorage.setItem("pending_meeting_events", JSON.stringify(pendingEvents));
-      }
-      if (ws) {
-        ws.send(JSON.stringify({ type: 'leave_meeting' }));
+      if (connected) {
+        send({ type: 'meeting_leave' });
       }
 
       await fetch(`/api/meetings/${meetingId}/leave`, {
@@ -224,7 +174,7 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
     <div className="meeting-room">
       <div className="meeting-header">
         <h2>Meeting Room</h2>
-        {reconnecting <h2>Meeting Room</h2><h2>Meeting Room</h2> <span className="reconnecting-indicator">Reconnecting...</span>}
+        {!connected && <span className="reconnecting-indicator">Reconnecting...</span>}
         <div className="meeting-info">
           <span>Meeting ID: {meetingId}</span>
           <span>Participants: {participants.length}</span>
@@ -299,6 +249,7 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
           {participants.map(participant => (
             <li key={participant.user_id}>
               User {participant.user_id}
+              {participant.online && <span style={{ color: 'green', marginLeft: '5px' }}>●</span>}
               {participant.role === 'organizer' && <span className="organizer-badge">Organizer</span>}
             </li>
           ))}
@@ -309,15 +260,3 @@ const MeetingRoom = ({ meetingId, userId, onLeave }) => {
 };
 
 export default MeetingRoom;
-  // Send queued messages on reconnect
-  useEffect(() => {
-    if (ws && ws.readyState === WebSocket.OPEN) {
-      const pendingMessages = JSON.parse(localStorage.getItem("pending_meeting_events") || "[]");
-      if (pendingMessages.length > 0) {
-        pendingMessages.forEach(msg => {
-          ws.send(JSON.stringify(msg));
-        });
-        localStorage.removeItem("pending_meeting_events");
-      }
-    }
-  }, [ws?.readyState]);

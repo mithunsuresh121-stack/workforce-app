@@ -256,18 +256,8 @@ def delete_attachment(db: Session, attachment_id: int):
     return True
 
 # Company CRUD functions
-def create_company(db: Session, name: str, domain: str = None, contact_email: str = None, contact_phone: str = None, address: str = None, city: str = None, state: str = None, country: str = None, postal_code: str = None):
-    company = Company(
-        name=name,
-        domain=domain,
-        contact_email=contact_email,
-        contact_phone=contact_phone,
-        address=address,
-        city=city,
-        state=state,
-        country=country,
-        postal_code=postal_code
-    )
+def create_company(db: Session, name: str):
+    company = Company(name=name)
     db.add(company)
     db.commit()
     db.refresh(company)

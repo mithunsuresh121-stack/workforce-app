@@ -104,8 +104,10 @@ app.include_router(websocket_manager.router, prefix="/api/ws")
 from app.seed_demo_user import seed_demo_user
 from app.deps import get_db
 from app.services.redis_service import redis_service
+from app.services.ws_broadcast import ws_manager
 from prometheus_fastapi_instrumentator import Instrumentator
 from app.metrics import registry, initialize_counters_from_redis
+import json
 
 # Initialize Prometheus instrumentation
 instrumentator = Instrumentator().instrument(app)
@@ -133,6 +135,23 @@ async def startup_event():
     # Seed demo user
     db = next(get_db())
     seed_demo_user(db)
+
+    # Start Redis subscriber for chat channels
+    asyncio.create_task(redis_subscriber())
+
+
+async def redis_subscriber():
+    """Subscribe to Redis pub/sub for chat channels and forward to WS"""
+    async def callback(message_data: str):
+        try:
+            data = json.loads(message_data)
+            channel_id = int(data.get('channel_id', 0))  # Extract from payload if needed
+            await ws_manager.broadcast(channel_id, message_data)
+            logger.info("redis_sub_forward", channel_id=channel_id)
+        except Exception as e:
+            logger.error("Error in Redis subscriber callback", error=str(e))
+
+    await redis_service.psubscribe("chat:channel:*:pub", callback)
 
 app.include_router(dashboard.router, prefix="/api")
 @app.get("/")

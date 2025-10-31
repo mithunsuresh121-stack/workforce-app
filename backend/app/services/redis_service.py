@@ -1,6 +1,6 @@
 import aioredis
 import structlog
-from typing import Optional, List
+from typing import Optional, List, Callable
 import os
 import json
 import asyncio
@@ -11,6 +11,8 @@ logger = structlog.get_logger(__name__)
 class RedisService:
     def __init__(self):
         self.redis: Optional[aioredis.Redis] = None
+        self.pubsub: Optional[aioredis.Redis] = None
+        self.sentinel: Optional[aioredis.sentinel.Sentinel] = None
         self._initialized = False
         self._reconnect_task: Optional[asyncio.Task] = None
         self._reconnect_attempts = 0
@@ -19,18 +21,45 @@ class RedisService:
 
     @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10), retry=retry_if_exception_type(aioredis.RedisError))
     async def initialize(self):
-        """Initialize Redis connection with retry logic"""
+        """Initialize Redis connection with retry logic and Sentinel support"""
         try:
             redis_url = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', 'workforce_redis_pw')}@localhost:6379")
-            self.redis = await aioredis.create_redis_pool(
-                redis_url,
-                encoding='utf-8',
-                minsize=5,
-                maxsize=50,
-                timeout=5.0
-            )
+            password = os.getenv('REDIS_PASSWORD', 'workforce_redis_pw')
+            sentinel_hosts = os.getenv("REDIS_SENTINEL_HOSTS")  # e.g., "host1:26379,host2:26379"
+            sentinel_master = os.getenv("REDIS_SENTINEL_MASTER", "mymaster")
+
+            if sentinel_hosts:
+                # Use Redis Sentinel for HA
+                sentinel_hosts_list = [(host.split(':')[0], int(host.split(':')[1])) for host in sentinel_hosts.split(',')]
+                self.sentinel = aioredis.sentinel.Sentinel(
+                    sentinel_hosts_list,
+                    password=password,
+                    socket_timeout=5,
+                )
+                self.redis = self.sentinel.master_for(sentinel_master)
+                self.pubsub = self.sentinel.slave_for(sentinel_master)
+                logger.info("Redis Sentinel initialized", sentinel_hosts=sentinel_hosts, master=sentinel_master)
+            else:
+                # Standard Redis pool
+                self.redis = await aioredis.create_redis_pool(
+                    redis_url,
+                    encoding='utf-8',
+                    minsize=5,
+                    maxsize=50,
+                    timeout=5.0
+                )
+
+                # Create separate pubsub connection
+                self.pubsub = await aioredis.create_redis_pool(
+                    redis_url,
+                    encoding='utf-8',
+                    minsize=2,
+                    maxsize=10,
+                    timeout=5.0
+                )
+
             self._initialized = True
-            logger.info("Redis service initialized", redis_url=redis_url.replace(os.getenv('REDIS_PASSWORD', ''), '***'), minsize=5, maxsize=50)
+            logger.info("Redis service initialized", redis_url=redis_url.replace(password, '***'), minsize=5, maxsize=50, sentinel=bool(sentinel_hosts))
         except Exception as e:
             logger.error("Failed to initialize Redis after retries", error=str(e), exc_info=True)
             self._initialized = False
@@ -201,6 +230,53 @@ class RedisService:
             from app.metrics import record_redis_error
             record_redis_error()
             logger.error("Failed to publish event to Redis", channel=channel, error=str(e), exc_info=True)
+
+    async def create_redis_pool(self, url: str) -> Optional[aioredis.Redis]:
+        """Create a new Redis pool connection"""
+        try:
+            redis_pool = await aioredis.create_redis_pool(
+                url,
+                encoding='utf-8',
+                minsize=5,
+                maxsize=50,
+                timeout=5.0
+            )
+            logger.info("Created Redis pool", url=url.replace(os.getenv('REDIS_PASSWORD', ''), '***'))
+            return redis_pool
+        except Exception as e:
+            logger.error("Failed to create Redis pool", error=str(e), exc_info=True)
+            return None
+
+    async def publish(self, channel_name: str, message: str):
+        """Publish message to Redis pub/sub channel"""
+        await self.ensure_connection()
+        if not self._initialized:
+            return
+        try:
+            await self.redis.publish(channel_name, message)
+            logger.info("Published message to Redis", channel=channel_name, message_size=len(message))
+        except Exception as e:
+            from app.metrics import record_redis_error
+            record_redis_error()
+            logger.error("Failed to publish message to Redis", channel=channel_name, error=str(e), exc_info=True)
+
+    async def psubscribe(self, pattern: str, callback: Callable[[str], None]):
+        """Subscribe to Redis pub/sub pattern and call callback on messages"""
+        if not self._initialized:
+            return
+        try:
+            pool = await self.create_redis_pool(os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', 'workforce_redis_pw')}@localhost:6379"))
+            if not pool:
+                return
+            channels = await pool.psubscribe(pattern)
+            ch = channels[0] if channels else None
+            if ch:
+                logger.info("Subscribed to Redis pattern", pattern=pattern)
+                async for msg in ch.listen():
+                    if msg['type'] == 'pmessage':
+                        await callback(msg['data'])
+        except Exception as e:
+            logger.error("Failed to psubscribe to Redis pattern", pattern=pattern, error=str(e), exc_info=True)
 
     async def subscribe_to_events(self, channel: str):
         """Subscribe to Redis pub/sub channel (returns channel object for aioredis 1.3.1)"""

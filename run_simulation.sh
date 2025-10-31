@@ -40,8 +40,16 @@ python3 websocket_simulation.py
 echo "📊 Collecting additional metrics..."
 REDIS_INFO=$(docker exec $(docker ps -q --filter name=redis) redis-cli --pass $REDIS_PASSWORD info stats)
 REDIS_PUBSUB=$(echo "$REDIS_INFO" | grep pubsub_channels || echo "pubsub_channels:0")
+REDIS_CONNECTED_CLIENTS=$(echo "$REDIS_INFO" | grep connected_clients || echo "connected_clients:0")
+REDIS_TOTAL_CONNECTIONS=$(echo "$REDIS_INFO" | grep total_connections_received || echo "total_connections_received:0")
 
 echo "Redis PubSub Channels: $REDIS_PUBSUB"
+echo "Redis Connected Clients: $REDIS_CONNECTED_CLIENTS"
+echo "Redis Total Connections: $REDIS_TOTAL_CONNECTIONS"
+
+# Get pubsub channels list
+echo "Active PubSub Channels:"
+docker exec $(docker ps -q --filter name=redis) redis-cli --pass $REDIS_PASSWORD pubsub channels
 
 # Cleanup
 echo "🧹 Cleaning up..."
