@@ -15,7 +15,7 @@ class User(Base):
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)  # Nullable for Super Admin
     is_active = Column(Boolean, default=True)
     fcm_token = Column(String, nullable=True)  # Firebase Cloud Messaging token for push notifications
-    last_active = Column(DateTime, nullable=True)  # Track user's last activity
+    last_active = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_at = Column(DateTime, server_default=func.now())
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     
@@ -25,8 +25,8 @@ class User(Base):
     attendance_records = relationship("Attendance", back_populates="employee", cascade="all, delete-orphan")
     shifts = relationship("Shift", back_populates="employee", cascade="all, delete-orphan")
     refresh_tokens = relationship("RefreshToken", back_populates="user", cascade="all, delete-orphan")
-    sent_messages = relationship("ChatMessage", back_populates="sender", cascade="all, delete-orphan")
-    received_messages = relationship("ChatMessage", back_populates="receiver", cascade="all, delete-orphan")
+    sent_messages = relationship("ChatMessage", foreign_keys="[ChatMessage.sender_id]", back_populates="sender", cascade="all, delete-orphan")
+    received_messages = relationship("ChatMessage", foreign_keys="[ChatMessage.receiver_id]", back_populates="receiver", cascade="all, delete-orphan")
     message_reactions = relationship("MessageReaction", back_populates="user", cascade="all, delete-orphan")
     organized_meetings = relationship("Meeting", back_populates="organizer", cascade="all, delete-orphan")
     meeting_participations = relationship("MeetingParticipant", back_populates="user", cascade="all, delete-orphan")

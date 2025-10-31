@@ -1,34 +1,47 @@
-# Relational Data Flow Implementation Steps
+# Relational Data Flow + Lifecycle Correctness - Implementation Steps
 
-## Step 1: Update Model Relationships with Cascades
-- [ ] Update Company model: Add CASCADE to users, channels, meetings, chat_messages relationships
-- [ ] Update User model: Add CASCADE to messages, reactions, meeting_participants, channel_members relationships
-- [ ] Update Channel model: Add CASCADE to messages, channel_members relationships
-- [ ] Update ChatMessage model: Add CASCADE to reactions relationship
-- [ ] Update Meeting model: Add CASCADE to participants relationship
+## Current Status
+- Models registered and validated
+- Partial cascades added to Company model
+- Missing lifecycle fields (last_active in User, last_message_at in Channel)
+- No DB-level cascades or integrity tests
 
-## Step 2: Add Lifecycle Audit Fields
-- [ ] Add last_active (DateTime, nullable=True) to User model
-- [ ] Add last_message_at (DateTime, nullable=True) to Channel model
+## Pending Tasks
 
-## Step 3: Update Alembic Configuration
-- [ ] Update backend/alembic/env.py to import all models for proper migration detection
+### 1. Update Model Relationships with Cascades
+- [ ] backend/app/models/company.py: Add missing 'attendances' relationship with cascade="all, delete-orphan"
+- [ ] backend/app/models/user.py: Add 'last_active' field; update relationships with appropriate cascades
+- [ ] backend/app/models/channels.py: Add 'last_message_at' field; add cascades to all relationships
+- [ ] backend/app/models/chat.py: Add cascades to all relationships
+- [ ] backend/app/models/message_reactions.py: Add cascades to message and user relationships
+- [ ] backend/app/models/meetings.py: Add cascades to organizer, company, participants relationships
+- [ ] backend/app/models/meeting_participants.py: Add cascades to meeting and user relationships
 
-## Step 4: Generate Migration
-- [ ] Create new Alembic revision with column additions and FK constraint updates
-- [ ] Verify migration includes proper CASCADE constraints
+### 2. Generate Alembic Migration
+- [ ] Run `alembic revision --autogenerate -m "add_cascades_lifecycle_fields"`
+- [ ] Review migration file for DB-level ON DELETE CASCADE on FKs
+- [ ] Edit migration to add ondelete='CASCADE' to FK constraints where appropriate
 
-## Step 5: Create DB Integrity Tests
-- [ ] Create backend/tests/test_db_integrity.py with cascade delete tests
-- [ ] Add tests for referential integrity constraints
-- [ ] Add validation for no orphaned records after deletes
+### 3. Run Migration
+- [ ] Execute `alembic upgrade head`
+- [ ] Verify no errors in migration
 
-## Step 6: Run Migration and Tests
-- [ ] Execute migration on database (ensure venv is active)
-- [ ] Run integrity tests to validate cascade behaviors
-- [ ] Verify no data corruption occurred
+### 4. Create/Update DB Integrity Tests
+- [ ] Update backend/tests/test_db_integrity.py with comprehensive cascade delete test
+- [ ] Add constraint violation tests (FK integrity errors)
+- [ ] Ensure test imports all models to configure mappers
 
-## Step 7: Generate Summary Report
-- [ ] Document all changes made in implementation report
-- [ ] Create table lineage diagram showing relationships and cascades
-- [ ] Validate all relational constraints are working correctly
+### 5. Run Tests
+- [ ] Execute `pytest backend/tests/test_db_integrity.py -v`
+- [ ] Verify cascade delete works and constraints are enforced
+
+### 6. Generate Summary Report
+- [ ] Create backend/RELATIONAL_INTEGRITY_REPORT.md with:
+  - Summary of changes made
+  - Test results
+  - ASCII table lineage diagram
+  - Any remaining issues
+
+### 7. Final Verification
+- [ ] Run full pytest suite to ensure no regressions
+- [ ] Verify live testing (if applicable) shows proper cascade behavior

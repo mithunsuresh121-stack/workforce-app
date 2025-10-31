@@ -11,8 +11,8 @@ class ParticipantRole(str, PyEnum):
 class MeetingParticipant(Base):
     __tablename__ = "meeting_participants"
 
-    meeting_id = Column(Integer, ForeignKey("meetings.id"), primary_key=True)
-    user_id = Column(Integer, ForeignKey("users.id"), primary_key=True)
+    meeting_id = Column(Integer, ForeignKey("meetings.id", ondelete="CASCADE"), primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), primary_key=True)
     role = Column(Enum(ParticipantRole), nullable=False)
     join_time = Column(DateTime, nullable=True)
     leave_time = Column(DateTime, nullable=True)
