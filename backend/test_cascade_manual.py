@@ -15,7 +15,7 @@ from app.models import (
     Company, User, Channel, ChannelMember, ChatMessage,
     MessageReaction, Meeting, MeetingParticipant
 )
-from app.config import DATABASE_URL
+
 
 def test_company_cascade_delete():
     """Test that deleting a company cascades to all related entities."""
