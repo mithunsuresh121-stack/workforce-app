@@ -19,3 +19,4 @@ class Company(Base):
     channels = relationship("Channel", back_populates="company", cascade="all, delete-orphan")
     meetings = relationship("Meeting", back_populates="company", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessage", back_populates="company", cascade="all, delete-orphan")
+    settings = relationship("CompanySettings", back_populates="company", uselist=False, cascade="all, delete-orphan")

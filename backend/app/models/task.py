@@ -6,15 +6,15 @@ from app.models.attachment import Attachment
 import enum
 
 class TaskStatus(str, enum.Enum):
-    PENDING = "Pending"
-    IN_PROGRESS = "In Progress"
-    COMPLETED = "Completed"
-    OVERDUE = "Overdue"
+    PENDING = "PENDING"
+    IN_PROGRESS = "IN_PROGRESS"
+    COMPLETED = "COMPLETED"
+    OVERDUE = "OVERDUE"
 
 class TaskPriority(str, enum.Enum):
-    LOW = "Low"
-    MEDIUM = "Medium"
-    HIGH = "High"
+    LOW = "LOW"
+    MEDIUM = "MEDIUM"
+    HIGH = "HIGH"
 
 class Task(Base):
     __tablename__ = "tasks"

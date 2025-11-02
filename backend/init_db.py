@@ -32,27 +32,11 @@ def init_database():
         
         # Create sample companies
         company1 = Company(
-            name="TechCorp Inc.",
-            domain="techcorp.com",
-            contact_email="admin@techcorp.com",
-            contact_phone="+1-555-0123",
-            address="123 Tech Street",
-            city="San Francisco",
-            state="CA",
-            country="USA",
-            postal_code="94105"
+            name="TechCorp Inc."
         )
-        
+
         company2 = Company(
-            name="Global Services Ltd.",
-            domain="globalservices.com",
-            contact_email="info@globalservices.com",
-            contact_phone="+1-555-0456",
-            address="456 Business Ave",
-            city="New York",
-            state="NY",
-            country="USA",
-            postal_code="10001"
+            name="Global Services Ltd."
         )
         
         db.add(company1)

@@ -197,6 +197,19 @@ async def increment_meetings_joined():
         # Fallback to in-memory only
         meetings_joined_total.inc()
 
+# Company Bootstrap Metrics
+company_created_total = Counter(
+    'workforce_company_created_total',
+    'Total number of companies created',
+    registry=registry
+)
+
+company_admin_created_total = Counter(
+    'workforce_company_admin_created_total',
+    'Total number of company admins created',
+    registry=registry
+)
+
 async def initialize_counters_from_redis():
     """Initialize counters from Redis on startup"""
     try:

@@ -1,4 +1,5 @@
 import structlog
+import asyncio
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings, engine, Base
