@@ -70,6 +70,30 @@ def test_user2(db, test_company):
     )
     return user
 
+@pytest.fixture(scope="function")
+def test_superadmin(db):
+    user = create_user(
+        db=db,
+        email="superadmin@test.com",
+        password="testpass",
+        full_name="Super Admin",
+        role="SUPERADMIN",
+        company_id=None
+    )
+    return user
+
+@pytest.fixture(scope="function")
+def test_companyadmin(db, test_company):
+    user = create_user(
+        db=db,
+        email="companyadmin@test.com",
+        password="testpass",
+        full_name="Company Admin",
+        role="COMPANYADMIN",
+        company_id=test_company.id
+    )
+    return user
+
 
 @pytest.fixture(scope="module")
 def client():

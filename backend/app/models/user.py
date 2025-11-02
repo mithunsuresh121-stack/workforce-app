@@ -32,6 +32,7 @@ class User(Base):
     meeting_participations = relationship("MeetingParticipant", back_populates="user", cascade="all, delete-orphan")
     channel_memberships = relationship("ChannelMember", back_populates="user", cascade="all, delete-orphan")
     created_channels = relationship("Channel", back_populates="creator", cascade="all, delete-orphan")
+    audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User {self.email}>"

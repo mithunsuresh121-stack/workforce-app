@@ -60,15 +60,7 @@ def seed_demo_user(db: Session):
         )
         company = create_company(
             db,
-            name=demo_company_name,
-            domain="demo.com",
-            contact_email="demo@company.com",
-            contact_phone="+1234567890",
-            address="123 Demo Street",
-            city="Demo City",
-            state="Demo State",
-            country="Demo Country",
-            postal_code="12345"
+            name=demo_company_name
         )
         logger.info(
             "Demo company created successfully",

@@ -31,28 +31,20 @@ class LeaveStatus(str, Enum):
 
 class CompanyCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
-    domain: Optional[str] = Field(None, max_length=100)
-    contact_email: EmailStr
-    contact_phone: Optional[str] = Field(None, max_length=20)
-    address: Optional[str] = Field(None, max_length=200)
-    city: Optional[str] = Field(None, max_length=50)
-    state: Optional[str] = Field(None, max_length=50)
-    country: Optional[str] = Field(None, max_length=50)
-    postal_code: Optional[str] = Field(None, max_length=20)
 
 class CompanyOut(BaseModel):
     id: int
     name: str
-    domain: Optional[str]
-    contact_email: str
-    contact_phone: Optional[str]
-    address: Optional[str]
-    city: Optional[str]
-    state: Optional[str]
-    country: Optional[str]
-    postal_code: Optional[str]
-    logo_url: Optional[str]
-    is_active: bool
+    domain: Optional[str] = None
+    contact_email: Optional[str] = None
+    contact_phone: Optional[str] = None
+    address: Optional[str] = None
+    city: Optional[str] = None
+    state: Optional[str] = None
+    country: Optional[str] = None
+    postal_code: Optional[str] = None
+    logo_url: Optional[str] = None
+    is_active: Optional[bool] = True
     created_at: datetime
     updated_at: datetime
 
