@@ -68,13 +68,7 @@ def create_department(
             detail="Can only create departments in your own company"
         )
 
-    department = CompanyDepartment(
-        name=dept.name,
-        company_id=dept.company_id
-    )
-    db.add(department)
-    db.commit()
-    db.refresh(department)
+    department = create_department(db, dept.company_id, dept.name, current_user.id)
     return department
 
 @router.get("/department/{department_id}", response_model=DepartmentResponse)
@@ -137,13 +131,7 @@ def create_team(
             detail="Not authorized to create teams in this department"
         )
 
-    team_obj = CompanyTeam(
-        name=team.name,
-        department_id=team.department_id
-    )
-    db.add(team_obj)
-    db.commit()
-    db.refresh(team_obj)
+    team_obj = create_team(db, team.department_id, team.name, current_user.id)
     return team_obj
 
 @router.get("/team/{team_id}", response_model=TeamResponse)

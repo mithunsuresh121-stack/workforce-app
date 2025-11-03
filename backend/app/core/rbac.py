@@ -44,6 +44,10 @@ class RBACService:
         """Check if user can access company resources"""
         if user.role == UserRole.SUPERADMIN:
             return True
+        # Strict scoping: COMPANY_ADMIN can only access their own company
+        if user.role == UserRole.COMPANY_ADMIN:
+            return user.company_id == company_id
+        # Sub-org roles can only access their company's resources
         return user.company_id == company_id
 
     @staticmethod
@@ -135,6 +139,9 @@ class RBACService:
         """Check if user can manage other users"""
         if user.role == UserRole.SUPERADMIN:
             return True
+        # Cross-org prevention: users can only manage users in their own org
+        if user.company_id != target_user.company_id:
+            return False
         if user.role == UserRole.COMPANY_ADMIN and user.company_id == target_user.company_id:
             return True
         if user.role == UserRole.DEPARTMENT_ADMIN and user.department_id == target_user.department_id:
@@ -142,6 +149,33 @@ class RBACService:
         if user.role == UserRole.TEAM_LEAD and user.team_id == target_user.team_id:
             return True
         return False
+
+    @staticmethod
+    def can_send_cross_org_message(user: User, target_user: User) -> bool:
+        """Check if user can send direct messages across org boundaries"""
+        return user.company_id == target_user.company_id
+
+    @staticmethod
+    def can_invite_to_channel(user: User, channel: Channel, target_user: User) -> bool:
+        """Check if user can invite others to channels across org boundaries"""
+        # Must be in same company
+        if user.company_id != target_user.company_id:
+            return False
+        # Channel must be in same company
+        if channel.company_id != user.company_id:
+            return False
+        return True
+
+    @staticmethod
+    def can_invite_to_meeting(user: User, meeting: Meeting, target_user: User) -> bool:
+        """Check if user can invite others to meetings across org boundaries"""
+        # Must be in same company
+        if user.company_id != target_user.company_id:
+            return False
+        # Meeting must be in same company
+        if meeting.company_id != user.company_id:
+            return False
+        return True
 
 # Dependency functions for FastAPI
 

@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings, engine, Base
 from app.models import *
-from app.routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat, meetings, websocket_manager, org
+from app.routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat, meetings, websocket_manager, org, admin
 from app.custom_json_response import CustomJSONResponse
 
 # Set up structured logging with structlog as primary logger
@@ -62,6 +62,27 @@ async def log_requests(request: Request, call_next):
         # In real implementation, decode JWT to get user_id
         user_id = "extracted_user_id"  # Placeholder
 
+    # Enhanced observability: log admin actions and request duration
+    is_admin_endpoint = request.url.path.startswith("/api/admin")
+    if is_admin_endpoint:
+        from app.services.audit_service import AuditService
+        from app.db import SessionLocal
+        db = SessionLocal()
+        try:
+            AuditService.log_admin_action(
+                db=db,
+                action="ENDPOINT_ACCESS",
+                user_id=int(user_id) if user_id and user_id != "extracted_user_id" else None,
+                company_id=None,  # Will be set in endpoint if needed
+                details={
+                    "endpoint": request.url.path,
+                    "method": request.method,
+                    "duration_ms": process_time * 1000
+                }
+            )
+        finally:
+            db.close()
+
     logger.info(
         "HTTP Request",
         method=request.method,
@@ -101,6 +122,7 @@ app.include_router(documents, prefix="/api/documents")
 app.include_router(chat.router, prefix="/api/chat")
 app.include_router(meetings.router, prefix="/api/meetings")
 app.include_router(org.router)
+app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(websocket_manager.router, prefix="/api/ws")
 
 from app.seed_demo_user import seed_demo_user

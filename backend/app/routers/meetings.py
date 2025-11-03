@@ -59,10 +59,38 @@ def create_new_meeting(
     try:
         # Check RBAC permissions for creating meeting
         if not RBACService.can_create_meeting(current_user, team_id, department_id):
+            from app.services.audit_service import AuditService
+            AuditService.log_permission_denied(
+                db=db,
+                user_id=current_user.id,
+                company_id=current_user.company_id,
+                action="create_meeting",
+                resource_type="meeting",
+                details={"team_id": team_id, "department_id": department_id}
+            )
             raise HTTPException(
                 status_code=403,
                 detail="Not authorized to create meetings in this scope"
             )
+
+        # Cross-org block for participants
+        if meeting.participant_ids:
+            for participant_id in meeting.participant_ids:
+                participant = db.query(User).filter(User.id == participant_id).first()
+                if participant and not RBACService.can_invite_to_meeting(current_user, None, participant):
+                    from app.services.audit_service import AuditService
+                    AuditService.log_permission_denied(
+                        db=db,
+                        user_id=current_user.id,
+                        company_id=current_user.company_id,
+                        action="invite_cross_org_participant",
+                        resource_type="meeting",
+                        details={"participant_id": participant_id, "participant_company_id": participant.company_id}
+                    )
+                    raise HTTPException(
+                        status_code=403,
+                        detail="Cannot invite participants from other organizations"
+                    )
 
         db_meeting = meeting_service.create_meeting(
             db=db,
@@ -75,6 +103,20 @@ def create_new_meeting(
             team_id=team_id,
             department_id=department_id
         )
+
+        # Audit log invites
+        if meeting.participant_ids:
+            from app.services.audit_service import AuditService
+            for participant_id in meeting.participant_ids:
+                AuditService.log_user_invited(
+                    db=db,
+                    user_id=current_user.id,
+                    target_user_id=participant_id,
+                    company_id=current_user.company_id,
+                    resource_type="meeting",
+                    resource_id=db_meeting.id
+                )
+
         logger.info("Meeting created via API", meeting_id=db_meeting.id, organizer_id=current_user.id)
         return MeetingResponse.from_orm(db_meeting)
     except HTTPException:
@@ -109,6 +151,16 @@ def join_meeting(
         if not meeting:
             raise HTTPException(status_code=404, detail="Meeting not found")
         if not RBACService.can_join_meeting(current_user, meeting):
+            from app.services.audit_service import AuditService
+            AuditService.log_permission_denied(
+                db=db,
+                user_id=current_user.id,
+                company_id=current_user.company_id,
+                action="join_meeting",
+                resource_type="meeting",
+                resource_id=meeting_id,
+                details={"meeting_company_id": meeting.company_id}
+            )
             raise HTTPException(status_code=403, detail="Access denied to this meeting")
 
         if not is_user_participant(db, meeting_id, current_user.id):
