@@ -13,6 +13,7 @@ class Company(Base):
 
     # Relationships
     users = relationship("User", back_populates="company", cascade="all, delete-orphan")
+    departments = relationship("CompanyDepartment", back_populates="company", cascade="all, delete-orphan")
     shifts = relationship("Shift", back_populates="company", cascade="all, delete-orphan")
     employee_profiles = relationship("EmployeeProfile", back_populates="company", cascade="all, delete-orphan")
     attendances = relationship("Attendance", back_populates="company", cascade="all, delete-orphan")

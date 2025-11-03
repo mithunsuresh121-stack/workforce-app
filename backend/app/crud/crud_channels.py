@@ -4,10 +4,12 @@ from typing import List, Optional
 from app.models.channels import Channel, ChannelMember, ChannelType
 from app.models.user import User
 from app.models.company import Company
+from app.models.company_department import CompanyDepartment
+from app.models.company_team import CompanyTeam
 
 logger = structlog.get_logger(__name__)
 
-def create_channel(db: Session, name: str, type: ChannelType, company_id: int, created_by: int) -> Channel:
+def create_channel(db: Session, name: str, type: ChannelType, company_id: int, created_by: int, department_id: Optional[int] = None, team_id: Optional[int] = None) -> Channel:
     """Create a new channel"""
     db_company = db.query(Company).filter(Company.id == company_id).first()
     if not db_company:
@@ -17,11 +19,26 @@ def create_channel(db: Session, name: str, type: ChannelType, company_id: int, c
     if not db_user:
         raise ValueError("User not found")
 
+    if department_id:
+        db_dept = db.query(CompanyDepartment).filter(CompanyDepartment.id == department_id).first()
+        if not db_dept or db_dept.company_id != company_id:
+            raise ValueError("Invalid department")
+
+    if team_id:
+        db_team = db.query(CompanyTeam).filter(CompanyTeam.id == team_id).first()
+        if not db_team:
+            raise ValueError("Invalid team")
+        db_dept = db.query(CompanyDepartment).filter(CompanyDepartment.id == db_team.department_id).first()
+        if not db_dept or db_dept.company_id != company_id:
+            raise ValueError("Invalid team")
+
     channel = Channel(
         name=name,
         type=type,
         company_id=company_id,
-        created_by=created_by
+        created_by=created_by,
+        department_id=department_id,
+        team_id=team_id
     )
     db.add(channel)
     db.commit()

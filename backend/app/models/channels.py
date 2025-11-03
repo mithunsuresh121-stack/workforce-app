@@ -16,6 +16,8 @@ class Channel(Base):
     name = Column(String(255), nullable=False)
     type = Column(Enum(ChannelType), nullable=False)
     company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    department_id = Column(Integer, ForeignKey("company_departments.id", ondelete="CASCADE"), nullable=True)
+    team_id = Column(Integer, ForeignKey("company_teams.id", ondelete="CASCADE"), nullable=True)
     created_by = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     last_message_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_at = Column(DateTime, server_default=func.now())
@@ -23,6 +25,8 @@ class Channel(Base):
 
     # Relationships
     company = relationship("Company", back_populates="channels")
+    department = relationship("CompanyDepartment", back_populates="channels")
+    team = relationship("CompanyTeam", back_populates="channels")
     creator = relationship("User", foreign_keys=[created_by], back_populates="created_channels")
     members = relationship("User", secondary="channel_members", overlaps="channel_memberships")
     messages = relationship("ChatMessage", back_populates="channel", cascade="all, delete-orphan")

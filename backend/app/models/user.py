@@ -1,8 +1,16 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, DateTime, Enum
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+from enum import Enum as PyEnum
 from app.db import Base
 from .refresh_token import RefreshToken
+
+class UserRole(str, PyEnum):
+    SUPERADMIN = "SUPERADMIN"
+    COMPANY_ADMIN = "COMPANY_ADMIN"
+    DEPARTMENT_ADMIN = "DEPARTMENT_ADMIN"
+    TEAM_LEAD = "TEAM_LEAD"
+    EMPLOYEE = "EMPLOYEE"
 
 class User(Base):
     __tablename__ = "users"
@@ -11,8 +19,10 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
     full_name = Column(String, nullable=True)
-    role = Column(String, default="Employee")  # SuperAdmin, CompanyAdmin, Manager, Employee
+    role = Column(Enum(UserRole), default=UserRole.EMPLOYEE)
     company_id = Column(Integer, ForeignKey("companies.id"), nullable=True)  # Nullable for Super Admin
+    department_id = Column(Integer, ForeignKey("company_departments.id"), nullable=True)
+    team_id = Column(Integer, ForeignKey("company_teams.id"), nullable=True)
     is_active = Column(Boolean, default=True)
     fcm_token = Column(String, nullable=True)  # Firebase Cloud Messaging token for push notifications
     last_active = Column(DateTime, server_default=func.now(), onupdate=func.now())
@@ -21,6 +31,8 @@ class User(Base):
     
     # Relationships
     company = relationship("Company", back_populates="users")
+    department = relationship("CompanyDepartment", back_populates="users")
+    team = relationship("CompanyTeam", back_populates="users")
     employee_profile = relationship("EmployeeProfile", back_populates="user", uselist=False, foreign_keys="[EmployeeProfile.user_id]", cascade="all, delete-orphan")
     attendance_records = relationship("Attendance", back_populates="employee", cascade="all, delete-orphan")
     shifts = relationship("Shift", back_populates="employee", cascade="all, delete-orphan")
