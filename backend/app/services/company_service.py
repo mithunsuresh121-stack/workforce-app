@@ -186,9 +186,26 @@ class CompanyService:
 
     @staticmethod
     def _generate_temp_password(length: int = 12) -> str:
-        """Generate a secure temporary password"""
-        chars = string.ascii_letters + string.digits + "!@#$%^&*"
-        return ''.join(secrets.choice(chars) for _ in range(length))
+        """Generate a secure temporary password ensuring all required character types"""
+        if length < 4:
+            raise ValueError("Password length must be at least 4 to include all character types")
+
+        # Ensure at least one of each required type
+        password = [
+            secrets.choice(string.ascii_uppercase),
+            secrets.choice(string.ascii_lowercase),
+            secrets.choice(string.digits),
+            secrets.choice("!@#$%^&*")
+        ]
+
+        # Fill the rest randomly
+        all_chars = string.ascii_letters + string.digits + "!@#$%^&*"
+        password += [secrets.choice(all_chars) for _ in range(length - 4)]
+
+        # Shuffle to avoid predictable order
+        secrets.SystemRandom().shuffle(password)
+
+        return ''.join(password)
 
     @staticmethod
     def _generate_temp_token() -> str:

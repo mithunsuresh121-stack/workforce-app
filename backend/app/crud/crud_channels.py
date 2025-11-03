@@ -11,6 +11,8 @@ logger = structlog.get_logger(__name__)
 
 def create_channel(db: Session, name: str, type: ChannelType, company_id: int, created_by: int, department_id: Optional[int] = None, team_id: Optional[int] = None) -> Channel:
     """Create a new channel"""
+    from app.services.audit_service import AuditService
+
     db_company = db.query(Company).filter(Company.id == company_id).first()
     if not db_company:
         raise ValueError("Company not found")
@@ -43,6 +45,16 @@ def create_channel(db: Session, name: str, type: ChannelType, company_id: int, c
     db.add(channel)
     db.commit()
     db.refresh(channel)
+
+    # Audit log
+    AuditService.log_channel_created(
+        db=db,
+        user_id=created_by,
+        company_id=company_id,
+        channel_id=channel.id,
+        details={"channel_name": name, "channel_type": type.value, "department_id": department_id, "team_id": team_id}
+    )
+
     logger.info("Channel created", channel_id=channel.id, company_id=company_id)
     return channel
 

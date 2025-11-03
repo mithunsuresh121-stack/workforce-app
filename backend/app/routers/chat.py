@@ -99,6 +99,24 @@ async def send_message(
 ):
     """Send a chat message"""
     try:
+        # Cross-org block for direct messages
+        if message.receiver_id:
+            receiver = db.query(User).filter(User.id == message.receiver_id).first()
+            if not receiver:
+                raise HTTPException(status_code=404, detail="Receiver not found")
+            if not RBACService.can_send_cross_org_message(current_user, receiver):
+                from app.services.audit_service import AuditService
+                AuditService.log_permission_denied(
+                    db=db,
+                    user_id=current_user.id,
+                    company_id=current_user.company_id,
+                    action="send_cross_org_dm",
+                    resource_type="user",
+                    resource_id=message.receiver_id,
+                    details={"receiver_company_id": receiver.company_id}
+                )
+                raise HTTPException(status_code=403, detail="Cannot send messages across organizations")
+
         # Validate channel membership if channel message
         if channel_id and not is_user_member_of_channel(db, channel_id, current_user.id):
             raise HTTPException(status_code=403, detail="Not a member of this channel")
@@ -236,6 +254,16 @@ def join_channel(
         if not channel:
             raise HTTPException(status_code=404, detail="Channel not found")
         if not RBACService.can_join_channel(current_user, channel):
+            from app.services.audit_service import AuditService
+            AuditService.log_permission_denied(
+                db=db,
+                user_id=current_user.id,
+                company_id=current_user.company_id,
+                action="join_channel",
+                resource_type="channel",
+                resource_id=channel_id,
+                details={"channel_company_id": channel.company_id}
+            )
             raise HTTPException(status_code=403, detail="Access denied to this channel")
 
         add_member_to_channel(db, channel_id, current_user.id)

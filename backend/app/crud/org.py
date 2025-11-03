@@ -8,8 +8,10 @@ from app.models.user import User
 
 logger = structlog.get_logger(__name__)
 
-def create_department(db: Session, company_id: int, name: str) -> CompanyDepartment:
+def create_department(db: Session, company_id: int, name: str, created_by: int) -> CompanyDepartment:
     """Create a new department"""
+    from app.services.audit_service import AuditService
+
     db_company = db.query(Company).filter(Company.id == company_id).first()
     if not db_company:
         raise ValueError("Company not found")
@@ -21,6 +23,17 @@ def create_department(db: Session, company_id: int, name: str) -> CompanyDepartm
     db.add(department)
     db.commit()
     db.refresh(department)
+
+    # Audit log
+    AuditService.log_org_created(
+        db=db,
+        user_id=created_by,
+        company_id=company_id,
+        resource_type="department",
+        resource_id=department.id,
+        details={"department_name": name}
+    )
+
     logger.info("Department created", department_id=department.id, company_id=company_id)
     return department
 
@@ -57,8 +70,10 @@ def delete_department(db: Session, department_id: int) -> bool:
     logger.info("Department deleted", department_id=department_id)
     return True
 
-def create_team(db: Session, department_id: int, name: str) -> CompanyTeam:
+def create_team(db: Session, department_id: int, name: str, created_by: int) -> CompanyTeam:
     """Create a new team"""
+    from app.services.audit_service import AuditService
+
     db_department = db.query(CompanyDepartment).filter(CompanyDepartment.id == department_id).first()
     if not db_department:
         raise ValueError("Department not found")
@@ -70,6 +85,17 @@ def create_team(db: Session, department_id: int, name: str) -> CompanyTeam:
     db.add(team)
     db.commit()
     db.refresh(team)
+
+    # Audit log
+    AuditService.log_org_created(
+        db=db,
+        user_id=created_by,
+        company_id=db_department.company_id,
+        resource_type="team",
+        resource_id=team.id,
+        details={"team_name": name, "department_id": department_id}
+    )
+
     logger.info("Team created", team_id=team.id, department_id=department_id)
     return team
 

@@ -52,6 +52,97 @@ class AuditService:
             details=details or {}
         )
 
+    @staticmethod
+    def log_admin_action(db: Session, action: str, user_id: int, company_id: int = None, details: dict = None):
+        """Log admin action for observability"""
+        AuditService.log_event(
+            db=db,
+            event_type=f"ADMIN_{action.upper()}",
+            user_id=user_id,
+            company_id=company_id,
+            resource_type="admin",
+            resource_id=None,
+            details=details or {}
+        )
+
+    @staticmethod
+    def log_org_created(db: Session, user_id: int, company_id: int, resource_type: str, resource_id: int, details: dict = None):
+        """Log organization creation events"""
+        AuditService.log_event(
+            db=db,
+            event_type="ORG_CREATED",
+            user_id=user_id,
+            company_id=company_id,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            details=details or {}
+        )
+
+    @staticmethod
+    def log_channel_created(db: Session, user_id: int, company_id: int, channel_id: int, details: dict = None):
+        """Log channel creation events"""
+        AuditService.log_event(
+            db=db,
+            event_type="CHANNEL_CREATED",
+            user_id=user_id,
+            company_id=company_id,
+            resource_type="channel",
+            resource_id=channel_id,
+            details=details or {}
+        )
+
+    @staticmethod
+    def log_meeting_created(db: Session, user_id: int, company_id: int, meeting_id: int, details: dict = None):
+        """Log meeting creation events"""
+        AuditService.log_event(
+            db=db,
+            event_type="MEETING_CREATED",
+            user_id=user_id,
+            company_id=company_id,
+            resource_type="meeting",
+            resource_id=meeting_id,
+            details=details or {}
+        )
+
+    @staticmethod
+    def log_user_assigned_role(db: Session, user_id: int, target_user_id: int, company_id: int, role: str, details: dict = None):
+        """Log user role assignment events"""
+        AuditService.log_event(
+            db=db,
+            event_type="USER_ASSIGNED_ROLE",
+            user_id=user_id,
+            company_id=company_id,
+            resource_type="user",
+            resource_id=target_user_id,
+            details={"assigned_role": role, **(details or {})}
+        )
+
+    @staticmethod
+    def log_permission_denied(db: Session, user_id: int, company_id: int, action: str, resource_type: str = None, resource_id: int = None, details: dict = None):
+        """Log permission denial events"""
+        AuditService.log_event(
+            db=db,
+            event_type="PERMISSION_DENIED",
+            user_id=user_id,
+            company_id=company_id,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            details={"denied_action": action, **(details or {})}
+        )
+
+    @staticmethod
+    def log_user_invited(db: Session, user_id: int, target_user_id: int, company_id: int, resource_type: str, resource_id: int, details: dict = None):
+        """Log user invitation events"""
+        AuditService.log_event(
+            db=db,
+            event_type="USER_INVITED",
+            user_id=user_id,
+            company_id=company_id,
+            resource_type=resource_type,
+            resource_id=resource_id,
+            details={"invited_user_id": target_user_id, **(details or {})}
+        )
+
 # Convenience functions
 def log_audit_event(
     event_type: str,

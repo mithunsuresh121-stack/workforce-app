@@ -13,6 +13,8 @@ logger = structlog.get_logger(__name__)
 
 def create_meeting(db: Session, title: str, organizer_id: int, company_id: int, start_time: datetime, end_time: datetime, department_id: Optional[int] = None, team_id: Optional[int] = None) -> Meeting:
     """Create a new meeting"""
+    from app.services.audit_service import AuditService
+
     db_company = db.query(Company).filter(Company.id == company_id).first()
     if not db_company:
         raise ValueError("Company not found")
@@ -47,6 +49,16 @@ def create_meeting(db: Session, title: str, organizer_id: int, company_id: int, 
     db.add(meeting)
     db.commit()
     db.refresh(meeting)
+
+    # Audit log
+    AuditService.log_meeting_created(
+        db=db,
+        user_id=organizer_id,
+        company_id=company_id,
+        meeting_id=meeting.id,
+        details={"meeting_title": title, "start_time": start_time.isoformat(), "end_time": end_time.isoformat(), "department_id": department_id, "team_id": team_id}
+    )
+
     logger.info("Meeting created", meeting_id=meeting.id, organizer_id=organizer_id, company_id=company_id)
     return meeting
 

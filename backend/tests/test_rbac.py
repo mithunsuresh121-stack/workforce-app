@@ -24,7 +24,7 @@ def company_admin_user(db: Session, test_company):
 
 @pytest.fixture
 def department_admin_user(db: Session, test_company):
-    dept = create_department(db, company_id=test_company.id, name="Test Dept")
+    dept = create_department(db, company_id=test_company.id, name="Test Dept", created_by=1)
     user = create_user(db, email="deptadmin@test.com", password="pass", full_name="Dept Admin", role=UserRole.DEPARTMENT_ADMIN, company_id=test_company.id)
     user.department_id = dept.id
     db.commit()
@@ -33,7 +33,7 @@ def department_admin_user(db: Session, test_company):
 @pytest.fixture
 def team_lead_user(db: Session, test_company, department_admin_user):
     dept = department_admin_user[1]
-    team = create_team(db, department_id=dept.id, name="Test Team")
+    team = create_team(db, department_id=dept.id, name="Test Team", created_by=1)
     user = create_user(db, email="teamlead@test.com", password="pass", full_name="Team Lead", role=UserRole.TEAM_LEAD, company_id=test_company.id)
     user.department_id = dept.id
     user.team_id = team.id
@@ -134,6 +134,30 @@ class TestRBACService:
     def test_cannot_manage_users_different_scope(self, db: Session, company_admin_user):
         other_user = create_user(db, email="other@test.com", password="pass", full_name="Other User", role=UserRole.EMPLOYEE, company_id=999)
         assert not RBACService.can_manage_users(company_admin_user, other_user)
+
+    def test_cross_org_message_block(self, company_admin_user, employee_user):
+        # Same company - should allow
+        assert RBACService.can_send_cross_org_message(company_admin_user, employee_user)
+
+        # Different company - should block
+        employee_user.company_id = 999
+        assert not RBACService.can_send_cross_org_message(company_admin_user, employee_user)
+
+    def test_cross_org_channel_invite_block(self, company_admin_user, team_channel, employee_user):
+        # Same company - should allow
+        assert RBACService.can_invite_to_channel(company_admin_user, team_channel, employee_user)
+
+        # Different company - should block
+        employee_user.company_id = 999
+        assert not RBACService.can_invite_to_channel(company_admin_user, team_channel, employee_user)
+
+    def test_cross_org_meeting_invite_block(self, company_admin_user, team_meeting, employee_user):
+        # Same company - should allow
+        assert RBACService.can_invite_to_meeting(company_admin_user, team_meeting, employee_user)
+
+        # Different company - should block
+        employee_user.company_id = 999
+        assert not RBACService.can_invite_to_meeting(company_admin_user, team_meeting, employee_user)
 
 # Note: CRUD functions like create_channel, create_meeting need to be defined or mocked for these tests
 # For now, assuming they exist or adjust fixtures accordingly

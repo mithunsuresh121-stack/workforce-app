@@ -1,33 +1,22 @@
-# Metrics Integration + Dashboard Hookup TODO
+# Org Analytics + Observability Implementation TODO
 
-## Phase: METRICS INTEGRATION + DASHBOARD HOOKUP
+## Backend Implementation
+- [ ] Create backend/app/services/analytics_service.py with AnalyticsService class and methods for user/channel/meeting/audit stats
+- [ ] Create backend/app/routers/admin.py with /api/admin/stats/* endpoints and RBAC dependencies
+- [ ] Edit backend/app/main.py to include admin router and enhance middleware for admin action logging and request duration
+- [ ] Edit backend/app/services/audit_service.py to add log_admin_action method
+- [ ] Create backend/tests/test_analytics.py with pytest suite for service methods and endpoints
 
-### 1. Metrics Fetching & Polling
-- [x] Create `useMetrics.js` hook to fetch from `/metrics` endpoint with 5-10 second polling
-- [x] Handle parsing of Prometheus metrics format
-- [x] Extract specific metrics: workforce_messages_sent_total, workforce_meetings_joined_total, redis_pubsub_messages_total, redis_pubsub_subscribers_active
-- [x] Implement error handling and fallback for Redis unavailability
+## Frontend Implementation
+- [ ] Create frontend-web/src/pages/admin/analytics.tsx for the analytics route page
+- [ ] Create frontend-web/src/components/OrgAnalyticsDashboard.tsx with charts and widgets
+- [ ] Edit frontend routing file (App.tsx or routes/index.tsx) to add /admin/analytics route
+- [ ] Create frontend unit tests for OrgAnalyticsDashboard component
 
-### 2. MetricsPanel UI Creation
-- [x] Create `MetricsPanel.jsx` component with cards/charts for each metric
-- [x] Implement auto-refresh every 5-10 seconds using the hook
-- [x] Add color-coded alerts: green (normal), yellow (warning), red (critical)
-- [x] Show numeric values and percentage changes (optional sparkline)
-- [x] Handle loading states and error displays
-
-### 3. Dashboard Integration
-- [x] Add `MetricsPanel` to admin dashboard section in `Dashboard.jsx`
-- [x] Position appropriately in the manager/admin layout
-- [x] Ensure responsive design and proper spacing
-
-### 4. Testing
-- [x] Launch frontend and backend dev servers (both running on ports 8000 and 3000)
-- [x] Verify metrics update live as users send messages or join meetings (metrics endpoint accessible)
-- [x] Simulate Redis unavailability and ensure frontend handles fallback (Redis stopped, metrics show 0 values with critical alerts; frontend hook sets fallbacks gracefully without crashing)
-- [x] Test alert color coding thresholds (implemented in MetricsPanel)
-- [x] Verify polling intervals and performance (5-second polling implemented)
-
-### Files Created/Modified:
-- New: `frontend-web/web-app/src/hooks/useMetrics.js`
-- New: `frontend-web/web-app/src/components/MetricsPanel.jsx`
-- Edit: `frontend-web/web-app/src/pages/Dashboard.jsx`
+## Testing and Verification
+- [ ] Run backend pytest suite to ensure all tests pass including new analytics tests
+- [ ] Run frontend tests to verify component rendering and RBAC gates
+- [ ] Test API endpoints with curl/Postman for RBAC scoping and data accuracy
+- [ ] Test frontend dashboard for responsive layout, dark-mode compatibility, and API integration
+- [ ] Verify observability logging for admin actions and request durations
+- [ ] Run full test suite and generate summary report
