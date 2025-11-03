@@ -90,5 +90,5 @@ vine==5.1.0
 watchfiles==1.1.0
 wcwidth==0.2.13
 websockets==15.0.1
-reportlab==4.2.2
+reportlab==4.4.4
 structlog==23.2.0
