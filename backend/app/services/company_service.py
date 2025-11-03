@@ -9,7 +9,9 @@ from passlib.context import CryptContext
 
 from app.models.company import Company
 from app.models.company_settings import CompanySettings
-from app.models.user import User
+from app.models.company_department import CompanyDepartment
+from app.models.company_team import CompanyTeam
+from app.models.user import User, UserRole
 from app.models.channels import Channel, ChannelType, ChannelMember
 from app.models.meetings import Meeting, MeetingStatus
 from app.models.meeting_participants import MeetingParticipant, ParticipantRole
@@ -51,18 +53,40 @@ class CompanyService:
                 email=admin_email,
                 hashed_password=hashed_password,
                 full_name=f"{company_name} Admin",
-                role="COMPANYADMIN",
+                role=UserRole.COMPANY_ADMIN,
                 company_id=company.id
             )
             db.add(admin_user)
             db.flush()
 
-            # 3. Create default "General" channel
+            # 3. Create default General Department
+            general_department = CompanyDepartment(
+                company_id=company.id,
+                name="General Department"
+            )
+            db.add(general_department)
+            db.flush()
+
+            # 4. Create default General Team
+            general_team = CompanyTeam(
+                department_id=general_department.id,
+                name="General Team"
+            )
+            db.add(general_team)
+            db.flush()
+
+            # 5. Assign admin to General Department and Team
+            admin_user.department_id = general_department.id
+            admin_user.team_id = general_team.id
+            db.flush()
+
+            # 6. Create default "General" channel (assigned to General Team)
             general_channel = Channel(
                 name="General",
                 type=ChannelType.PUBLIC,
                 company_id=company.id,
-                created_by=admin_user.id
+                created_by=admin_user.id,
+                team_id=general_team.id
             )
             db.add(general_channel)
             db.flush()
@@ -74,14 +98,15 @@ class CompanyService:
             )
             db.add(channel_member)
 
-            # 4. Create default "Meeting Room"
+            # 7. Create default "Meeting Room" (assigned to General Team)
             meeting_room = Meeting(
                 title="Meeting Room",
                 organizer_id=admin_user.id,
                 company_id=company.id,
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow() + timedelta(hours=1),
-                status=MeetingStatus.SCHEDULED
+                status=MeetingStatus.SCHEDULED,
+                team_id=general_team.id
             )
             db.add(meeting_room)
             db.flush()
@@ -94,17 +119,19 @@ class CompanyService:
             )
             db.add(meeting_participant)
 
-            # 5. Create company settings
+            # 8. Create company settings
             company_settings = CompanySettings(company_id=company.id)
             db.add(company_settings)
 
-            # 6. Log audit event
+            # 9. Log audit event
             AuditService.log_company_bootstrapped(
                 db=db,
                 user_id=superadmin_user.id,
                 company_id=company.id,
                 details={
                     "admin_user_id": admin_user.id,
+                    "general_department_id": general_department.id,
+                    "general_team_id": general_team.id,
                     "general_channel_id": general_channel.id,
                     "meeting_room_id": meeting_room.id,
                     "settings_id": company_settings.id
@@ -121,6 +148,8 @@ class CompanyService:
             # Refresh objects
             db.refresh(company)
             db.refresh(admin_user)
+            db.refresh(general_department)
+            db.refresh(general_team)
             db.refresh(general_channel)
             db.refresh(meeting_room)
             db.refresh(company_settings)

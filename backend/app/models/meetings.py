@@ -16,6 +16,8 @@ class Meeting(Base):
     title = Column(String(255), nullable=False)
     organizer_id = Column(Integer, ForeignKey("users.id", ondelete="CASCADE"), nullable=False)
     company_id = Column(Integer, ForeignKey("companies.id", ondelete="CASCADE"), nullable=False)
+    department_id = Column(Integer, ForeignKey("company_departments.id", ondelete="CASCADE"), nullable=True)
+    team_id = Column(Integer, ForeignKey("company_teams.id", ondelete="CASCADE"), nullable=True)
     start_time = Column(DateTime, nullable=False)
     end_time = Column(DateTime, nullable=False)
     status = Column(Enum(MeetingStatus), nullable=False)
@@ -26,4 +28,6 @@ class Meeting(Base):
     # Relationships
     organizer = relationship("User", foreign_keys=[organizer_id], back_populates="organized_meetings")
     company = relationship("Company", back_populates="meetings")
+    department = relationship("CompanyDepartment", back_populates="meetings")
+    team = relationship("CompanyTeam", back_populates="meetings")
     participants = relationship("MeetingParticipant", back_populates="meeting", cascade="all, delete-orphan")

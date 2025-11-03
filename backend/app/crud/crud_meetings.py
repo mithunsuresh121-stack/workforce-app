@@ -6,10 +6,12 @@ from app.models.meetings import Meeting, MeetingStatus
 from app.models.meeting_participants import MeetingParticipant, ParticipantRole
 from app.models.user import User
 from app.models.company import Company
+from app.models.company_department import CompanyDepartment
+from app.models.company_team import CompanyTeam
 
 logger = structlog.get_logger(__name__)
 
-def create_meeting(db: Session, title: str, organizer_id: int, company_id: int, start_time: datetime, end_time: datetime) -> Meeting:
+def create_meeting(db: Session, title: str, organizer_id: int, company_id: int, start_time: datetime, end_time: datetime, department_id: Optional[int] = None, team_id: Optional[int] = None) -> Meeting:
     """Create a new meeting"""
     db_company = db.query(Company).filter(Company.id == company_id).first()
     if not db_company:
@@ -19,13 +21,28 @@ def create_meeting(db: Session, title: str, organizer_id: int, company_id: int, 
     if not db_user:
         raise ValueError("Organizer not found")
 
+    if department_id:
+        db_dept = db.query(CompanyDepartment).filter(CompanyDepartment.id == department_id).first()
+        if not db_dept or db_dept.company_id != company_id:
+            raise ValueError("Invalid department")
+
+    if team_id:
+        db_team = db.query(CompanyTeam).filter(CompanyTeam.id == team_id).first()
+        if not db_team:
+            raise ValueError("Invalid team")
+        db_dept = db.query(CompanyDepartment).filter(CompanyDepartment.id == db_team.department_id).first()
+        if not db_dept or db_dept.company_id != company_id:
+            raise ValueError("Invalid team")
+
     meeting = Meeting(
         title=title,
         organizer_id=organizer_id,
         company_id=company_id,
         start_time=start_time,
         end_time=end_time,
-        status=MeetingStatus.SCHEDULED
+        status=MeetingStatus.SCHEDULED,
+        department_id=department_id,
+        team_id=team_id
     )
     db.add(meeting)
     db.commit()

@@ -89,7 +89,7 @@ def test_companyadmin(db, test_company):
         email="companyadmin@test.com",
         password="testpass",
         full_name="Company Admin",
-        role="COMPANYADMIN",
+        role="COMPANY_ADMIN",
         company_id=test_company.id
     )
     return user

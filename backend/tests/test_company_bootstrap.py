@@ -35,7 +35,7 @@ def test_bootstrap_company_success(db: Session, test_superadmin: User):
 
     # Verify admin user created
     admin_user = result["first_admin_user"]
-    assert admin_user.role == "COMPANYADMIN"
+    assert admin_user.role == "COMPANY_ADMIN"
     assert admin_user.company_id == company.id
     assert "@" in admin_user.email
 

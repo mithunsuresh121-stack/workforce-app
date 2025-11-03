@@ -6,6 +6,7 @@ from app.db import get_db
 from app.deps import get_current_user
 from app.models.user import User
 from app.models.company import Company
+from app.core.rbac import require_channel_access
 from app.crud.crud_chat import create_chat_message, get_chat_history, get_channel_messages, mark_message_as_read, get_unread_count
 from app.crud.crud_channels import create_channel, get_channels_for_company, add_member_to_channel, is_user_member_of_channel
 from app.crud.crud_reactions import add_reaction, remove_reaction, get_reactions_for_message
@@ -230,8 +231,17 @@ def join_channel(
 ):
     """Join a channel"""
     try:
+        # Check RBAC access
+        channel = db.query(Channel).filter(Channel.id == channel_id).first()
+        if not channel:
+            raise HTTPException(status_code=404, detail="Channel not found")
+        if not RBACService.can_join_channel(current_user, channel):
+            raise HTTPException(status_code=403, detail="Access denied to this channel")
+
         add_member_to_channel(db, channel_id, current_user.id)
         return {"status": "success"}
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Failed to join channel", error=str(e), user_id=current_user.id)
         raise HTTPException(status_code=500, detail="Failed to join channel")

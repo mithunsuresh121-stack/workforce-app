@@ -6,6 +6,7 @@ from typing import List, Optional
 from app.db import get_db
 from app.deps import get_current_user
 from app.models.user import User
+from app.core.rbac import require_meeting_access, RBACService
 from app.crud.crud_meetings import create_meeting, get_meeting, get_meetings_for_company, add_participant_to_meeting, get_meeting_participants, is_user_participant
 from app.services.meeting_service import meeting_service
 from app.schemas.schemas import MeetingCreate, MeetingResponse, MeetingParticipantResponse
@@ -49,11 +50,20 @@ async def meeting_websocket_endpoint(websocket: WebSocket, meeting_id: int, user
 @router.post("/create", response_model=MeetingResponse)
 def create_new_meeting(
     meeting: MeetingCreate,
+    team_id: Optional[int] = None,
+    department_id: Optional[int] = None,
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user)
 ):
     """Create a new meeting"""
     try:
+        # Check RBAC permissions for creating meeting
+        if not RBACService.can_create_meeting(current_user, team_id, department_id):
+            raise HTTPException(
+                status_code=403,
+                detail="Not authorized to create meetings in this scope"
+            )
+
         db_meeting = meeting_service.create_meeting(
             db=db,
             title=meeting.title,
@@ -61,10 +71,14 @@ def create_new_meeting(
             company_id=current_user.company_id,
             start_time=meeting.start_time,
             end_time=meeting.end_time,
-            participant_ids=meeting.participant_ids
+            participant_ids=meeting.participant_ids,
+            team_id=team_id,
+            department_id=department_id
         )
         logger.info("Meeting created via API", meeting_id=db_meeting.id, organizer_id=current_user.id)
         return MeetingResponse.from_orm(db_meeting)
+    except HTTPException:
+        raise
     except Exception as e:
         logger.error("Failed to create meeting", error=str(e), user_id=current_user.id)
         raise HTTPException(status_code=500, detail="Failed to create meeting")
@@ -90,6 +104,13 @@ def join_meeting(
 ):
     """Join a meeting"""
     try:
+        # Check RBAC access
+        meeting = db.query(Meeting).filter(Meeting.id == meeting_id).first()
+        if not meeting:
+            raise HTTPException(status_code=404, detail="Meeting not found")
+        if not RBACService.can_join_meeting(current_user, meeting):
+            raise HTTPException(status_code=403, detail="Access denied to this meeting")
+
         if not is_user_participant(db, meeting_id, current_user.id):
             raise HTTPException(status_code=403, detail="Not invited to this meeting")
 
