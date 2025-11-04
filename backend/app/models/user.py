@@ -24,6 +24,8 @@ class User(Base):
     department_id = Column(Integer, ForeignKey("company_departments.id"), nullable=True)
     team_id = Column(Integer, ForeignKey("company_teams.id"), nullable=True)
     is_active = Column(Boolean, default=True)
+    is_locked = Column(Boolean, default=False)  # Account lockout flag
+    locked_until = Column(DateTime, nullable=True)  # Lockout expiration time
     fcm_token = Column(String, nullable=True)  # Firebase Cloud Messaging token for push notifications
     last_active = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_at = Column(DateTime, server_default=func.now())

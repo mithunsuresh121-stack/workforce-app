@@ -143,6 +143,76 @@ class AuditService:
             details={"invited_user_id": target_user_id, **(details or {})}
         )
 
+    @staticmethod
+    def log_auth_failure(db: Session, user_id: int, company_id: int = None, details: dict = None, ip_address: str = None, user_agent: str = None):
+        """Log authentication failure events"""
+        from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
+
+        # Check for anomalies
+        escalated_severity = SecurityService.check_anomaly_rules(db, user_id, SecurityEvent.AUTH_FAILURE, details)
+
+        SecurityService.log_security_event(
+            db=db,
+            event_type=SecurityEvent.AUTH_FAILURE,
+            user_id=user_id,
+            company_id=company_id,
+            severity=escalated_severity or SecuritySeverity.LOW,
+            details=details,
+            ip_address=ip_address,
+            user_agent=user_agent
+        )
+
+    @staticmethod
+    def log_role_attempt(db: Session, user_id: int, target_user_id: int, company_id: int, attempted_role: str, details: dict = None):
+        """Log role change attempt events"""
+        from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
+
+        # Check for superadmin downgrade
+        escalated_severity = SecurityService.check_anomaly_rules(
+            db, user_id, SecurityEvent.ROLE_ATTEMPT,
+            {"target_role": attempted_role, "action": "downgrade" if attempted_role != "SUPERADMIN" else "attempt"}
+        )
+
+        SecurityService.log_security_event(
+            db=db,
+            event_type=SecurityEvent.ROLE_ATTEMPT,
+            user_id=user_id,
+            company_id=company_id,
+            severity=escalated_severity or SecuritySeverity.MEDIUM,
+            details={"target_user_id": target_user_id, "attempted_role": attempted_role, **(details or {})},
+        )
+
+    @staticmethod
+    def log_cross_org_access(db: Session, user_id: int, attempted_company_id: int, action: str, details: dict = None):
+        """Log cross-organization access attempts"""
+        from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
+
+        # Check for repeated attempts
+        escalated_severity = SecurityService.check_anomaly_rules(db, user_id, SecurityEvent.CROSS_ORG_ACCESS, details)
+
+        SecurityService.log_security_event(
+            db=db,
+            event_type=SecurityEvent.CROSS_ORG_ACCESS,
+            user_id=user_id,
+            company_id=attempted_company_id,
+            severity=escalated_severity or SecuritySeverity.MEDIUM,
+            details={"action": action, **(details or {})},
+        )
+
+    @staticmethod
+    def log_admin_impersonation(db: Session, user_id: int, target_user_id: int, company_id: int, details: dict = None):
+        """Log admin impersonation attempts"""
+        from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
+
+        SecurityService.log_security_event(
+            db=db,
+            event_type=SecurityEvent.ADMIN_IMPERSONATION,
+            user_id=user_id,
+            company_id=company_id,
+            severity=SecuritySeverity.HIGH,
+            details={"target_user_id": target_user_id, **(details or {})},
+        )
+
 # Convenience functions
 def log_audit_event(
     event_type: str,
