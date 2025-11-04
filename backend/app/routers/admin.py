@@ -5,6 +5,7 @@ from app.core.rbac import require_superadmin, require_company_access
 from app.services.analytics_service import AnalyticsService
 from app.services.audit_service import AuditService
 from app.services.security_service import SecurityService
+from app.schemas.ai import AIPolicyUpdate, AIApprovalRequest
 from app.deps import get_current_user
 from app.models.user import User, UserRole
 from app.core.rbac import RBACService
@@ -357,3 +358,91 @@ def update_user_role(
     )
 
     return {"message": "User role updated successfully"}
+
+
+@router.post("/ai/policy")
+def update_ai_policy(
+    policy_update: AIPolicyUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Update AI policy - Superadmin only"""
+    # For now, just log the policy update (policies are hardcoded in RBAC)
+    # In future, could store policies in database
+    AuditService.log_admin_action(
+        db=db,
+        action="UPDATE_AI_POLICY",
+        user_id=current_user.id,
+        company_id=None,
+        details=policy_update.dict()
+    )
+
+    return {"message": "AI policy updated successfully"}
+
+
+@router.get("/ai/logs")
+def get_ai_logs(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin),
+    company_id: Optional[int] = Query(None),
+    limit: int = Query(50, ge=1, le=1000),
+    offset: int = Query(0, ge=0)
+):
+    """Get AI audit logs - Superadmin only"""
+    query = db.query(AuditLog).filter(AuditLog.event_type == "AI_REQUEST").order_by(AuditLog.created_at.desc())
+
+    if company_id:
+        query = query.filter(AuditLog.company_id == company_id)
+
+    total = query.count()
+    logs = query.limit(limit).offset(offset).all()
+
+    # Log admin action
+    AuditService.log_admin_action(
+        db=db,
+        action="VIEW_AI_LOGS",
+        user_id=current_user.id,
+        company_id=company_id,
+        details={"limit": limit, "offset": offset}
+    )
+
+    return {
+        "logs": [
+            {
+                "id": log.id,
+                "user_id": log.user_id,
+                "company_id": log.company_id,
+                "ai_request_text": log.ai_request_text,
+                "ai_capability": log.ai_capability,
+                "ai_decision": log.ai_decision,
+                "ai_scope_valid": log.ai_scope_valid,
+                "ai_required_role": log.ai_required_role,
+                "ai_user_role": log.ai_user_role,
+                "ai_severity": log.ai_severity,
+                "created_at": log.created_at.isoformat()
+            }
+            for log in logs
+        ],
+        "total": total,
+        "limit": limit,
+        "offset": offset
+    }
+
+
+@router.post("/ai/approve")
+def approve_ai_request(
+    approval: AIApprovalRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Approve pending AI request - Superadmin only"""
+    # For now, just log the approval (no actual approval workflow implemented)
+    AuditService.log_admin_action(
+        db=db,
+        action="APPROVE_AI_REQUEST",
+        user_id=current_user.id,
+        company_id=None,
+        details=approval.dict()
+    )
+
+    return {"message": "AI request approved successfully"}

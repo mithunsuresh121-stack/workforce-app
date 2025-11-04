@@ -135,6 +135,42 @@ class RBACService:
         return True  # Company-wide meeting
 
     @staticmethod
+    def can_use_ai_capability(user: User, capability: str, scope_company_id: int = None, scope_department_id: int = None, scope_team_id: int = None) -> tuple[bool, str]:
+        """Check if user can use AI capability with given scope. Returns (allowed, required_role)"""
+        from app.schemas.ai import AICapability
+
+        # Define permission matrix
+        permission_matrix = {
+            UserRole.SUPERADMIN: [AICapability.READ_TEAM_DATA, AICapability.READ_COMPANY_DATA, AICapability.GENERATE_SUMMARY, AICapability.SUGGEST_TASKS],
+            UserRole.COMPANY_ADMIN: [AICapability.READ_TEAM_DATA, AICapability.READ_COMPANY_DATA, AICapability.GENERATE_SUMMARY, AICapability.SUGGEST_TASKS],
+            UserRole.DEPARTMENT_ADMIN: [AICapability.READ_TEAM_DATA, AICapability.GENERATE_SUMMARY, AICapability.SUGGEST_TASKS],
+            UserRole.TEAM_LEAD: [AICapability.READ_TEAM_DATA, AICapability.SUGGEST_TASKS],
+            UserRole.EMPLOYEE: [AICapability.READ_TEAM_DATA, AICapability.SUGGEST_TASKS]
+        }
+
+        # Check if capability is allowed for user's role
+        allowed_capabilities = permission_matrix.get(user.role, [])
+        if capability not in [cap.value for cap in allowed_capabilities]:
+            return False, user.role.value
+
+        # Check scope isolation
+        if scope_company_id and user.company_id != scope_company_id:
+            return False, user.role.value  # Cross-company not allowed
+
+        if scope_department_id and user.department_id != scope_department_id:
+            return False, user.role.value  # Cross-department not allowed
+
+        if scope_team_id and user.team_id != scope_team_id:
+            return False, user.role.value  # Cross-team not allowed
+
+        # For company-wide capabilities, ensure user has company access
+        if capability in [AICapability.READ_COMPANY_DATA.value, AICapability.GENERATE_SUMMARY.value]:
+            if not RBACService.can_access_company(user, scope_company_id or user.company_id):
+                return False, "COMPANY_ADMIN"
+
+        return True, user.role.value
+
+    @staticmethod
     def can_manage_users(user: User, target_user: User) -> bool:
         """Check if user can manage other users"""
         if user.role == UserRole.SUPERADMIN:

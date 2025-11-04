@@ -213,6 +213,47 @@ class AuditService:
             details={"target_user_id": target_user_id, **(details or {})},
         )
 
+    @staticmethod
+    def log_ai_event(
+        db: Session,
+        user_id: int,
+        company_id: int,
+        request_text: str,
+        capability: str,
+        decision: str,
+        scope_valid: bool,
+        required_role: str,
+        user_role: str,
+        severity: str = "low",
+        details: dict = None
+    ):
+        """Log AI request events"""
+        audit_log = AuditLog(
+            event_type="AI_REQUEST",
+            user_id=user_id,
+            company_id=company_id,
+            resource_type="ai",
+            resource_id=None,
+            details=details or {},
+            ai_request_text=request_text,
+            ai_capability=capability,
+            ai_decision=decision,
+            ai_scope_valid=scope_valid,
+            ai_required_role=required_role,
+            ai_user_role=user_role,
+            ai_severity=severity
+        )
+        db.add(audit_log)
+        db.commit()
+        logger.info(
+            "AI event logged",
+            user_id=user_id,
+            company_id=company_id,
+            capability=capability,
+            decision=decision,
+            severity=severity
+        )
+
 # Convenience functions
 def log_audit_event(
     event_type: str,

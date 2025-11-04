@@ -19,6 +19,9 @@ class SecurityEvent(str, Enum):
     CROSS_ORG_ACCESS = "CROSS_ORG_ACCESS"
     LOCKOUT = "LOCKOUT"
     ADMIN_IMPERSONATION = "ADMIN_IMPERSONATION"
+    AI_CROSS_ORG = "AI_CROSS_ORG"
+    AI_UNAUTHORIZED_CAPABILITY = "AI_UNAUTHORIZED_CAPABILITY"
+    AI_ADMIN_NO_SIGNOFF = "AI_ADMIN_NO_SIGNOFF"
 
 class SecuritySeverity(str, Enum):
     LOW = "LOW"
@@ -126,6 +129,28 @@ class SecurityService:
                     target_user = db.query(User).filter(User.id == target_user_id).first()
                     if target_user and target_user.role == UserRole.SUPERADMIN:
                         return SecuritySeverity.CRITICAL
+
+        elif event_type == SecurityEvent.AI_CROSS_ORG:
+            # Check for repeated AI cross-org attempts
+            recent_ai_cross_org = db.query(AuditLog).filter(
+                AuditLog.user_id == user_id,
+                AuditLog.event_type.like("SECURITY_AI_%"),
+                AuditLog.created_at >= datetime.utcnow() - timedelta(hours=1)
+            ).count()
+
+            if recent_ai_cross_org >= 3:  # Threshold for AI abuse
+                return SecuritySeverity.HIGH
+
+        elif event_type == SecurityEvent.AI_UNAUTHORIZED_CAPABILITY:
+            # Check for repeated unauthorized AI capability attempts
+            recent_unauth = db.query(AuditLog).filter(
+                AuditLog.user_id == user_id,
+                AuditLog.event_type == f"SECURITY_{SecurityEvent.AI_UNAUTHORIZED_CAPABILITY.value}",
+                AuditLog.created_at >= datetime.utcnow() - timedelta(hours=1)
+            ).count()
+
+            if recent_unauth >= 5:  # Higher threshold for capability abuse
+                return SecuritySeverity.HIGH
 
         return None  # No anomaly detected
 
