@@ -5,7 +5,14 @@ from app.core.rbac import require_superadmin, require_company_access
 from app.services.analytics_service import AnalyticsService
 from app.services.audit_service import AuditService
 from app.services.security_service import SecurityService
-from app.schemas.ai import AIPolicyUpdate, AIApprovalRequest
+from app.schemas.ai import (
+    AIPolicyUpdate, AIApprovalRequest, TrustScoreUpdate,
+    RiskHeatMapData, ComplianceExportRequest, WebhookAlertConfig
+)
+from app.services.trust_service import TrustService
+from app.services.threat_monitor_service import ThreatMonitorService
+from app.services.compliance_export_service import ComplianceExportService
+from app.services.audit_chain_service import AuditChainService
 from app.deps import get_current_user
 from app.models.user import User, UserRole
 from app.core.rbac import RBACService
@@ -446,3 +453,353 @@ def approve_ai_request(
     )
 
     return {"message": "AI request approved successfully"}
+
+
+@router.get("/ai/trust-scores")
+def get_trust_scores(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin),
+    company_id: Optional[int] = Query(None),
+    limit: int = Query(100, ge=1, le=1000)
+):
+    """Get trust scores for users - Superadmin only"""
+    query = db.query(User).order_by(User.trust_score.desc())
+
+    if company_id:
+        query = query.filter(User.company_id == company_id)
+
+    users = query.limit(limit).all()
+
+    return {
+        "trust_scores": [
+            {
+                "user_id": user.id,
+                "email": user.email,
+                "full_name": user.full_name,
+                "trust_score": user.trust_score,
+                "trust_tier": TrustService.get_trust_tier(user.trust_score),
+                "access_limits": TrustService.get_access_limits(user.trust_score),
+                "company_id": user.company_id,
+                "role": user.role.value
+            }
+            for user in users
+        ]
+    }
+
+
+@router.patch("/users/{user_id}/trust-score")
+def update_trust_score(
+    user_id: int,
+    trust_update: TrustScoreUpdate,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Manually update user trust score - Superadmin only"""
+    target_user = db.query(User).filter(User.id == user_id).first()
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    old_score = target_user.trust_score
+    target_user.trust_score = trust_update.new_score
+    db.commit()
+
+    # Log manual trust score update
+    AuditService.log_admin_action(
+        db=db,
+        action="MANUAL_TRUST_SCORE_UPDATE",
+        user_id=current_user.id,
+        company_id=target_user.company_id,
+        details={
+            "target_user_id": user_id,
+            "old_score": old_score,
+            "new_score": trust_update.new_score,
+            "reason": trust_update.reason
+        }
+    )
+
+    return {
+        "message": "Trust score updated successfully",
+        "old_score": old_score,
+        "new_score": trust_update.new_score,
+        "new_tier": TrustService.get_trust_tier(trust_update.new_score)
+    }
+
+
+@router.post("/users/{user_id}/reset-trust")
+def reset_user_trust(
+    user_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Reset user trust score to maximum - Superadmin only"""
+    success = TrustService.reset_trust_score(db, user_id, current_user.id, "Admin reset")
+
+    if not success:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    return {"message": "User trust score reset to maximum"}
+
+
+@router.get("/ai/trust-history/{user_id}")
+def get_user_trust_history(
+    user_id: int,
+    days: int = Query(30, ge=1, le=365),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Get trust score history for a user - Superadmin only"""
+    history = TrustService.get_trust_history(db, user_id, days)
+
+    return {
+        "user_id": user_id,
+        "history": history.get(user_id, []),
+        "days": days
+    }
+
+
+@router.get("/ai/threat-monitor")
+def get_live_violations(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin),
+    company_id: Optional[int] = Query(None),
+    limit: int = Query(50, ge=1, le=500)
+):
+    """Get live AI violation feed - Superadmin only"""
+    violations = ThreatMonitorService.get_live_violations(db, company_id, limit)
+
+    return {
+        "violations": violations,
+        "total": len(violations),
+        "limit": limit
+    }
+
+
+@router.get("/ai/risk-heatmap")
+def get_risk_heatmap(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin),
+    company_id: Optional[int] = Query(None),
+    time_range_hours: int = Query(24, ge=1, le=168)  # Max 1 week
+):
+    """Get AI risk heat map data - Superadmin only"""
+    heatmap = ThreatMonitorService.get_risk_heatmap(db, company_id, time_range_hours)
+
+    return RiskHeatMapData(
+        company_id=company_id,
+        time_range_hours=time_range_hours,
+        risk_levels=heatmap
+    )
+
+
+@router.post("/ai/compliance-export")
+def export_compliance_report(
+    export_request: ComplianceExportRequest,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Export compliance report - Superadmin only"""
+    try:
+        result = ComplianceExportService.export_report(db, export_request)
+
+        # Log export action
+        AuditService.log_admin_action(
+            db=db,
+            action="EXPORT_COMPLIANCE_REPORT",
+            user_id=current_user.id,
+            company_id=export_request.company_id,
+            details={
+                "format": export_request.format,
+                "date_range": f"{export_request.start_date} to {export_request.end_date}",
+                "include_logs": export_request.include_logs,
+                "include_trust_history": export_request.include_trust_history
+            }
+        )
+
+        if export_request.format.lower() == "pdf":
+            from fastapi.responses import StreamingResponse
+            import io
+
+            return StreamingResponse(
+                io.BytesIO(result["data"]),
+                media_type="application/pdf",
+                headers={"Content-Disposition": f"attachment; filename={result['filename']}"}
+            )
+        else:
+            from fastapi.responses import JSONResponse
+            return JSONResponse(
+                content=json.loads(result["data"]),
+                headers={"Content-Disposition": f"attachment; filename={result['filename']}"}
+            )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Export failed: {str(e)}")
+
+
+@router.post("/ai/webhook-config")
+def configure_alert_webhook(
+    webhook_config: WebhookAlertConfig,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Configure webhook for AI alerts - Superadmin only"""
+    # For now, store in memory (in production, store in database)
+    # This is a placeholder - implement proper webhook config storage
+
+    AuditService.log_admin_action(
+        db=db,
+        action="CONFIGURE_AI_WEBHOOK",
+        user_id=current_user.id,
+        company_id=None,
+        details={
+            "url": webhook_config.url,
+            "enabled": webhook_config.enabled,
+            "alert_types": webhook_config.alert_types
+        }
+    )
+
+    return {"message": "AI alert webhook configured successfully"}
+
+
+# Audit Chain Verification Endpoints
+
+@router.get("/audit-chain/verify/{chain_id}")
+def verify_audit_chain(
+    chain_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Verify integrity of an audit chain - Superadmin only"""
+    is_valid, issues = AuditChainService.verify_chain_integrity(db, chain_id)
+
+    # Log admin action
+    AuditService.log_admin_action(
+        db=db,
+        action="VERIFY_AUDIT_CHAIN",
+        user_id=current_user.id,
+        company_id=None,
+        details={
+            "chain_id": chain_id,
+            "is_valid": is_valid,
+            "issues_count": len(issues)
+        }
+    )
+
+    return {
+        "chain_id": chain_id,
+        "is_valid": is_valid,
+        "issues": issues,
+        "verified_at": datetime.utcnow().isoformat()
+    }
+
+
+@router.get("/audit-chain/stats/{chain_id}")
+def get_audit_chain_stats(
+    chain_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Get statistics for an audit chain - Superadmin only"""
+    stats = AuditChainService.get_chain_stats(db, chain_id)
+
+    # Log admin action
+    AuditService.log_admin_action(
+        db=db,
+        action="VIEW_AUDIT_CHAIN_STATS",
+        user_id=current_user.id,
+        company_id=None,
+        details={"chain_id": chain_id}
+    )
+
+    return stats
+
+
+@router.get("/audit-chain/replay/{chain_id}")
+def replay_audit_chain(
+    chain_id: str,
+    start_sequence: int = Query(0, ge=0),
+    end_sequence: Optional[int] = Query(None, ge=0),
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Replay audit chain entries - Superadmin only"""
+    replay_data = AuditChainService.replay_chain(db, chain_id, start_sequence, end_sequence)
+
+    # Log admin action
+    AuditService.log_admin_action(
+        db=db,
+        action="REPLAY_AUDIT_CHAIN",
+        user_id=current_user.id,
+        company_id=None,
+        details={
+            "chain_id": chain_id,
+            "start_sequence": start_sequence,
+            "end_sequence": end_sequence,
+            "entries_returned": len(replay_data)
+        }
+    )
+
+    return {
+        "chain_id": chain_id,
+        "start_sequence": start_sequence,
+        "end_sequence": end_sequence,
+        "entries": replay_data
+    }
+
+
+@router.get("/audit-chain/tampering/{chain_id}")
+def detect_chain_tampering(
+    chain_id: str,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """Detect tampering incidents in an audit chain - Superadmin only"""
+    incidents = AuditChainService.detect_tampering(db, chain_id)
+
+    # Log admin action
+    AuditService.log_admin_action(
+        db=db,
+        action="DETECT_CHAIN_TAMPERING",
+        user_id=current_user.id,
+        company_id=None,
+        details={
+            "chain_id": chain_id,
+            "incidents_found": len(incidents)
+        }
+    )
+
+    return {
+        "chain_id": chain_id,
+        "tampering_incidents": incidents,
+        "detected_at": datetime.utcnow().isoformat()
+    }
+
+
+@router.get("/audit-chain/all-chains")
+def list_all_chains(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(require_superadmin)
+):
+    """List all audit chains with their stats - Superadmin only"""
+    from sqlalchemy import distinct
+
+    # Get unique chain IDs
+    chain_ids = db.query(distinct(AuditChain.chain_id)).all()
+    chains = []
+
+    for (chain_id,) in chain_ids:
+        stats = AuditChainService.get_chain_stats(db, chain_id)
+        chains.append(stats)
+
+    # Log admin action
+    AuditService.log_admin_action(
+        db=db,
+        action="LIST_AUDIT_CHAINS",
+        user_id=current_user.id,
+        company_id=None,
+        details={"chains_count": len(chains)}
+    )
+
+    return {
+        "chains": chains,
+        "total_chains": len(chains)
+    }
