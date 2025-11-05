@@ -26,6 +26,7 @@ class User(Base):
     is_active = Column(Boolean, default=True)
     is_locked = Column(Boolean, default=False)  # Account lockout flag
     locked_until = Column(DateTime, nullable=True)  # Lockout expiration time
+    trust_score = Column(Integer, default=100)  # Trust score 0-100, starts at 100
     fcm_token = Column(String, nullable=True)  # Firebase Cloud Messaging token for push notifications
     last_active = Column(DateTime, server_default=func.now(), onupdate=func.now())
     created_at = Column(DateTime, server_default=func.now())
@@ -47,6 +48,7 @@ class User(Base):
     channel_memberships = relationship("ChannelMember", back_populates="user", cascade="all, delete-orphan")
     created_channels = relationship("Channel", back_populates="creator", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
+    audit_chain_entries = relationship("AuditChain", back_populates="user", cascade="all, delete-orphan")
     
     def __repr__(self):
         return f"<User {self.email}>"

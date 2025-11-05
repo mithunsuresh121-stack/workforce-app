@@ -245,6 +245,26 @@ class AuditService:
         )
         db.add(audit_log)
         db.commit()
+
+        # Also log to cryptographic audit chain
+        from app.services.audit_chain_service import AuditChainService
+        AuditChainService.log_ai_event(
+            db=db,
+            user_id=user_id,
+            company_id=company_id,
+            event_type="AI_REQUEST",
+            data={
+                "request_text": request_text,
+                "capability": capability,
+                "decision": decision,
+                "scope_valid": scope_valid,
+                "required_role": required_role,
+                "user_role": user_role,
+                "severity": severity,
+                "details": details or {}
+            }
+        )
+
         logger.info(
             "AI event logged",
             user_id=user_id,
