@@ -296,3 +296,23 @@ def require_meeting_access(meeting_id: int, db: Session = Depends(get_db), curre
             detail="Access denied to this meeting"
         )
     return current_user
+
+def require_role(roles: list[UserRole]):
+    """Decorator to require specific roles"""
+    def decorator(func):
+        def wrapper(*args, **kwargs):
+            # Get current_user from kwargs (assuming it's passed by FastAPI dependency)
+            current_user = kwargs.get('current_user')
+            if not current_user:
+                raise HTTPException(
+                    status_code=status.HTTP_401_UNAUTHORIZED,
+                    detail="Authentication required"
+                )
+            if current_user.role not in roles:
+                raise HTTPException(
+                    status_code=status.HTTP_403_FORBIDDEN,
+                    detail=f"Required role: {', '.join([r.value for r in roles])}"
+                )
+            return func(*args, **kwargs)
+        return wrapper
+    return decorator

@@ -4,7 +4,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings, engine, Base
 from app.models import *
-from app.routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat, meetings, websocket_manager, org, admin, ai
+from app.routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat, meetings, websocket_manager, org, admin, ai, approvals
 from app.custom_json_response import CustomJSONResponse
 
 # Set up structured logging with structlog as primary logger
@@ -124,6 +124,7 @@ app.include_router(meetings.router, prefix="/api/meetings")
 app.include_router(org.router)
 app.include_router(admin.router, prefix="/api/admin", tags=["admin"])
 app.include_router(ai.router, prefix="/api/ai")
+app.include_router(approvals.router, prefix="/api/approvals")
 app.include_router(websocket_manager.router, prefix="/api/ws")
 
 from app.seed_demo_user import seed_demo_user

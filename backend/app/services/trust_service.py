@@ -20,6 +20,18 @@ class TrustService:
     RECOVERY_RATE = 1       # Points to recover per clean day
     RECOVERY_THRESHOLD_DAYS = 7  # Days without violations to start recovery
 
+    # Risk scoring configuration
+    RISK_BASELINE = 50.0  # Baseline risk score (0-100, higher = riskier)
+    RISK_MAX = 100.0
+    RISK_MIN = 0.0
+
+    # Factor weights (sum to 1.0)
+    TRUST_WEIGHT = 0.3
+    ROLE_WEIGHT = 0.2
+    CAPABILITY_WEIGHT = 0.25
+    ANOMALY_WEIGHT = 0.15
+    TIME_WEIGHT = 0.1
+
     @staticmethod
     def calculate_trust_score_decay(severity: AIPolicySeverity) -> int:
         """Calculate trust score decay based on violation severity"""
@@ -215,3 +227,136 @@ class TrustService:
                    new_score=TrustService.MAX_TRUST_SCORE)
 
         return True
+
+    @staticmethod
+    def calculate_risk_score(
+        db: Session,
+        user: 'User',
+        capability: str,
+        context: dict = None
+    ) -> float:
+        """
+        Calculate comprehensive risk score combining multiple factors:
+        - Trust score
+        - User role
+        - Capability sensitivity
+        - Anomaly detection
+        - Time context
+        """
+        context = context or {}
+        current_time = context.get('current_time', datetime.utcnow())
+        recent_violations = context.get('recent_violations', 0)
+
+        # Factor 1: Trust Score (inverted - low trust = high risk)
+        trust_factor = max(0, 1.0 - (user.trust_score / TrustService.MAX_TRUST_SCORE))
+        trust_risk = trust_factor * TrustService.TRUST_WEIGHT * TrustService.RISK_MAX
+
+        # Factor 2: Role Risk (higher roles = lower risk)
+        role_risk_map = {
+            'SUPERADMIN': 0.1,
+            'COMPANY_ADMIN': 0.2,
+            'DEPARTMENT_ADMIN': 0.3,
+            'TEAM_LEAD': 0.4,
+            'EMPLOYEE': 0.6
+        }
+        role_risk = role_risk_map.get(user.role.value, 0.5) * TrustService.ROLE_WEIGHT * TrustService.RISK_MAX
+
+        # Factor 3: Capability Risk (sensitive capabilities = higher risk)
+        capability_risk_map = {
+            'READ_COMPANY_DATA': 0.8,
+            'GENERATE_SUMMARY': 0.6,
+            'SUGGEST_TASKS': 0.4,
+            'READ_TEAM_DATA': 0.3
+        }
+        capability_risk = capability_risk_map.get(capability, 0.5) * TrustService.CAPABILITY_WEIGHT * TrustService.RISK_MAX
+
+        # Factor 4: Anomaly Detection (recent violations, unusual patterns)
+        anomaly_score = min(1.0, recent_violations / 5.0)  # Normalize to 0-1
+        # Add behavioral anomaly (simple: off-peak usage)
+        hour = current_time.hour
+        is_off_peak = hour < 6 or hour > 22
+        anomaly_score += 0.2 if is_off_peak else 0
+        anomaly_score = min(1.0, anomaly_score)
+        anomaly_risk = anomaly_score * TrustService.ANOMALY_WEIGHT * TrustService.RISK_MAX
+
+        # Factor 5: Time Context (off-hours, weekends = higher risk)
+        is_weekend = current_time.weekday() >= 5
+        time_risk = (0.3 if is_off_peak else 0) + (0.2 if is_weekend else 0)
+        time_risk = min(1.0, time_risk) * TrustService.TIME_WEIGHT * TrustService.RISK_MAX
+
+        # Combine weighted factors
+        total_risk = (
+            trust_risk * TrustService.TRUST_WEIGHT +
+            role_risk * TrustService.ROLE_WEIGHT +
+            capability_risk * TrustService.CAPABILITY_WEIGHT +
+            anomaly_risk * TrustService.ANOMALY_WEIGHT +
+            time_risk * TrustService.TIME_WEIGHT
+        )
+
+        # Normalize to 0-100
+        total_risk = max(TrustService.RISK_MIN, min(TrustService.RISK_MAX, total_risk))
+
+        # Log risk assessment
+        logger.info(
+            "Risk score calculated",
+            user_id=user.id,
+            capability=capability,
+            trust_risk=trust_risk,
+            role_risk=role_risk,
+            capability_risk=capability_risk,
+            anomaly_risk=anomaly_risk,
+            time_risk=time_risk,
+            total_risk=total_risk
+        )
+
+        # Audit the risk assessment
+        from app.services.audit_service import AuditService
+        AuditService.log_event(
+            db=db,
+            event_type="RISK_ASSESSMENT",
+            user_id=user.id,
+            company_id=user.company_id,
+            resource_type="ai_capability",
+            resource_id=capability,
+            details={
+                "risk_score": float(total_risk),
+                "trust_factor": float(trust_factor),
+                "role_factor": role_risk_map.get(user.role.value, 0.5),
+                "capability_factor": capability_risk_map.get(capability, 0.5),
+                "anomaly_factor": float(anomaly_score),
+                "time_factor": float(time_risk / TrustService.RISK_MAX),
+                "context": {
+                    "recent_violations": recent_violations,
+                    "is_off_peak": is_off_peak,
+                    "is_weekend": is_weekend
+                }
+            }
+        )
+
+        return total_risk
+
+    @staticmethod
+    def get_recent_violations(db: Session, user_id: int, hours: int = 24) -> int:
+        """Get count of recent violations for anomaly detection"""
+        cutoff = datetime.utcnow() - timedelta(hours=hours)
+        from app.models.audit_log import AuditLog
+        count = db.query(AuditLog).filter(
+            AuditLog.user_id == user_id,
+            AuditLog.event_type.like("SECURITY_AI_%"),
+            AuditLog.created_at >= cutoff
+        ).count()
+        return count
+
+    @staticmethod
+    def assess_risk_level(risk_score: float) -> str:
+        """Assess risk level based on score"""
+        if risk_score >= 80:
+            return "CRITICAL"
+        elif risk_score >= 60:
+            return "HIGH"
+        elif risk_score >= 40:
+            return "MEDIUM"
+        elif risk_score >= 20:
+            return "LOW"
+        else:
+            return "MINIMAL"
