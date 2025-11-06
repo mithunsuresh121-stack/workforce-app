@@ -49,6 +49,12 @@ class User(Base):
     created_channels = relationship("Channel", back_populates="creator", cascade="all, delete-orphan")
     audit_logs = relationship("AuditLog", back_populates="user", cascade="all, delete-orphan")
     audit_chain_entries = relationship("AuditChain", back_populates="user", cascade="all, delete-orphan")
-    
+
+    # Approval queue relationships
+    approval_requests = relationship("ApprovalQueue", foreign_keys="[ApprovalQueue.requestor_id]", back_populates="requestor", cascade="all, delete-orphan")
+    pending_approvals = relationship("ApprovalQueue", foreign_keys="[ApprovalQueue.current_approver_id]", back_populates="current_approver", cascade="all, delete-orphan")
+    approved_requests = relationship("ApprovalQueue", foreign_keys="[ApprovalQueue.approved_by_id]", back_populates="approver", cascade="all, delete-orphan")
+    assigned_approvals = relationship("ApprovalQueueItem", back_populates="assigned_to", cascade="all, delete-orphan")
+
     def __repr__(self):
         return f"<User {self.email}>"
