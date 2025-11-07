@@ -11,6 +11,9 @@ class Settings(BaseSettings):
     POSTGRES_HOST: str = "localhost"  # Use localhost for local PostgreSQL
     POSTGRES_PORT: int = 5432
 
+    # Database URL
+    DATABASE_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+
     # JWT / App settings
     SECRET_KEY: str = "CHANGE_ME"
     JWT_SECRET: str = "CHANGE_ME"

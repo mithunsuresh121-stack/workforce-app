@@ -72,8 +72,17 @@ class ChatService:
         db.refresh(chat_message)
 
         # Increment metrics counter
-        import asyncio
-        asyncio.create_task(increment_messages_sent())
+        try:
+            import asyncio
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(increment_messages_sent())
+            else:
+                asyncio.run(increment_messages_sent())
+        except RuntimeError:
+            # No event loop, run synchronously
+            import asyncio
+            asyncio.run(increment_messages_sent())
 
         # Create notifications for other members
         self._notify_channel_members(db, channel_id, sender_id, chat_message)
