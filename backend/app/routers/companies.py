@@ -7,6 +7,7 @@ from app.schemas import CompanyCreate, CompanyOut
 from app.crud import create_company, list_companies, get_company_by_id, get_company_by_name, delete_company
 from app.services.company_service import CompanyService
 from app.models.user import User
+from app.core.rbac import require_superadmin, require_company_access
 
 logger = structlog.get_logger(__name__)
 
@@ -16,16 +17,11 @@ router = APIRouter(prefix="/companies", tags=["Companies"])
 def create_new_company(
     company_data: CompanyCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_superadmin)
 ):
     """
     Create a new company with full bootstrap (only SuperAdmin can create companies)
     """
-    if current_user.role != "SUPERADMIN":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only SuperAdmin can create companies"
-        )
 
     # Check if company with same name already exists
     existing_company = get_company_by_name(db, company_data.name)

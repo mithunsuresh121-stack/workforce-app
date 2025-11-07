@@ -37,7 +37,7 @@ def test_company_cascade_delete(db_session):
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test@example.com", company=company)
+    user = User(email="test@example.com", hashed_password="testpass", full_name="Test User", company=company)
     db_session.add(user)
     db_session.commit()
 
@@ -109,7 +109,7 @@ def test_user_cascade_delete(db_session):
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test@example.com", company=company)
+    user = User(email="test@example.com", hashed_password="testpass", full_name="Test User", company=company)
     db_session.add(user)
     db_session.commit()
 
@@ -173,7 +173,7 @@ def test_channel_cascade_delete(db_session):
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test@example.com", company=company)
+    user = User(email="test@example.com", hashed_password="testpass", full_name="Test User", company=company)
     db_session.add(user)
     db_session.commit()
 
@@ -216,11 +216,11 @@ def test_channel_cascade_delete(db_session):
 def test_message_cascade_delete(db_session):
     """Test that deleting a message cascades to reactions."""
     # Create test data
-    company = Company(name="Test Company")
+    company = Company(name="Test Company 3")
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test@example.com", company=company)
+    user = User(email="test3@example.com", hashed_password="testpass", full_name="Test User 3", company=company)
     db_session.add(user)
     db_session.commit()
 
@@ -258,11 +258,11 @@ def test_message_cascade_delete(db_session):
 def test_meeting_cascade_delete(db_session):
     """Test that deleting a meeting cascades to participants."""
     # Create test data
-    company = Company(name="Test Company")
+    company = Company(name="Test Company 4")
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test@example.com", company=company)
+    user = User(email="test4@example.com", hashed_password="testpass", full_name="Test User 4", company=company)
     db_session.add(user)
     db_session.commit()
 

@@ -13,6 +13,7 @@ from app.db import Base, get_db
 from app.main import app
 from app.models.user import User
 from app.models.company import Company
+from app.models.approval_queue import ApprovalQueue, ApprovalQueueItem
 from app.crud import create_user, create_company
 from app.schemas.schemas import UserCreate, CompanyCreate
 

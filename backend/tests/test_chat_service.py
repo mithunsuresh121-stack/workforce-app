@@ -46,23 +46,36 @@ def test_send_channel_message(db: Session, test_company: Company, test_user: Use
 
 def test_add_reaction(db: Session, test_company: Company, test_user: User):
     """Test adding reaction to message"""
-    # Create message first
-    message = create_chat_message(
+    # Create channel first
+    channel = chat_service.create_group_channel(
         db=db,
-        message_create=ChatMessageCreate(message="Test message"),
-        sender_id=test_user.id,
-        company_id=test_company.id
+        name="Test Channel",
+        company_id=test_company.id,
+        created_by=test_user.id,
+        member_ids=[test_user.id]
     )
+
+    # Create message first
+    message_obj = ChatMessage(
+        company_id=test_company.id,
+        sender_id=test_user.id,
+        channel_id=channel.id,
+        message="Test message",
+        attachments=[]
+    )
+    db.add(message_obj)
+    db.commit()
+    db.refresh(message_obj)
 
     # Add reaction
     reaction = chat_service.add_reaction_to_message(
         db=db,
-        message_id=message.id,
+        message_id=message_obj.id,
         user_id=test_user.id,
         emoji="👍"
     )
     assert reaction.emoji == "👍"
-    assert reaction.message_id == message.id
+    assert reaction.message_id == message_obj.id
 
 def test_typing_indicator(db: Session, test_company: Company, test_user: User):
     """Test typing indicator functionality"""
