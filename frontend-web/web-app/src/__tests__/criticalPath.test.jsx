@@ -8,7 +8,29 @@ import { AuthProvider } from '../contexts/AuthContext';
 // Mock axios
 import { vi } from 'vitest';
 
-vi.mock('axios');
+// Mock axios before importing AuthContext
+vi.mock('axios', () => ({
+  default: {
+    create: vi.fn(() => ({
+      interceptors: {
+        request: { use: vi.fn() },
+        response: { use: vi.fn() }
+      },
+      get: vi.fn(),
+      post: vi.fn(),
+      put: vi.fn(),
+      delete: vi.fn()
+    })),
+    interceptors: {
+      request: { use: vi.fn() },
+      response: { use: vi.fn() }
+    },
+    get: vi.fn(),
+    post: vi.fn(),
+    put: vi.fn(),
+    delete: vi.fn()
+  }
+}));
 
 describe('Critical Path Tests', () => {
   beforeEach(() => {

@@ -105,3 +105,23 @@ def should_send_push_notification(db: Session, user_id: int, company_id: int, no
     # Check if this notification type is enabled
     notification_types = prefs.get("notification_types", {})
     return notification_types.get(notification_type, True)
+
+def should_send_email_notification(db: Session, user_id: int, company_id: int, notification_type: str) -> bool:
+    """Check if an email notification should be sent based on user preferences"""
+    preferences = get_user_preferences(db, user_id, company_id)
+    if not preferences:
+        return False  # Default to not sending email if no preferences set
+
+    prefs = preferences.preferences
+
+    # Check if email notifications are enabled globally
+    if not prefs.get("email_enabled", False):
+        return False
+
+    # Check if all notifications are muted
+    if prefs.get("mute_all", False):
+        return False
+
+    # Check if this notification type is enabled
+    notification_types = prefs.get("notification_types", {})
+    return notification_types.get(notification_type, False)
