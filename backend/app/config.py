@@ -1,5 +1,7 @@
 # app/config.py
 from pydantic_settings import BaseSettings
+from pydantic import validator
+import os
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 
@@ -20,6 +22,20 @@ class Settings(BaseSettings):
     JWT_REFRESH_SECRET: str = "CHANGE_ME_REFRESH"
     JWT_ALG: str = "HS256"
     APP_ENV: str = "dev"
+
+    # Email settings
+    SMTP_SERVER: str = "smtp.sendgrid.net"
+    SMTP_PORT: int = 587
+    SMTP_USERNAME: str = "apikey"
+    SMTP_PASSWORD: str = ""  # Set in .env
+    EMAIL_FROM: str = "noreply@workforceapp.com"
+    SENDGRID_API_KEY: str = ""  # Set in .env (required for prod email)
+
+    @validator('SENDGRID_API_KEY', pre=True, always=True)
+    def validate_sendgrid_key(cls, v):
+        if not v and os.getenv('APP_ENV') == 'prod':
+            raise ValueError('SENDGRID_API_KEY is required in production')
+        return v
 
     class Config:
         env_file = ".env"
