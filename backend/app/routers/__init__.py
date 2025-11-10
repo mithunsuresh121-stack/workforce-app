@@ -14,3 +14,4 @@ from .documents import router as documents_router
 from .chat import router as chat_router
 from .meetings import router as meetings_router
 from .websocket_manager import router as websocket_manager_router
+from .procurement import router as procurement_router

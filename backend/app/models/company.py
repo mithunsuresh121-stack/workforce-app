@@ -21,3 +21,6 @@ class Company(Base):
     meetings = relationship("Meeting", back_populates="company", cascade="all, delete-orphan")
     chat_messages = relationship("ChatMessage", back_populates="company", cascade="all, delete-orphan")
     settings = relationship("CompanySettings", back_populates="company", uselist=False, cascade="all, delete-orphan")
+    vendors = relationship("Vendor", back_populates="company", cascade="all, delete-orphan")
+    purchase_orders = relationship("PurchaseOrder", back_populates="company", cascade="all, delete-orphan")
+    inventory_items = relationship("InventoryItem", back_populates="company", cascade="all, delete-orphan")
