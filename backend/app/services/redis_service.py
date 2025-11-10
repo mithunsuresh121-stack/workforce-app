@@ -4,7 +4,7 @@ from typing import Optional, List, Callable
 import os
 import json
 import asyncio
-from tenacity import retry, stop_after_attempt, wait_exponential, retry_if_exception_type
+from tenacity import retry, stop_after_attempt, wait_exponential, wait_exponential_jitter, retry_if_exception_type
 
 logger = structlog.get_logger(__name__)
 
@@ -19,12 +19,21 @@ class RedisService:
         self._max_reconnect_attempts = 10
         self._base_reconnect_delay = 1.0
 
-    @retry(stop=stop_after_attempt(3), wait=wait_exponential(multiplier=1, min=1, max=10), retry=retry_if_exception_type(aioredis.RedisError))
+    def _build_redis_url(self) -> str:
+        """Build Redis URL conditionally based on password presence"""
+        password = os.getenv('REDIS_PASSWORD', '').strip()
+        if password:
+            return f"redis://:{password}@localhost:6379"
+        else:
+            return "redis://localhost:6379"
+
+    @retry(stop=stop_after_attempt(5), wait=wait_exponential_jitter(initial=1, max=10), retry=retry_if_exception_type((aioredis.RedisError, aioredis.errors.ReplyError)))
     async def initialize(self):
         """Initialize Redis connection with retry logic and Sentinel support"""
+        redis_url = os.getenv("REDIS_URL") or self._build_redis_url()
+        password = os.getenv('REDIS_PASSWORD', '').strip()
+        sanitized_url = redis_url.replace(password, '***') if password else redis_url
         try:
-            redis_url = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', 'workforce_redis_pw')}@localhost:6379")
-            password = os.getenv('REDIS_PASSWORD', 'workforce_redis_pw')
             sentinel_hosts = os.getenv("REDIS_SENTINEL_HOSTS")  # e.g., "host1:26379,host2:26379"
             sentinel_master = os.getenv("REDIS_SENTINEL_MASTER", "mymaster")
 
@@ -33,16 +42,17 @@ class RedisService:
                 sentinel_hosts_list = [(host.split(':')[0], int(host.split(':')[1])) for host in sentinel_hosts.split(',')]
                 self.sentinel = aioredis.sentinel.Sentinel(
                     sentinel_hosts_list,
-                    password=password,
+                    password=password if password else None,
                     socket_timeout=5,
                 )
                 self.redis = self.sentinel.master_for(sentinel_master)
                 self.pubsub = self.sentinel.slave_for(sentinel_master)
                 logger.info("Redis Sentinel initialized", sentinel_hosts=sentinel_hosts, master=sentinel_master)
             else:
-                # Standard Redis pool
+                # Standard Redis pool - pass password explicitly if set
                 self.redis = await aioredis.create_redis_pool(
                     redis_url,
+                    password=password if password else None,
                     encoding='utf-8',
                     minsize=5,
                     maxsize=50,
@@ -52,6 +62,7 @@ class RedisService:
                 # Create separate pubsub connection
                 self.pubsub = await aioredis.create_redis_pool(
                     redis_url,
+                    password=password if password else None,
                     encoding='utf-8',
                     minsize=2,
                     maxsize=10,
@@ -59,7 +70,11 @@ class RedisService:
                 )
 
             self._initialized = True
-            logger.info("Redis service initialized", redis_url=redis_url.replace(password, '***'), minsize=5, maxsize=50, sentinel=bool(sentinel_hosts))
+            logger.info("Redis service initialized", redis_url=sanitized_url, minsize=5, maxsize=50, sentinel=bool(sentinel_hosts), password_set=bool(password))
+        except (aioredis.errors.ReplyError, aioredis.AuthenticationError) as e:
+            logger.error("Redis authentication failed", error=str(e), redis_url=sanitized_url, password_set=bool(password))
+            self._initialized = False
+            raise
         except Exception as e:
             logger.error("Failed to initialize Redis after retries", error=str(e), exc_info=True)
             self._initialized = False
@@ -91,15 +106,17 @@ class RedisService:
 
     async def _auto_reconnect(self):
         """Auto-reconnect to Redis with exponential backoff"""
+        password = os.getenv('REDIS_PASSWORD', '').strip()
+        redis_url = os.getenv("REDIS_URL") or self._build_redis_url()
         while self._reconnect_attempts < self._max_reconnect_attempts:
             try:
                 delay = self._base_reconnect_delay * (2 ** self._reconnect_attempts)
                 logger.info(f"Attempting Redis reconnection in {delay:.1f}s (attempt {self._reconnect_attempts + 1}/{self._max_reconnect_attempts})")
                 await asyncio.sleep(delay)
 
-                redis_url = os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', 'workforce_redis_pw')}@localhost:6379")
                 self.redis = await aioredis.create_redis_pool(
                     redis_url,
+                    password=password if password else None,
                     encoding='utf-8',
                     minsize=5,
                     maxsize=50,
@@ -231,17 +248,19 @@ class RedisService:
             record_redis_error()
             logger.error("Failed to publish event to Redis", channel=channel, error=str(e), exc_info=True)
 
-    async def create_redis_pool(self, url: str) -> Optional[aioredis.Redis]:
+    async def create_redis_pool(self, url: str, password: Optional[str] = None) -> Optional[aioredis.Redis]:
         """Create a new Redis pool connection"""
         try:
             redis_pool = await aioredis.create_redis_pool(
                 url,
+                password=password,
                 encoding='utf-8',
                 minsize=5,
                 maxsize=50,
                 timeout=5.0
             )
-            logger.info("Created Redis pool", url=url.replace(os.getenv('REDIS_PASSWORD', ''), '***'))
+            sanitized_url = url.replace(password or '', '***') if password else url
+            logger.info("Created Redis pool", url=sanitized_url)
             return redis_pool
         except Exception as e:
             logger.error("Failed to create Redis pool", error=str(e), exc_info=True)
@@ -265,16 +284,17 @@ class RedisService:
         if not self._initialized:
             return
         try:
-            pool = await self.create_redis_pool(os.getenv("REDIS_URL", f"redis://:{os.getenv('REDIS_PASSWORD', 'workforce_redis_pw')}@localhost:6379"))
+            redis_url = os.getenv("REDIS_URL") or self._build_redis_url()
+            password = os.getenv('REDIS_PASSWORD', '').strip()
+            pool = await self.create_redis_pool(redis_url, password=password if password else None)
             if not pool:
                 return
-            channels = await pool.psubscribe(pattern)
-            ch = channels[0] if channels else None
-            if ch:
-                logger.info("Subscribed to Redis pattern", pattern=pattern)
-                async for msg in ch.listen():
-                    if msg['type'] == 'pmessage':
-                        await callback(msg['data'])
+            pubsub = await pool.pubsub()
+            await pubsub.psubscribe(pattern)
+            logger.info("Subscribed to Redis pattern", pattern=pattern)
+            async for message in pubsub.listen():
+                if message['type'] == 'pmessage':
+                    await callback(message['data'])
         except Exception as e:
             logger.error("Failed to psubscribe to Redis pattern", pattern=pattern, error=str(e), exc_info=True)
 

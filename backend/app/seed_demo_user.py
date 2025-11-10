@@ -106,17 +106,17 @@ def seed_demo_user(db: Session):
             company_id=company.id
         )
         # Fix role if invalid
-        if existing_manager.role not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER", "EMPLOYEE"]:
-            existing_manager.role = "MANAGER"
+        if existing_manager.role not in ["SUPERADMIN", "COMPANY_ADMIN", "DEPARTMENT_ADMIN", "TEAM_LEAD", "EMPLOYEE"]:
+            existing_manager.role = "COMPANY_ADMIN"
             db.commit()
             logger.info(
-                "Fixed demo manager role to MANAGER",
+                "Fixed demo manager role to COMPANY_ADMIN",
                 user_id=existing_manager.id,
                 email=manager_email,
                 company_id=company.id
             )
     else:
-        create_user(db, manager_email, manager_password, full_name="Demo Manager", role="MANAGER", company_id=company.id)
+        create_user(db, manager_email, manager_password, full_name="Demo Manager", role="COMPANY_ADMIN", company_id=company.id)
         logger.info(
             "Demo manager created successfully",
             email=manager_email,
