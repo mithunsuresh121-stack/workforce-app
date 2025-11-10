@@ -335,5 +335,41 @@ class RedisService:
         # For now, rely on TTL expiration
         pass
 
+    async def get(self, key: str) -> Optional[str]:
+        """Get value from Redis by key"""
+        await self.ensure_connection()
+        if not self._initialized:
+            return None
+        try:
+            result = await self.redis.get(key)
+            return result.decode('utf-8') if result else None
+        except Exception as e:
+            logger.error("Failed to get from Redis", key=key, error=str(e))
+            return None
+
+    async def setex(self, key: str, seconds: int, value: str):
+        """Set value in Redis with expiration"""
+        await self.ensure_connection()
+        if not self._initialized:
+            return
+        try:
+            await self.redis.setex(key, seconds, value)
+            logger.debug("Setex in Redis", key=key, seconds=seconds)
+        except Exception as e:
+            logger.error("Failed to setex in Redis", key=key, error=str(e))
+
+    async def delete(self, key: str) -> int:
+        """Delete key from Redis"""
+        await self.ensure_connection()
+        if not self._initialized:
+            return 0
+        try:
+            deleted = await self.redis.delete(key)
+            logger.debug("Deleted from Redis", key=key, deleted=deleted)
+            return deleted
+        except Exception as e:
+            logger.error("Failed to delete from Redis", key=key, error=str(e))
+            return 0
+
 # Global Redis service instance
 redis_service = RedisService()

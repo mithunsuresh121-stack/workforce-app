@@ -31,6 +31,9 @@ from .channels import Channel, ChannelMember
 from .message_reactions import MessageReaction
 from .meetings import Meeting
 from .meeting_participants import MeetingParticipant
+from .vendor import Vendor
+from .purchase_order import PurchaseOrder
+from .inventory_item import InventoryItem
 
 __all__ = [
     "Company",
@@ -64,5 +67,8 @@ __all__ = [
     "ChannelMember",
     "MessageReaction",
     "Meeting",
-    "MeetingParticipant"
+    "MeetingParticipant",
+    "Vendor",
+    "PurchaseOrder",
+    "InventoryItem"
 ]
