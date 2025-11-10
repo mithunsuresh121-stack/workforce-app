@@ -87,7 +87,7 @@ uvicorn==0.30.6
 uvloop==0.21.0
 pandas==2.2.3
 vine==5.1.0
-watchfiles==1.1.0
+watchfiles==1.1.1
 wcwidth==0.2.13
 websockets==15.0.1
 reportlab==4.2.2
