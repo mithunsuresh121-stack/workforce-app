@@ -136,6 +136,9 @@ class WebSocketManager:
 
                 # Handle pong responses
                 if data.get("type") == "pong":
+                    # Update last pong received time for connection health
+                    self.last_activity[connection_key][user.id] = time.time()
+                    logger.debug("Received pong from user", user_id=user.id, room_type=room_type)
                     continue  # Heartbeat response, no further processing
 
                 await self.handle_message(websocket, data, room_type, room_id, user, db)
@@ -373,3 +376,14 @@ async def chat_websocket(websocket: WebSocket, channel_id: int, token: str = Que
 @router.websocket("/meetings/{meeting_id}")
 async def meeting_websocket(websocket: WebSocket, meeting_id: int, user=Depends(get_websocket_user), db: Session = Depends(get_db)):
     await ws_manager.connect(websocket, "meeting", meeting_id, user, db)
+
+# Notifications WebSocket route
+@router.websocket("/notifications")
+async def notifications_websocket(websocket: WebSocket, token: str = Query(...), db: Session = Depends(get_db)):
+    try:
+        user = get_current_user_from_token(token, db)
+    except Exception:
+        await websocket.close(code=4401, reason="Invalid token")
+        return
+
+    await ws_manager.connect(websocket, "notifications", user.id, user, db)

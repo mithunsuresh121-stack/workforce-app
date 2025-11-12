@@ -5,10 +5,10 @@ from enum import Enum as PyEnum
 from app.db import Base
 
 class PurchaseOrderStatus(str, PyEnum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    COMPLETED = "completed"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    COMPLETED = "COMPLETED"
 
 class PurchaseOrder(Base):
     __tablename__ = "purchase_orders"

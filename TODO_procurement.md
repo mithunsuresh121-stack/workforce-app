@@ -3,15 +3,17 @@
 ## Status: Core features complete; integrate procurement as new module with RBAC (Admin/Manager access)
 
 ### Backend Implementation
-- [ ] Create SQLAlchemy models: `backend/app/models/vendor.py`, `purchase_order.py`, `inventory_item.py`
-- [ ] Create Pydantic schemas: `backend/app/schemas/procurement.py`
-- [ ] Create FastAPI router: `backend/app/routers/procurement.py` (CRUD, approvals, bidding)
-- [ ] Create service: `backend/app/services/procurement_service.py` (business logic, Redis caching)
-- [ ] Create Alembic migration: `backend/alembic/versions/new_procurement_tables.py`
-- [ ] Create pytest tests: `backend/tests/test_procurement.py` (coverage >90%)
-- [ ] Update `backend/app/models/__init__.py` (import new models)
-- [ ] Update `backend/app/routers/__init__.py` (import procurement router)
-- [ ] Update `backend/app/main.py` (include procurement router)
+- [x] Create SQLAlchemy models: `backend/app/models/vendor.py`, `purchase_order.py`, `inventory_item.py`
+- [x] Create Pydantic schemas: `backend/app/schemas/procurement.py`
+- [x] Create FastAPI router: `backend/app/routers/procurement.py` (CRUD, approvals, bidding)
+- [x] Create service: `backend/app/services/procurement_service.py` (business logic, Redis caching)
+- [x] Create Alembic migration: `backend/alembic/versions/new_procurement_tables.py`
+- [x] Create pytest tests: `backend/tests/test_procurement.py` (coverage >90%)
+- [x] Update `backend/app/models/__init__.py` (import new models)
+- [x] Update `backend/app/routers/__init__.py` (import procurement router)
+- [x] Update `backend/app/main.py` (include procurement router)
+- [x] Fix updated_at field issue in models and services
+- [x] Fix E2E test for procurement flow
 
 ### Frontend Implementation
 - [ ] Create `frontend-web/web-app/src/pages/ProcurementDashboard.tsx` (charts with Recharts)

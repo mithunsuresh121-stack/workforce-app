@@ -286,10 +286,15 @@ class RedisService:
         try:
             redis_url = os.getenv("REDIS_URL") or self._build_redis_url()
             password = os.getenv('REDIS_PASSWORD', '').strip()
-            pool = await self.create_redis_pool(redis_url, password=password if password else None)
-            if not pool:
-                return
-            pubsub = await pool.pubsub()
+            pool = await aioredis.create_redis_pool(
+                redis_url,
+                password=password if password else None,
+                encoding='utf-8',
+                minsize=1,
+                maxsize=2,
+                timeout=5.0
+            )
+            pubsub = pool.pubsub()
             await pubsub.psubscribe(pattern)
             logger.info("Subscribed to Redis pattern", pattern=pattern)
             async for message in pubsub.listen():
@@ -346,6 +351,53 @@ class RedisService:
         except Exception as e:
             logger.error("Failed to get from Redis", key=key, error=str(e))
             return None
+
+    async def set_notification_cache(self, company_id: int, user_id: int, offset: int, limit: int, notifications: List[dict], ttl: int = 300) -> bool:
+        """Cache notifications for a user with pagination"""
+        if not self._initialized:
+            return False
+        key = f"notifications:{company_id}:{user_id}:{offset}:{limit}"
+        try:
+            import json
+            await self.redis.setex(key, ttl, json.dumps(notifications))
+            logger.debug("Cached notifications", company_id=company_id, user_id=user_id, offset=offset, limit=limit)
+            return True
+        except Exception as e:
+            logger.error("Failed to cache notifications", key=key, error=str(e))
+            return False
+
+    async def get_notification_cache(self, company_id: int, user_id: int, offset: int, limit: int) -> Optional[List[dict]]:
+        """Get cached notifications for a user with pagination"""
+        if not self._initialized:
+            return None
+        key = f"notifications:{company_id}:{user_id}:{offset}:{limit}"
+        try:
+            result = await self.redis.get(key)
+            if result:
+                import json
+                notifications = json.loads(result.decode('utf-8'))
+                logger.debug("Retrieved cached notifications", company_id=company_id, user_id=user_id, offset=offset, limit=limit)
+                return notifications
+            return None
+        except Exception as e:
+            logger.error("Failed to get cached notifications", key=key, error=str(e))
+            return None
+
+    async def invalidate_notification_cache(self, company_id: int, user_id: int) -> int:
+        """Invalidate all cached notifications for a user"""
+        if not self._initialized:
+            return 0
+        pattern = f"notifications:{company_id}:{user_id}:*"
+        try:
+            keys = await self.redis.keys(pattern)
+            if keys:
+                deleted = await self.redis.delete(*keys)
+                logger.info("Invalidated notification cache", company_id=company_id, user_id=user_id, keys_deleted=deleted)
+                return deleted
+            return 0
+        except Exception as e:
+            logger.error("Failed to invalidate notification cache", pattern=pattern, error=str(e))
+            return 0
 
     async def setex(self, key: str, seconds: int, value: str):
         """Set value in Redis with expiration"""

@@ -1,19 +1,17 @@
-# TODO List for Frontend Profile Update E2E Tests and Manual Testing Instructions
+# TODO List for Workforce App
 
-## Completed
-- Fixed test environment by separating Playwright and Vitest tests into different directories.
-- Updated playwright.config.js to point to e2e directory.
-- Fixed frontend Profile.jsx to correctly fetch and display profile data.
+## High Priority
+- [ ] Fix Failing WebSocket Test in useWebSocketNotifications.test.tsx
+  - [ ] Debug why `useWebSocketNotifications.tsx` doesn't set `connected` to `true`.
+  - [ ] Ensure WebSocket mock triggers `onopen` and `onmessage`.
+  - [ ] Mock connection state correctly.
+  - [ ] Update `useWebSocketNotifications.tsx` if needed (e.g., `onopen` logic).
+  - [ ] Run `npm test` to confirm all 20 tests pass.
+  - [ ] Update `TODO_integration.md` to mark fix complete.
 
-## Pending
-- Write Playwright end-to-end tests for profile update and approval workflow.
-  - Employee submits profile update request.
-  - Super Admin approves or rejects the request.
-  - Form validation tests.
-  - Employee views updated profile after approval.
-- Prepare manual testing instructions for profile update feature.
+## Medium Priority
+- [ ] Integrate frontend-backend features
+- [ ] Verify API endpoints
 
-## Next Steps
-- Run the new Playwright e2e tests to verify functionality.
-- Review and refine manual testing instructions.
-- Address any test failures or issues found during test runs.
+## Low Priority
+- [ ] Other tasks...

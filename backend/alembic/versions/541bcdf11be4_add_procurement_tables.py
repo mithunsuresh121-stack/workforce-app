@@ -20,10 +20,7 @@ depends_on: Union[str, Sequence[str], None] = None
 
 def upgrade() -> None:
     """Upgrade schema."""
-    # Create enums using raw SQL to handle if exists
-    op.execute("CREATE TYPE IF NOT EXISTS vendor_status AS ENUM ('active', 'inactive')")
-    op.execute("CREATE TYPE IF NOT EXISTS purchase_order_status AS ENUM ('pending', 'approved', 'rejected', 'completed')")
-    op.execute("CREATE TYPE IF NOT EXISTS inventory_status AS ENUM ('in_stock', 'low_stock', 'out_of_stock')")
+    # Enums are already created manually, so just create tables
 
     # Create vendors table
     op.create_table(
@@ -32,7 +29,7 @@ def upgrade() -> None:
         sa.Column('name', sa.String(), nullable=False),
         sa.Column('contact_email', sa.String(), nullable=False),
         sa.Column('phone', sa.String(), nullable=True),
-        sa.Column('status', vendor_status, nullable=False),
+        sa.Column('status', sa.Enum('active', 'inactive', name='vendor_status', create_type=False), nullable=False),
         sa.Column('company_id', sa.Integer(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
         sa.Column('updated_at', sa.DateTime(), nullable=True),
@@ -49,7 +46,7 @@ def upgrade() -> None:
         sa.Column('item_name', sa.String(), nullable=False),
         sa.Column('quantity', sa.Integer(), nullable=False),
         sa.Column('amount', sa.Float(), nullable=False),
-        sa.Column('status', po_status, nullable=False),
+        sa.Column('status', sa.Enum('PENDING', 'APPROVED', 'REJECTED', 'COMPLETED', name='purchase_order_status', create_type=False), nullable=False),
         sa.Column('approver_id', sa.Integer(), nullable=True),
         sa.Column('created_by', sa.Integer(), nullable=False),
         sa.Column('company_id', sa.Integer(), nullable=False),
@@ -72,7 +69,7 @@ def upgrade() -> None:
         sa.Column('quantity', sa.Integer(), nullable=False),
         sa.Column('unit_price', sa.Float(), nullable=False),
         sa.Column('expiry_date', sa.DateTime(), nullable=True),
-        sa.Column('status', inventory_status, nullable=False),
+        sa.Column('status', sa.Enum('in_stock', 'low_stock', 'out_of_stock', name='inventory_status', create_type=False), nullable=False),
         sa.Column('purchase_order_id', sa.Integer(), nullable=True),
         sa.Column('company_id', sa.Integer(), nullable=False),
         sa.Column('created_at', sa.DateTime(), server_default=sa.text('now()'), nullable=True),
@@ -86,17 +83,12 @@ def upgrade() -> None:
 
 def downgrade() -> None:
     """Downgrade schema."""
-    op.drop_index(op.f('ix_inventory_items_id'), table_name='inventory_items')
-    op.drop_table('inventory_items')
-    op.drop_index(op.f('ix_purchase_orders_id'), table_name='purchase_orders')
-    op.drop_table('purchase_orders')
-    op.drop_index(op.f('ix_vendors_id'), table_name='vendors')
-    op.drop_table('vendors')
+    # Drop tables if they exist
+    op.execute("DROP TABLE IF EXISTS inventory_items")
+    op.execute("DROP TABLE IF EXISTS purchase_orders")
+    op.execute("DROP TABLE IF EXISTS vendors")
 
     # Drop enums
-    inventory_status = sa.Enum('in_stock', 'low_stock', 'out_of_stock', name='inventory_status')
-    inventory_status.drop(op.get_bind())
-    po_status = sa.Enum('pending', 'approved', 'rejected', 'completed', name='purchase_order_status')
-    po_status.drop(op.get_bind())
-    vendor_status = sa.Enum('active', 'inactive', name='vendor_status')
-    vendor_status.drop(op.get_bind())
+    op.execute("DROP TYPE IF EXISTS inventory_status")
+    op.execute("DROP TYPE IF EXISTS purchase_order_status")
+    op.execute("DROP TYPE IF EXISTS vendor_status")

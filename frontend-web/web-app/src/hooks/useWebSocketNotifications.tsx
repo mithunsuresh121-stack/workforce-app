@@ -73,7 +73,9 @@ export default function useWebSocketNotifications(): UseWebSocketNotificationsRe
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const ws = new WebSocket(`ws://localhost:8000/ws/notifications?token=${token}`);
+    const wsUrl = import.meta.env.VITE_WS_URL || 'wss://api.workforce-app.com/ws/notifications?token=${token}';
+
+    const ws = new WebSocket(wsUrl);
 
     ws.onopen = () => {
       setConnected(true);
