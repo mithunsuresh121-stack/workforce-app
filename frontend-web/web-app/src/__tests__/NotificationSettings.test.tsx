@@ -1,34 +1,10 @@
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
-import axios from 'axios';
-import { vi } from 'vitest';
 import NotificationSettings from '../pages/NotificationSettings';
 import { AuthProvider } from '../contexts/AuthContext';
 
-// Mock axios
-vi.mock('axios', () => ({
-  default: {
-    create: vi.fn(() => ({
-      interceptors: {
-        request: { use: vi.fn() },
-        response: { use: vi.fn() }
-      },
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn()
-    })),
-    interceptors: {
-      request: { use: vi.fn() },
-      response: { use: vi.fn() }
-    },
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn()
-  }
-}));
+// Mock fetch and localStorage are set globally in setupTests.js
 
 describe('NotificationSettings', () => {
   beforeEach(() => {
@@ -36,14 +12,23 @@ describe('NotificationSettings', () => {
   });
 
   test('renders notification settings form', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: {
+    // Mock auth
+    (global.localStorage.getItem as any).mockReturnValue('fake-token');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
+    });
+
+    // Mock preferences get
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
         email_notifications: true,
         websocket_notifications: true,
         task_notifications: true,
         shift_notifications: false,
         general_notifications: true,
-      }
+      }),
     });
 
     render(
@@ -60,14 +45,23 @@ describe('NotificationSettings', () => {
   });
 
   test('loads and displays preferences correctly', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: {
+    // Mock auth
+    (global.localStorage.getItem as any).mockReturnValue('fake-token');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
+    });
+
+    // Mock preferences get
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
         email_notifications: true,
         websocket_notifications: false,
         task_notifications: true,
         shift_notifications: true,
         general_notifications: false,
-      }
+      }),
     });
 
     render(
@@ -86,16 +80,26 @@ describe('NotificationSettings', () => {
   });
 
   test('saves preferences successfully', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: {
+    // Mock auth
+    (global.localStorage.getItem as any).mockReturnValue('fake-token');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
+    });
+
+    // Mock preferences get
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
         email_notifications: true,
         websocket_notifications: true,
         task_notifications: true,
         shift_notifications: true,
         general_notifications: true,
-      }
+      }),
     });
-    axios.post.mockResolvedValueOnce({});
+    // Mock post
+    (global.fetch as any).mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) });
 
     render(
       <AuthProvider>
@@ -116,20 +120,42 @@ describe('NotificationSettings', () => {
       expect(screen.getByText('Notification preferences saved successfully!')).toBeInTheDocument();
     });
 
-    expect(axios.post).toHaveBeenCalledWith('/notification-preferences/', expect.any(Object));
-  });
-
-  test('handles save error', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: {
+    expect((global.fetch as any)).toHaveBeenCalledWith('/notification-preferences/', expect.objectContaining({
+      method: 'POST',
+      headers: expect.objectContaining({
+        'Content-Type': 'application/json',
+      }),
+      body: JSON.stringify({
         email_notifications: true,
         websocket_notifications: true,
         task_notifications: true,
         shift_notifications: true,
         general_notifications: true,
-      }
+      }),
+    }));
+  });
+
+  test('handles save error', async () => {
+    // Mock auth
+    (global.localStorage.getItem as any).mockReturnValue('fake-token');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
     });
-    axios.post.mockRejectedValueOnce(new Error('Save failed'));
+
+    // Mock preferences get
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
+        email_notifications: true,
+        websocket_notifications: true,
+        task_notifications: true,
+        shift_notifications: true,
+        general_notifications: true,
+      }),
+    });
+    // Mock post error
+    (global.fetch as any).mockRejectedValueOnce(new Error('Save failed'));
 
     render(
       <AuthProvider>
@@ -152,14 +178,23 @@ describe('NotificationSettings', () => {
   });
 
   test('toggles preferences correctly', async () => {
-    axios.get.mockResolvedValueOnce({
-      data: {
+    // Mock auth
+    (global.localStorage.getItem as any).mockReturnValue('fake-token');
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
+    });
+
+    // Mock preferences get
+    (global.fetch as any).mockResolvedValueOnce({
+      ok: true,
+      json: () => Promise.resolve({
         email_notifications: true,
         websocket_notifications: true,
         task_notifications: true,
         shift_notifications: true,
         general_notifications: true,
-      }
+      }),
     });
 
     render(

@@ -15,21 +15,64 @@ logger = structlog.get_logger(__name__)
 router = APIRouter()
 
 @router.get("/notifications/", response_model=List[NotificationOut])
-def get_notifications(
+async def get_notifications(
     type: str = None,
+    limit: int = 50,
+    offset: int = 0,
     db: Session = Depends(get_db),
     current_user = Depends(get_current_user)
 ):
-    """Get all notifications for the current user, optionally filtered by type"""
+    """Get notifications for the current user with caching and pagination"""
+    from app.services.redis_service import redis_service
+    import json
+
+    # Validate pagination parameters
+    if limit < 1:
+        limit = 50
+    if limit > 100:
+        limit = 100
+    if offset < 0:
+        offset = 0
+
+    company_id = current_user.company_id or 0  # Use 0 for superadmin
+
+    # Try to get from cache first
+    cached_notifications = await redis_service.get_notification_cache(company_id, current_user.id, offset, limit)
+    if cached_notifications:
+        logger.info("Serving notifications from cache", user_id=current_user.id, offset=offset, limit=limit)
+        return cached_notifications
+
+    # Cache miss - fetch from database
     query = db.query(Notification).filter(Notification.user_id == current_user.id)
 
-    if current_user.company_id is not None:
-        query = query.filter(Notification.company_id == current_user.company_id)
+    if company_id != 0:
+        query = query.filter(Notification.company_id == company_id)
 
     if type:
         query = query.filter(Notification.type == type)
 
-    notifications = query.order_by(Notification.created_at.desc()).all()
+    notifications = query.order_by(Notification.created_at.desc()).offset(offset).limit(limit).all()
+
+    # Convert to dict for caching
+    notifications_dict = [
+        {
+            "id": n.id,
+            "user_id": n.user_id,
+            "company_id": n.company_id,
+            "title": n.title,
+            "message": n.message,
+            "type": n.type,
+            "status": n.status.value if hasattr(n.status, 'value') else str(n.status),
+            "created_at": n.created_at.isoformat() if n.created_at else None,
+            "updated_at": n.updated_at.isoformat() if n.updated_at else None
+        }
+        for n in notifications
+    ]
+
+    # Cache the results
+    await redis_service.set_notification_cache(company_id, current_user.id, offset, limit, notifications_dict)
+
+    logger.info("Serving notifications from database", user_id=current_user.id, offset=offset, limit=limit)
     return notifications
 
 @router.post("/notifications/mark-read/{notification_id}")

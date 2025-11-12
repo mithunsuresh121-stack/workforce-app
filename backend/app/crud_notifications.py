@@ -23,6 +23,17 @@ def mark_notification_as_read(db: Session, notification_id: int, user_id: int, c
         notification.status = NotificationStatus.READ
         db.commit()
         db.refresh(notification)
+
+        # Invalidate cache for this user to ensure fresh data on next fetch
+        from app.services.redis_service import redis_service
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(redis_service.invalidate_notification_cache(company_id, user_id))
+        except RuntimeError:
+            # No running event loop, skip async operation
+            pass
+
     return notification
 
 def create_notification(db: Session, user_id: int, company_id: int, title: str, message: str, type: str) -> Optional[Notification]:
@@ -48,6 +59,16 @@ def create_notification(db: Session, user_id: int, company_id: int, title: str, 
         _send_push_notification_if_enabled(db, user_id, company_id, notification.id, title, message, type)
         # Send email notification if enabled
         _send_email_notification_if_enabled(db, user_id, notification.id, title, message, type)
+
+        # Invalidate cache for this user to ensure fresh data includes new notification
+        from app.services.redis_service import redis_service
+        import asyncio
+        try:
+            loop = asyncio.get_running_loop()
+            loop.create_task(redis_service.invalidate_notification_cache(company_id, user_id))
+        except RuntimeError:
+            # No running event loop, skip async operation
+            pass
 
     return notification
 

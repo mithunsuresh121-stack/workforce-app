@@ -100,7 +100,12 @@ async def log_requests(request: Request, call_next):
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # Allow frontend origin explicitly
+    allow_origins=[
+        "http://localhost:3000",  # Development frontend
+        "https://app.workforce.com",  # Production frontend
+        "https://workforce-app.com",  # Alternative production domain
+        "https://app.workforce-app.com",  # Specified production frontend
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -115,7 +120,7 @@ app.include_router(leaves.router, prefix="/api")
 app.include_router(shifts.router, prefix="/api")
 app.include_router(payroll.router, prefix="/api")
 app.include_router(attendance.router, prefix="/api")
-app.include_router(notifications, prefix="/api/notifications")
+app.include_router(notifications, prefix="/api")
 app.include_router(notification_preferences.router, prefix="/api")
 app.include_router(profile.router, prefix="/api")
 app.include_router(documents, prefix="/api/documents")
@@ -204,6 +209,17 @@ def welcome_endpoint(request: Request):
         remote_addr=request.client.host if request.client else None
     )
     return {"message": "Welcome to the Workforce App!"}
+
+@app.get("/hello")
+def hello_endpoint(request: Request):
+    logger.info(
+        "Hello endpoint accessed",
+        method=request.method,
+        path=request.url.path,
+        user_agent=request.headers.get("user-agent", ""),
+        remote_addr=request.client.host if request.client else None
+    )
+    return {"message": "Hello, welcome to the Workforce API!"}
 
 @app.get("/metrics")
 def metrics_endpoint():

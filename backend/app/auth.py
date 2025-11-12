@@ -3,6 +3,7 @@ import bcrypt
 from jose import jwt
 from app.config import settings
 import structlog
+import secrets
 
 logger = structlog.get_logger(__name__)
 
@@ -27,15 +28,18 @@ def create_access_token(sub: str, company_id: int | None, role: str, expires_min
     return token
 
 def create_refresh_token(sub: str, company_id: int | None, role: str) -> str:
+    # Generate a unique token identifier to avoid duplicates
+    token_id = secrets.token_urlsafe(32)
     payload = {
         "sub": sub,
         "company_id": company_id,
         "role": role,
         "type": "refresh",
+        "token_id": token_id,
         "exp": datetime.utcnow() + timedelta(days=7)  # 7 days expiry
     }
     token = jwt.encode(payload, settings.JWT_REFRESH_SECRET, algorithm=settings.JWT_ALG)
-    logger.info("Refresh token created", user_email=sub, company_id=company_id, role=role)
+    logger.info("Refresh token created", user_email=sub, company_id=company_id, role=role, token_id=token_id)
     return token
 
 def verify_refresh_token(token: str) -> dict | None:

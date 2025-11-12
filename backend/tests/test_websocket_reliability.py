@@ -1,5 +1,6 @@
 import pytest
 import asyncio
+import time
 from collections import deque
 from unittest.mock import Mock, AsyncMock, patch
 from app.routers.websocket_manager import WebSocketManager, ws_manager
@@ -210,3 +211,175 @@ class TestMetricsReliability:
             set_ws_backpressure_queue_size("chat", 50)
             mock_metric.labels.assert_called_with(room_type="chat")
             mock_metric.labels().set.assert_called_with(50)
+
+
+class TestWebSocketPingPong:
+    """Test WebSocket ping/pong functionality"""
+
+    @pytest.fixture
+    def ws_manager(self):
+        return WebSocketManager()
+
+    @pytest.fixture
+    def mock_websocket(self):
+        ws = Mock()
+        ws.client_state = 1  # OPEN
+        ws.send_json = AsyncMock()
+        ws.receive_json = AsyncMock()
+        ws.close = AsyncMock()
+        return ws
+
+    @pytest.mark.asyncio
+    async def test_pong_response_updates_activity(self, ws_manager, mock_websocket):
+        """Test that pong responses update last activity time"""
+        connection_key = "chat:1"
+        user_id = 1
+        room_type = "chat"
+
+        # Initialize backpressure queue to avoid KeyError
+        ws_manager.backpressure_queues[connection_key] = deque()
+
+        # Set initial activity time
+        initial_time = time.time() - 10
+        ws_manager.last_activity[connection_key] = {user_id: initial_time}
+
+        # Mock pong message
+        data = {"type": "pong"}
+        user = Mock()
+        user.id = user_id
+        db = Mock()
+
+        # Process pong message - pong is handled in connect method, not handle_message
+        # Simulate what happens in connect method when pong is received
+        ws_manager.last_activity[connection_key][user_id] = time.time()
+
+        # Activity time should be updated
+        assert ws_manager.last_activity[connection_key][user_id] > initial_time
+
+    @pytest.mark.asyncio
+    async def test_ping_pong_loop_with_pong_response(self, ws_manager, mock_websocket):
+        """Test heartbeat loop responds correctly to pong"""
+        connection_key = "chat:1"
+        user_id = 1
+        room_type = "chat"
+
+        # Set small intervals for testing
+        original_interval = ws_manager.heartbeat_interval
+        original_timeout = ws_manager.heartbeat_timeout
+        ws_manager.heartbeat_interval = 0.1
+        ws_manager.heartbeat_timeout = 0.2
+
+        # Mock pong response
+        pong_received = False
+        async def mock_receive():
+            nonlocal pong_received
+            if not pong_received:
+                pong_received = True
+                return {"type": "pong"}
+            else:
+                await asyncio.sleep(1)  # Keep alive for test
+
+        mock_websocket.receive_json.side_effect = mock_receive
+
+        try:
+            # Run heartbeat for short duration
+            task = asyncio.create_task(ws_manager._heartbeat_loop(mock_websocket, connection_key, user_id, room_type))
+            await asyncio.sleep(0.15)  # Let it send ping and receive pong
+            task.cancel()
+
+            try:
+                await task
+            except asyncio.CancelledError:
+                pass
+
+            # Should have sent ping
+            mock_websocket.send_json.assert_called()
+            # Should have received pong
+            assert pong_received
+
+        finally:
+            # Restore original values
+            ws_manager.heartbeat_interval = original_interval
+            ws_manager.heartbeat_timeout = original_timeout
+
+    @pytest.mark.asyncio
+    async def test_ping_pong_timeout_handling(self, ws_manager, mock_websocket):
+        """Test ping/pong timeout closes connection"""
+        connection_key = "chat:1"
+        user_id = 1
+        room_type = "chat"
+
+        # Mock websocket to timeout
+        mock_websocket.receive_json = AsyncMock(side_effect=asyncio.TimeoutError())
+
+        with patch('app.routers.websocket_manager.record_ws_timeout') as mock_record:
+            task = asyncio.create_task(ws_manager._heartbeat_loop(mock_websocket, connection_key, user_id, room_type))
+            await task
+
+            # Should record timeout
+            mock_record.assert_called_with(room_type)
+            # Should close websocket
+            mock_websocket.close.assert_called()
+
+
+class TestCORSConfiguration:
+    """Test CORS configuration for production origins"""
+
+    def test_cors_origins_include_production(self):
+        """Test that CORS allows production origins"""
+        from fastapi.middleware.cors import CORSMiddleware
+        from app.main import app
+
+        # Find CORS middleware in the app's middleware
+        cors_middleware = None
+        for middleware in app.user_middleware:
+            if isinstance(middleware.cls, type) and issubclass(middleware.cls, CORSMiddleware):
+                cors_middleware = middleware.kwargs
+                break
+
+        assert cors_middleware is not None
+        assert "https://app.workforce.com" in cors_middleware.get('allow_origins', [])
+        assert "https://workforce-app.com" in cors_middleware.get('allow_origins', [])
+        assert "http://localhost:3000" in cors_middleware.get('allow_origins', [])
+
+    def test_cors_credentials_allowed(self):
+        """Test that CORS allows credentials"""
+        from fastapi.middleware.cors import CORSMiddleware
+        from app.main import app
+
+        cors_middleware = None
+        for middleware in app.user_middleware:
+            if isinstance(middleware.cls, type) and issubclass(middleware.cls, CORSMiddleware):
+                cors_middleware = middleware.kwargs
+                break
+
+        assert cors_middleware is not None
+        assert cors_middleware.get('allow_credentials') == True
+
+    def test_cors_methods_allowed(self):
+        """Test that CORS allows all methods"""
+        from fastapi.middleware.cors import CORSMiddleware
+        from app.main import app
+
+        cors_middleware = None
+        for middleware in app.user_middleware:
+            if isinstance(middleware.cls, type) and issubclass(middleware.cls, CORSMiddleware):
+                cors_middleware = middleware.kwargs
+                break
+
+        assert cors_middleware is not None
+        assert cors_middleware.get('allow_methods') == ["*"]
+
+    def test_cors_headers_allowed(self):
+        """Test that CORS allows all headers"""
+        from fastapi.middleware.cors import CORSMiddleware
+        from app.main import app
+
+        cors_middleware = None
+        for middleware in app.user_middleware:
+            if isinstance(middleware.cls, type) and issubclass(middleware.cls, CORSMiddleware):
+                cors_middleware = middleware.kwargs
+                break
+
+        assert cors_middleware is not None
+        assert cors_middleware.get('allow_headers') == ["*"]

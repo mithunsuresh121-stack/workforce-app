@@ -29,7 +29,8 @@ const NotificationSettings: React.FC = () => {
       try {
         setLoading(true);
         const response = await api.get('/notification-preferences/');
-        setPreferences(response.data);
+        const data = await response.json();
+        setPreferences(data);
       } catch (err) {
         console.error('Failed to load preferences:', err);
         // Keep default preferences if fetch fails

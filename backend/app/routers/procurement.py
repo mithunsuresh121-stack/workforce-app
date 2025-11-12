@@ -72,6 +72,17 @@ def get_purchase_orders(
 ):
     return ProcurementService.get_purchase_orders(db, current_user.company_id, status)
 
+@router.get("/purchase-orders/{po_id}", response_model=PurchaseOrderOut)
+def get_purchase_order(
+    po_id: int,
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user)
+):
+    po = ProcurementService.get_purchase_order(db, po_id, current_user.company_id)
+    if not po:
+        raise HTTPException(status_code=404, detail="Purchase order not found")
+    return po
+
 @router.post("/purchase-orders/{po_id}/approve", response_model=PurchaseOrderOut)
 def approve_purchase_order(
     po_id: int,

@@ -6,7 +6,8 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:connectivity_plus/connectivity_plus.dart';
 
 class ApiService {
-  static const String baseUrl = 'http://localhost:8000';
+  static const String baseUrl = 'https://api.workforce-app.com';
+  static const String wsUrl = 'wss://api.workforce-app.com/ws/notifications';
   final FlutterSecureStorage _secureStorage = const FlutterSecureStorage();
   late FirebaseMessaging _firebaseMessaging;
   final Connectivity _connectivity = Connectivity();

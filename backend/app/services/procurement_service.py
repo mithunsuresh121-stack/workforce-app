@@ -1,6 +1,7 @@
 import structlog
 from sqlalchemy.orm import Session
 from typing import List, Optional
+from datetime import datetime
 from app.models.vendor import Vendor, VendorStatus
 from app.models.purchase_order import PurchaseOrder, PurchaseOrderStatus
 from app.models.inventory_item import InventoryItem, InventoryStatus
@@ -17,6 +18,7 @@ class ProcurementService:
     @staticmethod
     def create_vendor(db: Session, vendor_data: VendorCreate, company_id: int) -> Vendor:
         vendor = Vendor(**vendor_data.model_dump(), company_id=company_id)
+        vendor.updated_at = datetime.utcnow()
         db.add(vendor)
         db.commit()
         db.refresh(vendor)
@@ -55,6 +57,7 @@ class ProcurementService:
     @staticmethod
     def create_purchase_order(db: Session, po_data: PurchaseOrderCreate, created_by: int, company_id: int) -> PurchaseOrder:
         po = PurchaseOrder(**po_data.model_dump(), created_by=created_by, company_id=company_id)
+        po.updated_at = datetime.utcnow()
         db.add(po)
         db.commit()
         db.refresh(po)
@@ -67,6 +70,10 @@ class ProcurementService:
         if status:
             query = query.filter(PurchaseOrder.status == status)
         return query.all()
+
+    @staticmethod
+    def get_purchase_order(db: Session, po_id: int, company_id: int) -> Optional[PurchaseOrder]:
+        return db.query(PurchaseOrder).filter(PurchaseOrder.id == po_id, PurchaseOrder.company_id == company_id).first()
 
     @staticmethod
     def approve_purchase_order(db: Session, po_id: int, approver: User, company_id: int) -> Optional[PurchaseOrder]:

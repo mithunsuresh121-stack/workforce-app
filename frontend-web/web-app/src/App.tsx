@@ -1,5 +1,7 @@
 import React, { Suspense, lazy } from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { AuthProvider } from './contexts/AuthContext';
 import ProtectedRoute from './components/ProtectedRoute';
 import Layout from './components/Layout';
 
@@ -97,15 +99,27 @@ function App() {
     </Suspense>
   );
 
+  const queryClient = new QueryClient();
+
   // If we're in a test environment, don't wrap with Router
   if (process.env.NODE_ENV === 'test') {
-    return <AppRoutes />;
+    return (
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AppRoutes />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
   }
 
   return (
-    <Router>
-      <AppRoutes />
-    </Router>
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <Router>
+          <AppRoutes />
+        </Router>
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }
 

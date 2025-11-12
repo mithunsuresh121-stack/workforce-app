@@ -8,10 +8,10 @@ class VendorStatus(str, Enum):
     INACTIVE = "inactive"
 
 class PurchaseOrderStatus(str, Enum):
-    PENDING = "pending"
-    APPROVED = "approved"
-    REJECTED = "rejected"
-    COMPLETED = "completed"
+    PENDING = "PENDING"
+    APPROVED = "APPROVED"
+    REJECTED = "REJECTED"
+    COMPLETED = "COMPLETED"
 
 class InventoryStatus(str, Enum):
     IN_STOCK = "in_stock"

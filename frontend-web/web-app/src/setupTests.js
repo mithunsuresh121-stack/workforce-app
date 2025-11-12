@@ -2,47 +2,28 @@ import { expect, afterEach, vi } from 'vitest';
 import { cleanup } from '@testing-library/react';
 import '@testing-library/jest-dom';
 
-// Mock axios globally
-vi.mock('axios', () => {
-  const mockAxios = {
-    create: vi.fn(() => ({
-      interceptors: {
-        request: { use: vi.fn() },
-        response: { use: vi.fn() }
-      },
-      get: vi.fn(),
-      post: vi.fn(),
-      put: vi.fn(),
-      delete: vi.fn()
-    })),
-    interceptors: {
-      request: { use: vi.fn() },
-      response: { use: vi.fn() }
-    },
-    get: vi.fn(),
-    post: vi.fn(),
-    put: vi.fn(),
-    delete: vi.fn()
-  };
-  return {
-    default: mockAxios,
-    __esModule: true
-  };
-});
+// Global mocks for consistent testing
+global.fetch = vi.fn();
+global.localStorage = {
+  getItem: vi.fn(),
+  setItem: vi.fn(),
+  removeItem: vi.fn(),
+  clear: vi.fn(),
+};
 
 // Mock WebSocket globally
-vi.mock('ws', () => {
-  return {
-    default: vi.fn().mockImplementation(() => ({
-      on: vi.fn(),
-      off: vi.fn(),
-      send: vi.fn(),
-      close: vi.fn(),
-      readyState: 1 // OPEN
-    })),
-    __esModule: true
-  };
-});
+class MockWebSocket {
+  constructor() {
+    // Keep reference to the last instance for testing
+    global.lastMockWebSocket = this;
+    // Do not auto-call onopen; let tests control it
+  }
+
+  send() {}
+  close() {}
+}
+
+global.WebSocket = MockWebSocket;
 
 // Extend Vitest's expect with jest-dom matchers
 // Cleanup after each test case (e.g. clearing jsdom)
