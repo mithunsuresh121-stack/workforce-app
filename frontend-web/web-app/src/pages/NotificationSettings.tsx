@@ -109,6 +109,7 @@ const NotificationSettings: React.FC = () => {
                 <input
                   type="checkbox"
                   className="sr-only peer"
+                  data-testid="toggle-email_notifications"
                   checked={preferences.email_notifications}
                   onChange={(e) => handlePreferenceChange('email_notifications', e.target.checked)}
                 />
@@ -128,6 +129,7 @@ const NotificationSettings: React.FC = () => {
                 <input
                   type="checkbox"
                   className="sr-only peer"
+                  data-testid="toggle-websocket_notifications"
                   checked={preferences.websocket_notifications}
                   onChange={(e) => handlePreferenceChange('websocket_notifications', e.target.checked)}
                 />
@@ -150,6 +152,7 @@ const NotificationSettings: React.FC = () => {
                 <input
                   type="checkbox"
                   className="sr-only peer"
+                  data-testid="toggle-task_notifications"
                   checked={preferences.task_notifications}
                   onChange={(e) => handlePreferenceChange('task_notifications', e.target.checked)}
                 />
@@ -166,6 +169,7 @@ const NotificationSettings: React.FC = () => {
                 <input
                   type="checkbox"
                   className="sr-only peer"
+                  data-testid="toggle-shift_notifications"
                   checked={preferences.shift_notifications}
                   onChange={(e) => handlePreferenceChange('shift_notifications', e.target.checked)}
                 />
@@ -182,6 +186,7 @@ const NotificationSettings: React.FC = () => {
                 <input
                   type="checkbox"
                   className="sr-only peer"
+                  data-testid="toggle-general_notifications"
                   checked={preferences.general_notifications}
                   onChange={(e) => handlePreferenceChange('general_notifications', e.target.checked)}
                 />

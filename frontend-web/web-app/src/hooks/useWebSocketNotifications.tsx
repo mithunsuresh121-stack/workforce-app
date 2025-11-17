@@ -34,12 +34,12 @@ export default function useWebSocketNotifications(): UseWebSocketNotificationsRe
     try {
       setLoading(true);
       setError(null);
-      const response = await fetch('/api/notifications/', {
+      const response = await fetch('http://localhost:3000/api/notifications/', {
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
         },
       });
-      if (!response.ok) throw new Error('Failed to fetch notifications');
+      if (!response.ok) throw new Error('Failed to load notifications');
       const data = await response.json();
       setNotifications(data);
     } catch (err) {
@@ -51,7 +51,7 @@ export default function useWebSocketNotifications(): UseWebSocketNotificationsRe
 
   const markAsRead = useCallback(async (id: string) => {
     try {
-      const response = await fetch(`/api/notifications/mark-read/${id}`, {
+      const response = await fetch(`http://localhost:3000/api/notifications/mark-read/${id}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`,
@@ -73,7 +73,7 @@ export default function useWebSocketNotifications(): UseWebSocketNotificationsRe
     const token = localStorage.getItem('token');
     if (!token) return;
 
-    const wsUrl = import.meta.env.VITE_WS_URL || 'wss://api.workforce-app.com/ws/notifications?token=${token}';
+    const wsUrl = import.meta.env.VITE_WS_URL || `wss://api.workforce-app.com/ws/notifications?token=${token}`;
 
     const ws = new WebSocket(wsUrl);
 
@@ -116,6 +116,9 @@ export default function useWebSocketNotifications(): UseWebSocketNotificationsRe
 
   useEffect(() => {
     fetchNotifications();
+  }, [fetchNotifications]);
+
+  useEffect(() => {
     connectWebSocket();
 
     return () => {
@@ -123,7 +126,7 @@ export default function useWebSocketNotifications(): UseWebSocketNotificationsRe
         wsRef.current.close();
       }
     };
-  }, [fetchNotifications, connectWebSocket]);
+  }, [connectWebSocket, user]);
 
   return {
     notifications,

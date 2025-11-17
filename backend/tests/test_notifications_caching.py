@@ -194,3 +194,21 @@ class TestNotificationCaching:
                 # Cache key should use 0
                 # Database query should not filter by company_id
                 mock_db.query.return_value.filter.assert_called_once()  # Only user_id filter
+
+    @pytest.mark.asyncio
+    async def test_publish_to_redis_endpoint(self, mock_user):
+        """Test the /api/notifications/publish endpoint"""
+        from app.routers.notifications import publish_to_redis
+
+        channel = "test-channel"
+        message = "test message"
+
+        # Mock redis_service.publish
+        with patch('app.services.redis_service.redis_service.publish', new_callable=AsyncMock) as mock_publish:
+            result = await publish_to_redis(channel=channel, message=message, current_user=mock_user)
+
+            # Verify publish was called with correct args
+            mock_publish.assert_called_once_with(channel, message)
+
+            # Verify response
+            assert result == {"status": "published", "channel": channel}

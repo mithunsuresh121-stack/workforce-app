@@ -7,6 +7,7 @@
 - [ ] Run API schema validation using /docs or /openapi.json
 - [x] Ensure CORS settings allow frontend and mobile origins (backend optimizations complete)
 - [x] Add new /hello endpoint with logging (logs request method and path, returns JSON welcome message)
+- [x] Add /api/notifications/publish endpoint for Redis pub/sub testing (logs request metadata, publishes to Redis channel)
 
 ## 2. Frontend (React) Verification
 - [x] Check Dashboard.jsx for live data fetch from backend (useProcurement.ts uses env vars)
