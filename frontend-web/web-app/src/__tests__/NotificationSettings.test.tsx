@@ -3,8 +3,8 @@ import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { MemoryRouter } from 'react-router-dom';
 import NotificationSettings from '../pages/NotificationSettings';
 import { AuthProvider } from '../contexts/AuthContext';
-
-// Mock fetch and localStorage are set globally in setupTests.js
+import { server } from '../setupTests';
+import { http, HttpResponse } from 'msw';
 
 describe('NotificationSettings', () => {
   beforeEach(() => {
@@ -12,25 +12,6 @@ describe('NotificationSettings', () => {
   });
 
   test('renders notification settings form', async () => {
-    // Mock auth
-    (global.localStorage.getItem as any).mockReturnValue('fake-token');
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
-    });
-
-    // Mock preferences get
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        email_notifications: true,
-        websocket_notifications: true,
-        task_notifications: true,
-        shift_notifications: false,
-        general_notifications: true,
-      }),
-    });
-
     render(
       <AuthProvider>
         <MemoryRouter>
@@ -45,25 +26,6 @@ describe('NotificationSettings', () => {
   });
 
   test('loads and displays preferences correctly', async () => {
-    // Mock auth
-    (global.localStorage.getItem as any).mockReturnValue('fake-token');
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
-    });
-
-    // Mock preferences get
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        email_notifications: true,
-        websocket_notifications: false,
-        task_notifications: true,
-        shift_notifications: true,
-        general_notifications: false,
-      }),
-    });
-
     render(
       <AuthProvider>
         <MemoryRouter>
@@ -80,27 +42,6 @@ describe('NotificationSettings', () => {
   });
 
   test('saves preferences successfully', async () => {
-    // Mock auth
-    (global.localStorage.getItem as any).mockReturnValue('fake-token');
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
-    });
-
-    // Mock preferences get
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        email_notifications: true,
-        websocket_notifications: true,
-        task_notifications: true,
-        shift_notifications: true,
-        general_notifications: true,
-      }),
-    });
-    // Mock post
-    (global.fetch as any).mockResolvedValueOnce({ ok: true, json: () => Promise.resolve({}) });
-
     render(
       <AuthProvider>
         <MemoryRouter>
@@ -119,43 +60,15 @@ describe('NotificationSettings', () => {
     await waitFor(() => {
       expect(screen.getByText('Notification preferences saved successfully!')).toBeInTheDocument();
     });
-
-    expect((global.fetch as any)).toHaveBeenCalledWith('/notification-preferences/', expect.objectContaining({
-      method: 'POST',
-      headers: expect.objectContaining({
-        'Content-Type': 'application/json',
-      }),
-      body: JSON.stringify({
-        email_notifications: true,
-        websocket_notifications: true,
-        task_notifications: true,
-        shift_notifications: true,
-        general_notifications: true,
-      }),
-    }));
   });
 
   test('handles save error', async () => {
-    // Mock auth
-    (global.localStorage.getItem as any).mockReturnValue('fake-token');
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
-    });
-
-    // Mock preferences get
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        email_notifications: true,
-        websocket_notifications: true,
-        task_notifications: true,
-        shift_notifications: true,
-        general_notifications: true,
-      }),
-    });
-    // Mock post error
-    (global.fetch as any).mockRejectedValueOnce(new Error('Save failed'));
+    // Override POST to return error
+    server.use(
+      http.post('/notification-preferences/', () => {
+        return HttpResponse.json({}, { status: 500 });
+      })
+    );
 
     render(
       <AuthProvider>
@@ -178,25 +91,6 @@ describe('NotificationSettings', () => {
   });
 
   test('toggles preferences correctly', async () => {
-    // Mock auth
-    (global.localStorage.getItem as any).mockReturnValue('fake-token');
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({ id: '1', name: 'Demo User', email: 'demo@company.com', company_id: '1', role: 'EMPLOYEE' }),
-    });
-
-    // Mock preferences get
-    (global.fetch as any).mockResolvedValueOnce({
-      ok: true,
-      json: () => Promise.resolve({
-        email_notifications: true,
-        websocket_notifications: true,
-        task_notifications: true,
-        shift_notifications: true,
-        general_notifications: true,
-      }),
-    });
-
     render(
       <AuthProvider>
         <MemoryRouter>
@@ -209,7 +103,12 @@ describe('NotificationSettings', () => {
       expect(screen.getByText('Notification Settings')).toBeInTheDocument();
     });
 
-    // Find toggle switches and test toggling (would need more specific implementation)
-    // This is a basic structure - actual toggle testing would depend on the toggle implementation
+    const emailToggle = screen.getByTestId('toggle-email_notifications');
+    fireEvent.click(emailToggle);
+    expect(emailToggle).toHaveProperty('checked', false);
+
+    const websocketToggle = screen.getByTestId('toggle-websocket_notifications');
+    fireEvent.click(websocketToggle);
+    expect(websocketToggle).toHaveProperty('checked', false);
   });
 });

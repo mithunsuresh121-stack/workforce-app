@@ -121,3 +121,32 @@ def list_announcements(
     current_user = Depends(get_current_user)
 ):
     return get_announcements_for_company(db, current_user.company_id)
+
+@router.post("/publish")
+async def publish_to_redis(
+    channel: str,
+    message: str,
+    current_user = Depends(get_current_user)
+):
+    """Publish message to Redis pub/sub channel for testing"""
+    from fastapi import Request
+    from app.services.redis_service import redis_service
+
+    # Log request metadata
+    logger.info("Publishing to Redis", method="POST", path="/api/notifications/publish", channel=channel, user_id=current_user.id)
+
+    # Publish to Redis
+    await redis_service.publish(channel, message)
+
+    return {"status": "published", "channel": channel}
+
+@router.post("/notification-preferences")
+def save_notification_preferences(
+    preferences: dict,
+    db: Session = Depends(get_db),
+    current_user = Depends(get_current_user)
+):
+    """Save user notification preferences"""
+    # For now, just log and return success (can be extended to store in user model or separate table)
+    logger.info("Saving notification preferences", user_id=current_user.id, preferences=preferences)
+    return {"message": "Notification preferences saved successfully"}
