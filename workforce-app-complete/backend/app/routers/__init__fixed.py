@@ -1,0 +1,12 @@
+from app.auth import router as auth_router
+from app.tasks import router as tasks_router
+from app.companies import router as companies_router
+from app.dashboard import router as dashboard_router
+from app.profile_fixed import router as profile_router
+from app.employees import router as employees_router
+from app.leaves import router as leaves_router
+from app.shifts import router as shifts_router
+from app.payroll import router as payroll_router
+from app.attendance import router as attendance_router
+from app.notifications import router as notifications_router
+from app.notification_preferences import router as notification_preferences_router

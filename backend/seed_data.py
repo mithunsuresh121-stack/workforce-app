@@ -16,6 +16,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
 
 from app.models.user import User
 from app.models.company import Company
+from app.models.company_settings import CompanySettings
 from app.models.employee_profile import EmployeeProfile
 from app.models.payroll import Employee as PayrollEmployee
 from app.models.leave import Leave
@@ -58,7 +59,7 @@ def seed_approval_data():
                 email="manager@test.com",
                 password="password123",
                 full_name="Test Manager",
-                role="MANAGER",
+                role="manager",
                 company_id=company.id
             )
             create_employee_profile(
@@ -80,7 +81,7 @@ def seed_approval_data():
                 email="employee@test.com",
                 password="password123",
                 full_name="Test Employee",
-                role="EMPLOYEE",
+                role="employee",
                 company_id=company.id
             )
             create_employee_profile(

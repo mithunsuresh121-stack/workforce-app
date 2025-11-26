@@ -1,0 +1,87 @@
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-workforce}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-workforce_pw}
+      POSTGRES_DB: ${POSTGRES_DB:-workforce}
+    ports: ["5432:5432"]
+    volumes: [ "pgdata:/var/lib/postgresql/data" ]
+
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redisdata:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-workforce_redis_pw}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-workforce_redis_pw}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      replicas: 3
+
+  backend:
+    build: ./backend
+    env_file: .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    ports: ["8000:8000"]
+    command: uvicorn app.main:app --host 0.0.0.0 --port 8000
+    environment:
+      - PYTHONPATH=/app
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-workforce_redis_pw}
+
+  backend-migrate:
+    build: ./backend
+    env_file: .env
+    depends_on: [postgres]
+    command: bash -c "alembic upgrade head && python seed_data.py"
+    environment:
+      - PYTHONPATH=/app
+
+  backend-test:
+    build: ./backend
+    env_file: .env
+    depends_on: [postgres, backend-migrate]
+    command: pytest tests/ -v --tb=short
+    environment:
+      - PYTHONPATH=/app
+
+  flutter-frontend:
+    build: ./frontend
+    ports: ["5173:5173"]
+    environment:
+      - BACKEND_BASE_URL=http://backend:8000
+    depends_on: [backend]
+    command: bash -lc "flutter pub get && flutter run -d web-server --web-port 5173 --web-hostname 0.0.0.0"
+
+  react-web-app:
+    build: ./frontend/web-app
+    ports: ["3000:3000"]
+    environment:
+      - REACT_APP_API_URL=http://backend:8000
+      - CHOKIDAR_USEPOLLING=true
+    depends_on: [backend]
+    volumes:
+      - ./frontend/web-app:/app
+      - /app/node_modules
+    command: npm start
+
+  react-test:
+    build: ./frontend/web-app
+    depends_on: [react-web-app]
+    command: npm run test:e2e
+    environment:
+      - CI=true
+
+volumes:
+  pgdata:
+  redisdata:
