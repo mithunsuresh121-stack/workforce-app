@@ -1,5 +1,9 @@
 # Import all models to ensure they are registered with SQLAlchemy
 from .company import Company
+from .company_settings import CompanySettings
+from .audit_log import AuditLog
+from .audit_chain import AuditChain
+from .approval_queue import ApprovalQueue, ApprovalQueueItem
 from .company_department import CompanyDepartment
 from .company_team import CompanyTeam
 from .user import User
@@ -37,6 +41,9 @@ from .inventory_item import InventoryItem
 
 __all__ = [
     "Company",
+    "CompanySettings",
+    "AuditLog",
+    "AuditChain",
     "CompanyDepartment",
     "CompanyTeam",
     "User",

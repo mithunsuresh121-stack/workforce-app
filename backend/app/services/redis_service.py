@@ -284,22 +284,13 @@ class RedisService:
         if not self._initialized:
             return
         try:
-            redis_url = os.getenv("REDIS_URL") or self._build_redis_url()
-            password = os.getenv('REDIS_PASSWORD', '').strip()
-            pool = await aioredis.create_redis_pool(
-                redis_url,
-                password=password if password else None,
-                encoding='utf-8',
-                minsize=1,
-                maxsize=2,
-                timeout=5.0
-            )
-            pubsub = pool.pubsub()
-            await pubsub.psubscribe(pattern)
-            logger.info("Subscribed to Redis pattern", pattern=pattern)
-            async for message in pubsub.listen():
-                if message['type'] == 'pmessage':
-                    await callback(message['data'])
+            async with self.pubsub.acquire() as conn:
+                pubsub = conn.pubsub()
+                await pubsub.psubscribe(pattern)
+                logger.info("Subscribed to Redis pattern", pattern=pattern)
+                async for message in pubsub.listen():
+                    if message['type'] == 'pmessage':
+                        await callback(message['data'])
         except Exception as e:
             logger.error("Failed to psubscribe to Redis pattern", pattern=pattern, error=str(e), exc_info=True)
 

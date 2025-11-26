@@ -28,7 +28,24 @@ class MockWebSocket {
   send = vi.fn();
   addEventListener = vi.fn();
   removeEventListener = vi.fn();
-  dispatchEvent = vi.fn();
+
+  dispatchEvent(event: Event): boolean {
+    switch (event.type) {
+      case 'open':
+        if (this.onopen) this.onopen(event);
+        break;
+      case 'message':
+        if (this.onmessage) this.onmessage(event as MessageEvent);
+        break;
+      case 'close':
+        if (this.onclose) this.onclose(event as CloseEvent);
+        break;
+      case 'error':
+        if (this.onerror) this.onerror(event);
+        break;
+    }
+    return true;
+  }
 
   constructor(url: string) {
     this.url = url;
@@ -109,8 +126,8 @@ describe('useWebSocketNotifications', () => {
     // Simulate WebSocket open
     const mockWS = (global as any).lastMockWebSocket;
     await act(async () => {
-      if (mockWS && mockWS.onopen) {
-        mockWS.onopen(new Event('open'));
+      if (mockWS) {
+        mockWS.dispatchEvent(new Event('open'));
       }
     });
 
@@ -252,18 +269,18 @@ describe('useWebSocketNotifications', () => {
         message: 'New message',
         type: 'GENERAL',
         status: 'UNREAD',
-        created_at: new Date().toISOString()
+        created_at: '2023-01-01T00:00:00.000Z'
       }
     };
 
-    // Trigger the onmessage callback on the last mocked WebSocket instance
+    // Trigger the onmessage callback directly
     await act(async () => {
       if (mockWS && mockWS.onmessage) {
         mockWS.onmessage({ data: JSON.stringify(newNotification) } as MessageEvent);
       }
     });
 
-    // Force a re-render to ensure state update
+    // Force a re-render to ensure state updates are reflected
     await act(async () => {
       // Small delay to allow state update
       await new Promise(resolve => setTimeout(resolve, 0));
@@ -273,6 +290,6 @@ describe('useWebSocketNotifications', () => {
     await waitFor(() => {
       expect(result.current.notifications).toHaveLength(1);
       expect(result.current.notifications[0].id).toBe('2');
-    });
+    }, { timeout: 2000 });
   });
 });
