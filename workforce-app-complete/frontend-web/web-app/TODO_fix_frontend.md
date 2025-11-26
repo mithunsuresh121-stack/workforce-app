@@ -1,0 +1,5 @@
+- [x] Navigate to frontend-web/web-app directory
+- [x] Verify and activate nvm/Node.js environment
+- [x] Remove corrupted node_modules and package-lock.json
+- [x] Reinstall dependencies with npm install
+- [x] Start the app with npm start and verify it loads

@@ -1,0 +1,232 @@
+# Kubernetes Redis Cluster Configuration for Workforce App
+# Deploy with: kubectl apply -f k8s-redis-cluster.yaml
+
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: redis-config
+  namespace: workforce-app
+data:
+  redis.conf: |
+    # Redis Cluster Configuration
+    cluster-enabled yes
+    cluster-config-file /data/nodes.conf
+    cluster-node-timeout 5000
+    cluster-migration-barrier 1
+    cluster-require-full-coverage no
+
+    # Persistence
+    appendonly yes
+    appendfsync everysec
+    save 900 1
+    save 300 10
+    save 60 10000
+
+    # Memory Management
+    maxmemory 2gb
+    maxmemory-policy allkeys-lru
+
+    # Security
+    requirepass ${REDIS_PASSWORD:-workforce_redis_pw}
+
+    # Networking
+    bind 0.0.0.0
+    protected-mode no
+
+    # Logging
+    loglevel notice
+
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: redis-cluster
+  namespace: workforce-app
+  labels:
+    app: redis-cluster
+spec:
+  serviceName: redis-cluster
+  replicas: 3
+  selector:
+    matchLabels:
+      app: redis-cluster
+  template:
+    metadata:
+      labels:
+        app: redis-cluster
+    spec:
+      containers:
+      - name: redis
+        image: redis:7-alpine
+        ports:
+        - containerPort: 6379
+          name: redis
+        - containerPort: 16379
+          name: cluster-bus
+        command:
+        - redis-server
+        - /etc/redis/redis.conf
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        volumeMounts:
+        - name: redis-config
+          mountPath: /etc/redis
+        - name: redis-data
+          mountPath: /data
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "100m"
+          limits:
+            memory: "2Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 30
+          periodSeconds: 10
+        readinessProbe:
+          exec:
+            command:
+            - redis-cli
+            - ping
+          initialDelaySeconds: 5
+          periodSeconds: 5
+      volumes:
+      - name: redis-config
+        configMap:
+          name: redis-config
+  volumeClaimTemplates:
+  - metadata:
+    name: redis-data
+    namespace: workforce-app
+  spec:
+    accessModes: ["ReadWriteOnce"]
+    resources:
+      requests:
+        storage: 10Gi
+    storageClassName: standard  # Adjust for your cloud provider
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-cluster
+  namespace: workforce-app
+  labels:
+    app: redis-cluster
+spec:
+  type: ClusterIP
+  ports:
+  - port: 6379
+    targetPort: 6379
+    name: redis
+  - port: 16379
+    targetPort: 16379
+    name: cluster-bus
+  selector:
+    app: redis-cluster
+
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: redis-secret
+  namespace: workforce-app
+type: Opaque
+data:
+  # Base64 encoded password: workforce_redis_pw
+  password: d29ya2ZvcmNlX3JlZGlzX3B3
+
+---
+# Sentinel for High Availability (Optional)
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redis-sentinel
+  namespace: workforce-app
+  labels:
+    app: redis-sentinel
+spec:
+  replicas: 3
+  selector:
+    matchLabels:
+      app: redis-sentinel
+  template:
+    metadata:
+      labels:
+        app: redis-sentinel
+    spec:
+      containers:
+      - name: sentinel
+        image: redis:7-alpine
+        command:
+        - redis-sentinel
+        - /etc/redis/sentinel.conf
+        ports:
+        - containerPort: 26379
+          name: sentinel
+        volumeMounts:
+        - name: sentinel-config
+          mountPath: /etc/redis
+        env:
+        - name: REDIS_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: redis-secret
+              key: password
+        resources:
+          requests:
+            memory: "64Mi"
+            cpu: "50m"
+          limits:
+            memory: "128Mi"
+            cpu: "100m"
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: sentinel-config
+  namespace: workforce-app
+data:
+  sentinel.conf: |
+    sentinel monitor mymaster redis-cluster-0.redis-cluster.workforce-app.svc.cluster.local 6379 2
+    sentinel auth-pass mymaster ${REDIS_PASSWORD}
+    sentinel down-after-milliseconds mymaster 5000
+    sentinel failover-timeout mymaster 60000
+    sentinel parallel-syncs mymaster 1
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redis-sentinel
+  namespace: workforce-app
+  labels:
+    app: redis-sentinel
+spec:
+  type: ClusterIP
+  ports:
+  - port: 26379
+    targetPort: 26379
+    name: sentinel
+  selector:
+    app: redis-sentinel
+
+---
+# Notes for AWS ElastiCache (Alternative to self-managed Redis):
+# - Use ElastiCache Redis Cluster with 3 shards, 2 replicas per shard
+# - Enable encryption in-transit and at-rest
+# - Set maxmemory-policy to allkeys-lru
+# - Configure backup retention (7 days recommended)
+# - Use VPC security groups to restrict access
+# - Monitor with CloudWatch metrics: CPUUtilization, DatabaseMemorySizePercentage, CurrConnections
+# - Set up Multi-AZ for high availability
+# - Use parameter group with custom redis.conf settings

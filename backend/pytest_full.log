@@ -1,0 +1,231 @@
+/Users/mithunsuresh/Documents/workforce-app/backend/venv/lib/python3.11/site-packages/pytest_asyncio/plugin.py:252: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+The event loop scope for asynchronous fixtures will default to the fixture caching scope. Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope. Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future. Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+
+  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+............................................FF......EEE
+==================================== ERRORS ====================================
+________________ ERROR at setup of test_company_cascade_delete _________________
+
+    @pytest.fixture(scope="module")
+    def test_engine():
+        """Create a test database engine."""
+>       engine = create_engine(settings.DATABASE_URL)
+
+tests/test_db_integrity.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Settings(POSTGRES_USER='workforce', POSTGRES_PASSWORD='workforce_pw', POSTGRES_DB='workforce', POSTGRES_HOST='localhos..._KEY='some_secret_key', JWT_SECRET='CHANGE_ME', JWT_REFRESH_SECRET='CHANGE_ME_REFRESH', JWT_ALG='HS256', APP_ENV='dev')
+item = 'DATABASE_URL'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra:
+                try:
+                    return pydantic_extra[item]
+                except KeyError as exc:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Settings' object has no attribute 'DATABASE_URL'
+
+venv/lib/python3.11/site-packages/pydantic/main.py:856: AttributeError
+__________________ ERROR at setup of test_user_cascade_delete __________________
+
+    @pytest.fixture(scope="module")
+    def test_engine():
+        """Create a test database engine."""
+>       engine = create_engine(settings.DATABASE_URL)
+
+tests/test_db_integrity.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Settings(POSTGRES_USER='workforce', POSTGRES_PASSWORD='workforce_pw', POSTGRES_DB='workforce', POSTGRES_HOST='localhos..._KEY='some_secret_key', JWT_SECRET='CHANGE_ME', JWT_REFRESH_SECRET='CHANGE_ME_REFRESH', JWT_ALG='HS256', APP_ENV='dev')
+item = 'DATABASE_URL'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra:
+                try:
+                    return pydantic_extra[item]
+                except KeyError as exc:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Settings' object has no attribute 'DATABASE_URL'
+
+venv/lib/python3.11/site-packages/pydantic/main.py:856: AttributeError
+________________ ERROR at setup of test_channel_cascade_delete _________________
+
+    @pytest.fixture(scope="module")
+    def test_engine():
+        """Create a test database engine."""
+>       engine = create_engine(settings.DATABASE_URL)
+
+tests/test_db_integrity.py:15: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+self = Settings(POSTGRES_USER='workforce', POSTGRES_PASSWORD='workforce_pw', POSTGRES_DB='workforce', POSTGRES_HOST='localhos..._KEY='some_secret_key', JWT_SECRET='CHANGE_ME', JWT_REFRESH_SECRET='CHANGE_ME_REFRESH', JWT_ALG='HS256', APP_ENV='dev')
+item = 'DATABASE_URL'
+
+    def __getattr__(self, item: str) -> Any:
+        private_attributes = object.__getattribute__(self, '__private_attributes__')
+        if item in private_attributes:
+            attribute = private_attributes[item]
+            if hasattr(attribute, '__get__'):
+                return attribute.__get__(self, type(self))  # type: ignore
+    
+            try:
+                # Note: self.__pydantic_private__ cannot be None if self.__private_attributes__ has items
+                return self.__pydantic_private__[item]  # type: ignore
+            except KeyError as exc:
+                raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+        else:
+            # `__pydantic_extra__` can fail to be set if the model is not yet fully initialized.
+            # See `BaseModel.__repr_args__` for more details
+            try:
+                pydantic_extra = object.__getattribute__(self, '__pydantic_extra__')
+            except AttributeError:
+                pydantic_extra = None
+    
+            if pydantic_extra:
+                try:
+                    return pydantic_extra[item]
+                except KeyError as exc:
+                    raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}') from exc
+            else:
+                if hasattr(self.__class__, item):
+                    return super().__getattribute__(item)  # Raises AttributeError if appropriate
+                else:
+                    # this is the current error
+>                   raise AttributeError(f'{type(self).__name__!r} object has no attribute {item!r}')
+E                   AttributeError: 'Settings' object has no attribute 'DATABASE_URL'
+
+venv/lib/python3.11/site-packages/pydantic/main.py:856: AttributeError
+=================================== FAILURES ===================================
+__________________________ test_send_channel_message ___________________________
+
+db = <sqlalchemy.orm.session.Session object at 0x1235d9fd0>
+test_company = <app.models.company.Company object at 0x123618050>
+test_user = <User test@example.com>
+
+    def test_send_channel_message(db: Session, test_company: Company, test_user: User):
+        """Test sending a message to a channel"""
+        # Create channel first
+        channel = chat_service.create_group_channel(
+            db=db,
+            name="Test Channel",
+            company_id=test_company.id,
+            created_by=test_user.id,
+            member_ids=[test_user.id]
+        )
+    
+        # Send message
+>       message = chat_service.send_message_to_channel(
+            db=db,
+            channel_id=channel.id,
+            sender_id=test_user.id,
+            message="Test message",
+            attachments=[]
+        )
+
+tests/test_chat_service.py:36: 
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+app/services/chat_service.py:76: in send_message_to_channel
+    asyncio.create_task(increment_messages_sent())
+_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ 
+
+coro = <coroutine object increment_messages_sent at 0x1235828e0>
+
+    def create_task(coro, *, name=None, context=None):
+        """Schedule the execution of a coroutine object in a spawn task.
+    
+        Return a Task object.
+        """
+>       loop = events.get_running_loop()
+E       RuntimeError: no running event loop
+
+/Library/Frameworks/Python.framework/Versions/3.11/lib/python3.11/asyncio/tasks.py:371: RuntimeError
+______________________________ test_add_reaction _______________________________
+
+db = <sqlalchemy.orm.session.Session object at 0x123547e50>
+test_company = <app.models.company.Company object at 0x1236ae8d0>
+test_user = <User test@example.com>
+
+    def test_add_reaction(db: Session, test_company: Company, test_user: User):
+        """Test adding reaction to message"""
+        # Create message first
+>       message = create_chat_message(
+            db=db,
+            message_create=ChatMessageCreate(message="Test message"),
+            sender_id=test_user.id,
+            company_id=test_company.id
+        )
+E       TypeError: create_chat_message() got an unexpected keyword argument 'message_create'
+
+tests/test_chat_service.py:50: TypeError
+============================= slowest 10 durations =============================
+0.79s setup    tests/test_ai_governance.py::TestTrustFabric::test_trust_score_admin_reset
+0.58s setup    tests/test_ai_governance.py::TestAIGovernance::test_ai_tenant_isolation
+0.56s setup    tests/test_ai_governance.py::TestTrustFabric::test_trust_score_history_tracking
+0.53s setup    tests/test_analytics.py::test_get_channel_stats
+0.51s setup    tests/test_analytics.py::test_get_audit_stats
+0.50s setup    tests/test_audit_chain.py::TestAuditChain::test_chain_isolation_by_company
+0.50s setup    tests/test_audit_chain.py::TestAuditChain::test_chain_integrity_verification_tampered
+0.49s setup    tests/test_audit_chain.py::TestAuditChain::test_chain_replay
+0.49s setup    tests/test_ai_governance.py::TestTrustFabric::test_content_policy_jailbreak_detection
+0.49s setup    tests/test_chat_service.py::test_typing_indicator
+=========================== short test summary info ============================
+FAILED tests/test_chat_service.py::test_send_channel_message - RuntimeError: ...
+FAILED tests/test_chat_service.py::test_add_reaction - TypeError: create_chat...
+ERROR tests/test_db_integrity.py::test_company_cascade_delete - AttributeErro...
+ERROR tests/test_db_integrity.py::test_user_cascade_delete - AttributeError: ...
+ERROR tests/test_db_integrity.py::test_channel_cascade_delete - AttributeErro...
+!!!!!!!!!!!!!!!!!!!!!!!!!! stopping after 5 failures !!!!!!!!!!!!!!!!!!!!!!!!!!!
+2 failed, 50 passed, 34 warnings, 3 errors in 30.42s
+sys:1: RuntimeWarning: coroutine 'increment_messages_sent' was never awaited
+RuntimeWarning: Enable tracemalloc to get the object allocation traceback
+pytest finished with exit code 0
