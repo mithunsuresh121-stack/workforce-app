@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip as RechartsToolti
 import { useAuth, api } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import DashboardCharts from '../components/DashboardCharts';
+import MetricsPanel from '../components/MetricsPanel';
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend, ArcElement);
 
@@ -302,6 +303,9 @@ const Dashboard = () => {
           Here's what's happening with your workforce today.
         </p>
       </div>
+
+      {/* Real-time Metrics Panel */}
+      <MetricsPanel />
 
       {/* Manager KPI Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">

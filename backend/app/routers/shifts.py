@@ -1,10 +1,11 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
-from ..deps import get_db, get_current_user
-from ..schemas import ShiftCreate, ShiftOut
-from ..crud import (
+from app.deps import get_db, get_current_user
+from app.schemas import ShiftCreate, ShiftOut
+from app.crud import (
     create_shift,
     get_shift_by_id,
     list_shifts_by_employee,
@@ -12,11 +13,13 @@ from ..crud import (
     update_shift,
     delete_shift
 )
-from ..crud_notifications import create_notification
-from ..models.user import User
-from ..models.notification import NotificationType
-from ..models.swap_request import SwapRequest, SwapStatus
-from ..schemas.swap_request import SwapRequestCreate, SwapRequestOut
+from app.crud_notifications import create_notification
+from app.models.user import User
+from app.models.notification import NotificationType
+from app.models.swap_request import SwapRequest, SwapStatus
+from app.schemas.swap_request import SwapRequestCreate, SwapRequestOut
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/shifts", tags=["Shifts"])
 
@@ -77,9 +80,25 @@ def create_shift_schedule(
             message=f"You have been scheduled for a shift from {payload.start_at.strftime('%Y-%m-%d %H:%M')} to {payload.end_at.strftime('%Y-%m-%d %H:%M')}",
             type=NotificationType.SHIFT_SCHEDULED
         )
+        logger.info(
+            "Shift notification created",
+            event="shift_notification_created",
+            shift_id=shift.id,
+            employee_id=payload.employee_id,
+            company_id=payload.company_id,
+            user_id=current_user.id
+        )
     except Exception as e:
         # Log the error but don't fail the shift creation
-        print(f"Warning: Failed to create shift notification: {e}")
+        logger.warning(
+            "Failed to create shift notification",
+            event="shift_notification_failed",
+            shift_id=shift.id,
+            employee_id=payload.employee_id,
+            company_id=payload.company_id,
+            user_id=current_user.id,
+            error=str(e)
+        )
 
     return shift
 
@@ -306,8 +325,24 @@ def request_shift_swap(
             message=f"{current_user.full_name} has requested to swap shifts with you. Reason: {payload.reason or 'No reason provided'}",
             type=NotificationType.SHIFT_SWAP_REQUESTED
         )
+        logger.info(
+            "Swap request notification created",
+            event="swap_request_notification_created",
+            swap_request_id=swap_request.id,
+            requester_id=current_user.id,
+            target_employee_id=target_shift.employee_id,
+            company_id=requester_shift.company_id
+        )
     except Exception as e:
-        print(f"Warning: Failed to create swap request notification: {e}")
+        logger.warning(
+            "Failed to create swap request notification",
+            event="swap_request_notification_failed",
+            swap_request_id=swap_request.id,
+            requester_id=current_user.id,
+            target_employee_id=target_shift.employee_id,
+            company_id=requester_shift.company_id,
+            error=str(e)
+        )
 
     return swap_request
 
@@ -387,8 +422,26 @@ def approve_shift_swap(
             message="A shift swap request has been approved.",
             type=NotificationType.SHIFT_SWAP_APPROVED
         )
+        logger.info(
+            "Swap approval notifications created",
+            event="swap_approval_notifications_created",
+            swap_request_id=swap_request.id,
+            requester_id=swap_request.requester_id,
+            target_employee_id=swap_request.target_employee_id,
+            company_id=swap_request.company_id,
+            reviewed_by=current_user.id
+        )
     except Exception as e:
-        print(f"Warning: Failed to create approval notifications: {e}")
+        logger.warning(
+            "Failed to create approval notifications",
+            event="swap_approval_notifications_failed",
+            swap_request_id=swap_request.id,
+            requester_id=swap_request.requester_id,
+            target_employee_id=swap_request.target_employee_id,
+            company_id=swap_request.company_id,
+            reviewed_by=current_user.id,
+            error=str(e)
+        )
 
     return swap_request
 
@@ -443,7 +496,23 @@ def reject_shift_swap(
             message="Your shift swap request has been rejected.",
             type=NotificationType.SHIFT_SWAP_REJECTED
         )
+        logger.info(
+            "Swap rejection notification created",
+            event="swap_rejection_notification_created",
+            swap_request_id=swap_request.id,
+            requester_id=swap_request.requester_id,
+            company_id=swap_request.company_id,
+            reviewed_by=current_user.id
+        )
     except Exception as e:
-        print(f"Warning: Failed to create rejection notification: {e}")
+        logger.warning(
+            "Failed to create rejection notification",
+            event="swap_rejection_notification_failed",
+            swap_request_id=swap_request.id,
+            requester_id=swap_request.requester_id,
+            company_id=swap_request.company_id,
+            reviewed_by=current_user.id,
+            error=str(e)
+        )
 
     return swap_request

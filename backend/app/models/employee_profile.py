@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from ..db import Base
+from app.db import Base
 
 class EmployeeProfile(Base):
     __tablename__ = "employee_profiles"

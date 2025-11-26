@@ -1,50 +1,62 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
-from typing import List
-from ..deps import get_db, get_current_user
-from ..schemas import CompanyCreate, CompanyOut
-from ..crud import create_company, list_companies, get_company_by_id, get_company_by_name, delete_company
-from ..models.user import User
+from typing import List, Dict, Any
+from app.deps import get_db, get_current_user
+from app.schemas import CompanyCreate, CompanyOut
+from app.crud import create_company, list_companies, get_company_by_id, get_company_by_name, delete_company
+from app.services.company_service import CompanyService
+from app.models.user import User
+from app.core.rbac import require_superadmin, require_company_access
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/companies", tags=["Companies"])
 
-@router.post("/", response_model=CompanyOut, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=Dict[str, Any], status_code=status.HTTP_201_CREATED)
 def create_new_company(
     company_data: CompanyCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(require_superadmin)
 ):
     """
-    Create a new company (only SuperAdmin can create companies)
+    Create a new company with full bootstrap (only SuperAdmin can create companies)
     """
-    if current_user.role != "SuperAdmin":
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only SuperAdmin can create companies"
-        )
-    
+
     # Check if company with same name already exists
     existing_company = get_company_by_name(db, company_data.name)
     if existing_company:
         raise HTTPException(
-            status_code=status.HTTP_400_BORBIDDEN,
+            status_code=status.HTTP_400_BAD_REQUEST,
             detail="Company with this name already exists"
         )
-    
-    company = create_company(
-        db=db,
-        name=company_data.name,
-        domain=company_data.domain,
-        contact_email=company_data.contact_email,
-        contact_phone=company_data.contact_phone,
-        address=company_data.address,
-        city=company_data.city,
-        state=company_data.state,
-        country=company_data.country,
-        postal_code=company_data.postal_code
-    )
-    
-    return company
+
+    try:
+        # Bootstrap the company with all required components
+        result = CompanyService.bootstrap_company(
+            db=db,
+            company_name=company_data.name,
+            superadmin_user=current_user
+        )
+
+        return {
+            "company": CompanyOut.from_orm(result["company"]),
+            "first_admin_user": {
+                "id": result["first_admin_user"].id,
+                "email": result["first_admin_user"].email,
+                "full_name": result["first_admin_user"].full_name,
+                "role": result["first_admin_user"].role
+            },
+            "bootstrap_status": result["bootstrap_status"],
+            "temporary_access_link": result["temporary_access_link"],
+            "token_expiry": result["token_expiry"]
+        }
+
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e)
+        )
 
 @router.get("/", response_model=List[CompanyOut])
 def get_companies(

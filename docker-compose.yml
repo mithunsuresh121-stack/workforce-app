@@ -8,15 +8,36 @@ services:
     ports: ["5432:5432"]
     volumes: [ "pgdata:/var/lib/postgresql/data" ]
 
+  redis:
+    image: redis:7
+    ports: ["6379:6379"]
+    command: redis-server /usr/local/etc/redis/redis.conf
+    volumes:
+      - redisdata:/data
+      - ./redis.conf:/usr/local/etc/redis/redis.conf:ro
+    environment:
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-workforce_redis_pw}
+    healthcheck:
+      test: ["CMD", "redis-cli", "--pass", "${REDIS_PASSWORD:-workforce_redis_pw}", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+    deploy:
+      replicas: 3
+
   backend:
     build: ./backend
     env_file: .env
-    depends_on: [postgres]
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     ports: ["8000:8000"]
     command: uvicorn app.main:app --host 0.0.0.0 --port 8000
-    # Add migration command
     environment:
       - PYTHONPATH=/app
+      - REDIS_PASSWORD=${REDIS_PASSWORD:-workforce_redis_pw}
 
   backend-migrate:
     build: ./backend
@@ -63,3 +84,4 @@ services:
 
 volumes:
   pgdata:
+  redisdata:

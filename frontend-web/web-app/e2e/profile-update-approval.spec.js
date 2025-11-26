@@ -200,3 +200,4 @@ test.describe('Profile Update and Approval Workflow', () => {
     await expect(page.locator('text=+1-555-0123')).toBeVisible();
     await expect(page.locator('text=Engineering')).toBeVisible();
   });
+});

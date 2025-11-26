@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Response
 from fastapi.middleware.cors import CORSMiddleware
-from .config import settings, engine, Base
-from .routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications, notification_preferences
-from .routers.profile_final import router as profile
-from .custom_json_response import CustomJSONResponse
+from app.config import settings, engine, Base
+from app.routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications, notification_preferences
+from app.routers.profile_final import router as profile
+from app.custom_json_response import CustomJSONResponse
 
 # Only create tables when running the app directly, not when imported for testing
 if __name__ == "__main__":
@@ -33,8 +33,8 @@ app.include_router(notifications.router, prefix="/api")
 app.include_router(notification_preferences.router, prefix="/api")
 app.include_router(profile, prefix="/api")
 
-from .seed_demo_user_final import seed_demo_user
-from .deps import get_db
+from app.seed_demo_user_final import seed_demo_user
+from app.deps import get_db
 
 @app.on_event("startup")
 async def startup_event():

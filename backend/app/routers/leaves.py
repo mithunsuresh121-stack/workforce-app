@@ -1,9 +1,10 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Dict, Any
-from ..deps import get_db, get_current_user
-from ..schemas import LeaveCreate, LeaveOut, LeaveStatus
-from ..crud import (
+from app.deps import get_db, get_current_user
+from app.schemas import LeaveCreate, LeaveOut, LeaveStatus
+from app.crud import (
     create_leave,
     get_leave_by_id,
     list_leaves_by_employee,
@@ -11,9 +12,11 @@ from ..crud import (
     update_leave_status,
     delete_leave
 )
-from ..crud_notifications import create_notification
-from ..models.user import User
-from ..models.notification import NotificationType
+from app.crud_notifications import create_notification
+from app.models.user import User
+from app.models.notification import NotificationType
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/leaves", tags=["Leaves"])
 
@@ -191,8 +194,9 @@ def update_leave_status_endpoint(
             message=f"Your leave request ({leave.type}) was {new_status.lower()} by {current_user.full_name}.",
             type=NotificationType.LEAVE_APPROVED if new_status == "APPROVED" else NotificationType.LEAVE_REJECTED
         )
+        logger.info("leave_notification_created", event="leave_status_update_notification", user_id=current_user.id, company_id=current_user.company_id, leave_id=leave_id, employee_id=leave.employee_id, new_status=new_status)
     except Exception as e:
-        print(f"Warning: Failed to create leave notification: {e}")
+        logger.warning("failed_to_create_leave_notification", event="leave_status_update_notification_error", user_id=current_user.id, company_id=current_user.company_id, leave_id=leave_id, employee_id=leave.employee_id, error=str(e))
 
     return updated_leave
 

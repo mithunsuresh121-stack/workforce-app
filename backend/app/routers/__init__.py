@@ -11,3 +11,7 @@ from .attendance import router as attendance_router
 from .notifications import router as notifications_router
 from .notification_preferences import router as notification_preferences_router
 from .documents import router as documents_router
+from .chat import router as chat_router
+from .meetings import router as meetings_router
+from .websocket_manager import router as websocket_manager_router
+from .procurement import router as procurement_router

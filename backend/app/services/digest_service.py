@@ -1,16 +1,15 @@
+import structlog
 from sqlalchemy.orm import Session
 from sqlalchemy import and_, func
 from datetime import datetime, timedelta
 from typing import List, Dict, Any
-import logging
 
-from ..models.notification import Notification, NotificationType
-from ..models.notification_digest import NotificationDigest, DigestType, DigestStatus
-from ..models.notification_preferences import NotificationPreferences, DigestMode
-from ..models.user import User
-from ..database import get_db
+from app.models.notification import Notification, NotificationType
+from app.models.notification_digest import NotificationDigest, DigestType, DigestStatus
+from app.models.notification_preferences import NotificationPreferences, DigestMode
+from app.models.user import User
 
-logger = logging.getLogger(__name__)
+logger = structlog.get_logger(__name__)
 
 class DigestService:
     def __init__(self, db: Session):
@@ -159,7 +158,7 @@ class DigestService:
         """Send a digest notification to the user"""
         try:
             # Create a new notification for the digest
-            from ..crud_notifications import create_notification
+            from app.crud_notifications import create_notification
 
             notification_data = {
                 "user_id": digest.user_id,

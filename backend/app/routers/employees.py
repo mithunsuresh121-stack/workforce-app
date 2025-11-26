@@ -1,17 +1,20 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status, Response
 from sqlalchemy.orm import Session
 from sqlalchemy.exc import IntegrityError
 from typing import List
-from ..deps import get_db, get_current_user
-from ..schemas import EmployeeProfileCreate, EmployeeProfileOut, EmployeeProfileUpdate
-from ..crud import (
+from app.deps import get_db, get_current_user
+from app.schemas import EmployeeProfileCreate, EmployeeProfileOut, EmployeeProfileUpdate
+from app.crud import (
     list_employee_profiles_by_company,
     create_employee_profile,
     get_employee_profile_by_user_id,
     update_employee_profile,
     delete_employee_profile
 )
-from ..models.user import User
+from app.models.user import User
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/employees", tags=["Employees"])
 
@@ -35,9 +38,10 @@ def create_employee_profile_endpoint(
     """
     Create a new employee profile for the current user's company
     """
-    print(f"DEBUG: create_employee_profile_endpoint called with user_id={payload.user_id}, company_id={payload.company_id}")
+    logger.info("create_employee_profile_endpoint called", event="create_employee_profile", user_id=current_user.id, company_id=current_user.company_id, payload_user_id=payload.user_id, payload_company_id=payload.company_id)
     # Role-based access control
     if current_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager"]:
+        logger.warning("insufficient_permissions", event="create_employee_profile_denied", user_id=current_user.id, company_id=current_user.company_id, role=current_user.role)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Insufficient permissions to create employee profiles"
@@ -45,6 +49,7 @@ def create_employee_profile_endpoint(
 
     # Ensure the profile is created for the user's company (SuperAdmin can create for any)
     if current_user.role != "SuperAdmin" and payload.company_id != current_user.company_id:
+        logger.warning("cross_company_access_denied", event="create_employee_profile_denied", user_id=current_user.id, company_id=current_user.company_id, target_company_id=payload.company_id)
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Cannot create employee profile for another company"
@@ -53,13 +58,13 @@ def create_employee_profile_endpoint(
     # Pre-insert check to avoid DB constraint violation
     existing_profile = get_employee_profile_by_user_id(db, payload.user_id, payload.company_id)
     if existing_profile:
-        print(f"DEBUG: Found existing profile for user_id={payload.user_id}, company_id={payload.company_id}")
+        logger.warning("profile_already_exists", event="create_employee_profile_conflict", user_id=current_user.id, company_id=current_user.company_id, target_user_id=payload.user_id, target_company_id=payload.company_id)
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
             detail="Employee profile already exists for this user"
         )
 
-    print(f"DEBUG: No existing profile found, proceeding with creation for user_id={payload.user_id}")
+    logger.info("proceeding_with_profile_creation", event="create_employee_profile_start", user_id=current_user.id, company_id=current_user.company_id, target_user_id=payload.user_id)
     try:
         profile = create_employee_profile(
             db=db,
@@ -71,13 +76,10 @@ def create_employee_profile_endpoint(
             hire_date=payload.hire_date,
             manager_id=payload.manager_id
         )
-        print(f"DEBUG: Successfully created profile for user_id={payload.user_id}")
+        logger.info("profile_created_successfully", event="create_employee_profile_success", user_id=current_user.id, company_id=current_user.company_id, target_user_id=payload.user_id, profile_id=profile.id)
         return profile
     except IntegrityError as e:
-        import traceback
-        print(f"DEBUG: IntegrityError caught: {e}")
-        print(f"DEBUG: Exception orig: {e.orig}")
-        traceback.print_exc()
+        logger.error("integrity_error_during_creation", event="create_employee_profile_error", user_id=current_user.id, company_id=current_user.company_id, target_user_id=payload.user_id, error=str(e), orig=str(e.orig))
         if "duplicate key value violates unique constraint" in str(e.orig):
             raise HTTPException(
                 status_code=status.HTTP_409_CONFLICT,
@@ -85,9 +87,7 @@ def create_employee_profile_endpoint(
             )
         raise
     except Exception as e:
-        import traceback
-        print(f"DEBUG: Unexpected exception: {type(e).__name__}: {e}")
-        traceback.print_exc()
+        logger.error("unexpected_error_during_creation", event="create_employee_profile_error", user_id=current_user.id, company_id=current_user.company_id, target_user_id=payload.user_id, error_type=type(e).__name__, error=str(e))
         raise
 
 @router.get("/{user_id}", response_model=EmployeeProfileOut)

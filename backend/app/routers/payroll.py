@@ -1,9 +1,10 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from typing import List, Optional
 from datetime import datetime
-from ..db import get_db
-from ..crud import (
+from app.db import get_db
+from app.crud import (
     create_payroll_employee, get_payroll_employee_by_id, get_payroll_employee_by_employee_id,
     list_payroll_employees_by_tenant, update_payroll_employee, delete_payroll_employee,
     create_salary, get_salary_by_id, list_salaries_by_employee, update_salary, delete_salary,
@@ -15,12 +16,14 @@ from ..crud import (
     update_payroll_entry, delete_payroll_entry,
     get_user_by_id, get_company_by_id
 )
-from ..schemas import (
+from app.schemas import (
     EmployeeCreate, EmployeeOut, SalaryCreate, SalaryOut, AllowanceCreate, AllowanceOut,
     DeductionCreate, DeductionOut, BonusCreate, BonusOut, PayrollRunCreate, PayrollRunOut,
     PayrollEntryCreate, PayrollEntryOut
 )
-from ..deps import get_current_user
+from app.deps import get_current_user
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter()
 

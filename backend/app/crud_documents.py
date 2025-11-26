@@ -1,6 +1,9 @@
+import structlog
 from sqlalchemy.orm import Session
-from .models.document import Document
-from .schemas.schemas import DocumentCreate
+from app.models.document import Document
+from app.schemas.schemas import DocumentCreate
+
+logger = structlog.get_logger(__name__)
 
 def create_document(db: Session, document: DocumentCreate, company_id: int, user_id: int):
     db_document = Document(**document.dict(), company_id=company_id, user_id=user_id)

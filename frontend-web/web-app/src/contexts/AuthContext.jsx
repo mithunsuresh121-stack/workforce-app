@@ -24,18 +24,28 @@ export const AuthProvider = ({ children }) => {
     const token = localStorage.getItem("token");
     if (token) {
       // Validate token or fetch user data
-      api
-        .get("/auth/me")
-        .then((response) => {
-          setUser(response.data);
-        })
-        .catch(() => {
+      const loadUser = async () => {
+        try {
+          // Call api.get and await result. If axios is mocked and returns undefined,
+          // awaiting undefined resolves to undefined and we guard below to avoid
+          // calling methods on a non-object (which would happen with .then chaining).
+          const response = await api.get("/auth/me");
+          if (response && response.data) {
+            setUser(response.data);
+          } else {
+            // No usable response (possible test mock); treat as unauthenticated
+            localStorage.removeItem("token");
+            setUser(null);
+          }
+        } catch (err) {
           localStorage.removeItem("token");
           setUser(null);
-        })
-        .finally(() => {
+        } finally {
           setLoading(false);
-        });
+        }
+      };
+
+      loadUser();
     } else {
       setLoading(false);
     }

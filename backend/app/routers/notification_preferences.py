@@ -1,14 +1,17 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import Dict, Any
-from ..db import get_db
-from ..crud_notification_preferences import (
+from app.db import get_db
+from app.crud_notification_preferences import (
     get_user_preferences,
     create_user_preferences,
     update_user_preferences,
     get_or_create_user_preferences
 )
-from ..deps import get_current_user
+from app.deps import get_current_user
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/notification-preferences", tags=["Notification Preferences"])
 
@@ -80,7 +83,7 @@ def delete_notification_preferences(
     if current_user.company_id is None:
         raise HTTPException(status_code=400, detail="User must be associated with a company")
 
-    from ..crud_notification_preferences import delete_user_preferences
+    from app.crud_notification_preferences import delete_user_preferences
     success = delete_user_preferences(db, current_user.id, current_user.company_id)
     if not success:
         raise HTTPException(status_code=404, detail="Preferences not found")

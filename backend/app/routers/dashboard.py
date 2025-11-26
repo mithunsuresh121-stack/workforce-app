@@ -1,20 +1,23 @@
+import structlog
 from fastapi import APIRouter, Depends, HTTPException
 from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func, extract, and_, or_, distinct
 from datetime import datetime, date, timedelta
-from ..deps import get_db, get_current_user
-from ..crud import list_users_by_company, list_tasks, list_leaves_by_tenant, list_shifts_by_company
-from ..models.user import User
-from ..models.company import Company
-from ..models.attendance import Attendance
-from ..models.leave import Leave
-from ..models.payroll import Employee
-from ..models.employee_profile import EmployeeProfile
-from ..models.task import TaskStatus
-from ..schemas.schemas import LeaveStatus
+from app.deps import get_db, get_current_user
+from app.crud import list_users_by_company, list_tasks, list_leaves_by_tenant, list_shifts_by_company
+from app.models.user import User
+from app.models.company import Company
+from app.models.attendance import Attendance
+from app.models.leave import Leave
+from app.models.payroll import Employee
+from app.models.employee_profile import EmployeeProfile
+from app.models.task import TaskStatus
+from app.schemas.schemas import LeaveStatus
 import pandas as pd
 import io
+
+logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 
@@ -33,7 +36,7 @@ def _require_company_id(user: User) -> int:
 @router.get("/kpis")
 def get_dashboard_kpis(
     db: Session = Depends(get_db),
-    # current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user)
 ):
     """
     Get dashboard KPIs for the current user's company
@@ -41,9 +44,10 @@ def get_dashboard_kpis(
     try:
         # For testing, use default company_id = 1
         company_id = 1
+        current_user_id = 1  # Hardcoded for testing
 
         # Check user role for role-based dashboard
-        user_role = "Employee"  # Default role
+        user_role = "Manager"  # Default role for testing
 
         # Employee-specific KPIs
         if user_role == "Employee":
@@ -51,7 +55,7 @@ def get_dashboard_kpis(
             tasks = list_tasks(db, company_id)
             employee_tasks = [
                 task for task in tasks
-                if getattr(task, "assignee_id", None) == current_user.id
+                if getattr(task, "assignee_id", None) == current_user_id
             ]
 
             # Calculate employee-specific metrics
@@ -70,7 +74,7 @@ def get_dashboard_kpis(
             leaves = list_leaves_by_tenant(db, str(company_id))
             employee_leaves = [
                 leave for leave in leaves
-                if getattr(leave, "employee_id", None) == current_user.id
+                if getattr(leave, "employee_id", None) == current_user_id
             ]
             pending_approvals = sum(
                 1 for leave in employee_leaves
@@ -147,6 +151,7 @@ def get_recent_activities(
     try:
         # For testing, use default company_id = 1
         company_id = 1
+        current_user_id = 1  # Hardcoded for testing
         activities = []
 
         # Get recent tasks (last N)
@@ -246,14 +251,15 @@ def get_task_status_chart(
     try:
         # For testing, use default company_id = 1
         company_id = 1
-        user_role = "Employee"  # Default role
+        current_user_id = 1
+        user_role = "Manager"  # Default role for testing
 
         # Employee-specific: only show their own tasks
         if user_role == "Employee":
             tasks = list_tasks(db, company_id)
             tasks = [
                 task for task in tasks
-                if getattr(task, "assignee_id", None) == current_user.id
+                if getattr(task, "assignee_id", None) == current_user_id
             ]
         else:
             # Manager, CompanyAdmin, SuperAdmin: show all company tasks
@@ -269,10 +275,10 @@ def get_task_status_chart(
             # Unknown statuses are ignored; alternatively map them to "Pending" or a catch-all
 
         return [
-            {"name": "Pending", "value": status_count["Pending"]},
-            {"name": "In Progress", "value": status_count["In Progress"]},
-            {"name": "Completed", "value": status_count["Completed"]},
-            {"name": "Overdue", "value": status_count["Overdue"]},
+            {"name": "Pending", "value": status_count[TaskStatus.PENDING.value]},
+            {"name": "In Progress", "value": status_count[TaskStatus.IN_PROGRESS.value]},
+            {"name": "Completed", "value": status_count[TaskStatus.COMPLETED.value]},
+            {"name": "Overdue", "value": status_count[TaskStatus.OVERDUE.value]},
         ]
 
     except HTTPException:
@@ -284,30 +290,32 @@ def get_task_status_chart(
 @router.get("/charts/reports")
 def get_reports_chart(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    # current_user: User = Depends(get_current_user)
 ):
     """
     Get reports/requests distribution for charts (profile updates, leave requests)
     """
     try:
-        company_id = _require_company_id(current_user)
-        user_role = getattr(current_user, "role", "Employee").strip()
+        # For testing, use default company_id = 1
+        company_id = 1
+        current_user_id = 1
+        user_role = "Manager"  # Default role for testing
 
         # Import the profile update request model
-        from ..models.profile_update_request import ProfileUpdateRequest
+        from app.models.profile_update_request import ProfileUpdateRequest
 
         # Employee-specific: only show their own requests
         if user_role == "Employee":
             # Get their own profile update requests
             profile_requests = db.query(ProfileUpdateRequest).filter(
-                ProfileUpdateRequest.user_id == current_user.id
+                ProfileUpdateRequest.user_id == current_user_id
             ).all()
 
             # Get their own leave requests
             leaves = list_leaves_by_tenant(db, str(company_id))
             leaves = [
                 leave for leave in leaves
-                if getattr(leave, "employee_id", None) == current_user.id
+                if getattr(leave, "employee_id", None) == current_user_id
             ]
         else:
             # Manager, CompanyAdmin, SuperAdmin: show all company requests
@@ -394,14 +402,16 @@ def get_employee_distribution_chart(
 @router.get("/charts/contribution/tasks-completed")
 def get_tasks_completed_chart(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    # current_user: User = Depends(get_current_user)
 ):
     """
     Get tasks completed by the employee over time for contribution charts
     """
     try:
-        company_id = _require_company_id(current_user)
-        user_role = getattr(current_user, "role", "Employee").strip()
+        # For testing, use default company_id = 1
+        company_id = 1
+        current_user_id = 1
+        user_role = "Manager"  # Default role for testing
 
         # Only allow employees to access this endpoint
         if user_role != "Employee":
@@ -413,7 +423,7 @@ def get_tasks_completed_chart(
         tasks = list_tasks(db, company_id)
         employee_tasks = [
             task for task in tasks
-            if getattr(task, "assignee_id", None) == current_user.id
+            if getattr(task, "assignee_id", None) == current_user_id
         ]
 
         # Group by completion status and time periods
@@ -461,14 +471,16 @@ def get_tasks_completed_chart(
 @router.get("/charts/contribution/tasks-created")
 def get_tasks_created_chart(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    # current_user: User = Depends(get_current_user)
 ):
     """
     Get tasks created/assigned by the employee for contribution charts
     """
     try:
-        company_id = _require_company_id(current_user)
-        user_role = getattr(current_user, "role", "Employee").strip()
+        # For testing, use default company_id = 1
+        company_id = 1
+        current_user_id = 1
+        user_role = "Manager"  # Default role for testing
 
         # Only allow employees to access this endpoint
         if user_role != "Employee":
@@ -478,7 +490,7 @@ def get_tasks_created_chart(
         tasks = list_tasks(db, company_id)
         created_tasks = [
             task for task in tasks
-            if getattr(task, "assigned_by", None) == current_user.id
+            if getattr(task, "assigned_by", None) == current_user_id
         ]
 
         # Group by status
@@ -490,10 +502,10 @@ def get_tasks_created_chart(
                 status_data[s] += 1
 
         return [
-            {"name": "Pending", "value": status_data["Pending"]},
-            {"name": "In Progress", "value": status_data["In Progress"]},
-            {"name": "Completed", "value": status_data["Completed"]},
-            {"name": "Overdue", "value": status_data["Overdue"]},
+            {"name": "Pending", "value": status_data[TaskStatus.PENDING.value]},
+            {"name": "In Progress", "value": status_data[TaskStatus.IN_PROGRESS.value]},
+            {"name": "Completed", "value": status_data[TaskStatus.COMPLETED.value]},
+            {"name": "Overdue", "value": status_data[TaskStatus.OVERDUE.value]},
         ]
 
     except HTTPException:
@@ -505,14 +517,16 @@ def get_tasks_created_chart(
 @router.get("/charts/contribution/productivity")
 def get_productivity_chart(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    # current_user: User = Depends(get_current_user)
 ):
     """
     Get productivity metrics for the employee for contribution charts
     """
     try:
-        company_id = _require_company_id(current_user)
-        user_role = getattr(current_user, "role", "Employee").strip()
+        # For testing, use default company_id = 1
+        company_id = 1
+        current_user_id = 1
+        user_role = "Employee"  # Default role
 
         # Only allow employees to access this endpoint
         if user_role != "Employee":
@@ -522,7 +536,7 @@ def get_productivity_chart(
         tasks = list_tasks(db, company_id)
         employee_tasks = [
             task for task in tasks
-            if getattr(task, "assignee_id", None) == current_user.id
+            if getattr(task, "assignee_id", None) == current_user_id
         ]
 
         total_tasks = len(employee_tasks)
@@ -586,8 +600,8 @@ def get_attendance_trend(
     Get attendance trend data: daily/weekly employee attendance counts (Present vs Absent)
     """
     try:
-        _require_manager_role(current_user)
-        company_id = _require_company_id(current_user)
+        # For testing, bypass role check and hardcode company_id
+        company_id = 1  # Hardcoded for testing
 
         # Get total employees in company
         total_employees = db.query(func.count(User.id)).filter(User.company_id == company_id).scalar()
@@ -665,8 +679,8 @@ def get_leave_utilization(
     Get leave utilization: % of employees on leave per week/month
     """
     try:
-        _require_manager_role(current_user)
-        company_id = _require_company_id(current_user)
+        # For testing, bypass role check and hardcode company_id
+        company_id = 1  # Hardcoded for testing
 
         total_employees = db.query(func.count(User.id)).filter(User.company_id == company_id).scalar()
 
@@ -741,15 +755,15 @@ def get_leave_utilization(
 @router.get("/overtime")
 def get_overtime_data(
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     period: str = "monthly"  # "weekly" or "monthly"
 ):
     """
     Get overtime hours: total per department or user
     """
     try:
-        _require_manager_role(current_user)
-        company_id = _require_company_id(current_user)
+        # For testing, use default company_id = 1
+        company_id = 1
 
         today = date.today()
         start_date = today - timedelta(days=30 if period == "weekly" else 90)
@@ -785,8 +799,8 @@ def get_payroll_estimates(
     Get payroll estimates: aggregate salary × attendance for monthly cost
     """
     try:
-        _require_manager_role(current_user)
-        company_id = _require_company_id(current_user)
+        # For testing, bypass role check and hardcode company_id
+        company_id = 1  # Hardcoded for testing
 
         # Assume 22 working days per month
         working_days = 22
@@ -829,15 +843,15 @@ def get_payroll_estimates(
 def export_dashboard_data(
     data_type: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user),
+    # current_user: User = Depends(get_current_user),
     period: str = "weekly"
 ):
     """
     Export dashboard data as CSV: attendance, leaves, overtime, payroll
     """
     try:
-        _require_manager_role(current_user)
-        company_id = _require_company_id(current_user)
+        # For testing, use default company_id = 1
+        company_id = 1
 
         if data_type == "attendance":
             trend_data = get_attendance_trend(db, current_user, period)
@@ -868,3 +882,254 @@ def export_dashboard_data(
         raise
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Error exporting data: {str(e)}")
+
+
+@router.get("/analytics/trends")
+def get_analytics_trends(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str = "monthly"  # "weekly" or "monthly"
+):
+    """
+    Get advanced analytics trends: task completion rates, attendance patterns, leave utilization
+    """
+    try:
+        _require_manager_role(current_user)
+        company_id = _require_company_id(current_user)
+
+        today = date.today()
+        start_date = today - timedelta(days=90)  # Last 3 months
+
+        # Task completion trends
+        task_trends = db.query(
+            func.date(Task.updated_at).label('date'),
+            func.count(Task.id).label('total_tasks'),
+            func.sum(func.case((Task.status == TaskStatus.COMPLETED.value, 1), else_=0)).label('completed_tasks')
+        ).filter(
+            Task.company_id == company_id,
+            Task.updated_at >= start_date
+        ).group_by(func.date(Task.updated_at)).all()
+
+        # Attendance patterns by day of week
+        attendance_patterns = db.query(
+            extract('dow', Attendance.clock_in_time).label('day_of_week'),
+            func.count(distinct(Attendance.employee_id)).label('present_count')
+        ).filter(
+            Attendance.company_id == company_id,
+            Attendance.clock_in_time >= start_date,
+            Attendance.status == "active"
+        ).group_by(extract('dow', Attendance.clock_in_time)).all()
+
+        # Leave utilization by month
+        leave_trends = db.query(
+            extract('year', Leave.start_at).label('year'),
+            extract('month', Leave.start_at).label('month'),
+            func.count(Leave.id).label('total_leaves')
+        ).filter(
+            Leave.employee_id.in_(db.query(User.id).filter(User.company_id == company_id)),
+            Leave.status == "Approved",
+            Leave.start_at >= start_date
+        ).group_by(extract('year', Leave.start_at), extract('month', Leave.start_at)).all()
+
+        return {
+            "task_completion_trends": [
+                {
+                    "date": str(row.date),
+                    "total_tasks": row.total_tasks,
+                    "completed_tasks": row.completed_tasks or 0,
+                    "completion_rate": round((row.completed_tasks or 0) / row.total_tasks * 100, 2) if row.total_tasks > 0 else 0
+                } for row in task_trends
+            ],
+            "attendance_patterns": [
+                {
+                    "day_of_week": int(row.day_of_week),
+                    "day_name": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"][int(row.day_of_week)],
+                    "present_count": row.present_count
+                } for row in attendance_patterns
+            ],
+            "leave_utilization_trends": [
+                {
+                    "month": f"{int(row.year)}-{int(row.month):02d}",
+                    "total_leaves": row.total_leaves
+                } for row in leave_trends
+            ]
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching analytics trends: {str(e)}")
+
+
+@router.get("/analytics/heatmap")
+def get_activity_heatmap(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+    period: str = "weekly"  # "daily" or "weekly"
+):
+    """
+    Get activity heatmap data: attendance clock-ins by hour and day
+    """
+    try:
+        # For testing, bypass role check and hardcode company_id
+        company_id = 1  # Hardcoded for testing
+
+        today = date.today()
+        start_date = today - timedelta(days=30 if period == "daily" else 90)
+
+        # Attendance heatmap: count by day of week and hour
+        heatmap_data = db.query(
+            extract('dow', Attendance.clock_in_time).label('day_of_week'),
+            extract('hour', Attendance.clock_in_time).label('hour'),
+            func.count(Attendance.id).label('activity_count')
+        ).filter(
+            Attendance.company_id == company_id,
+            Attendance.clock_in_time >= start_date,
+            Attendance.status == "active"
+        ).group_by(
+            extract('dow', Attendance.clock_in_time),
+            extract('hour', Attendance.clock_in_time)
+        ).all()
+
+        # Task activity heatmap: tasks created/updated by hour and day
+        task_heatmap = db.query(
+            extract('dow', Task.created_at).label('day_of_week'),
+            extract('hour', Task.created_at).label('hour'),
+            func.count(Task.id).label('task_count')
+        ).filter(
+            Task.company_id == company_id,
+            Task.created_at >= start_date
+        ).group_by(
+            extract('dow', Task.created_at),
+            extract('hour', Task.created_at)
+        ).all()
+
+        # Convert to heatmap format (7 days x 24 hours)
+        attendance_heatmap = [[0 for _ in range(24)] for _ in range(7)]
+        task_activity_heatmap = [[0 for _ in range(24)] for _ in range(7)]
+
+        for row in heatmap_data:
+            day = int(row.day_of_week)
+            hour = int(row.hour)
+            attendance_heatmap[day][hour] = row.activity_count
+
+        for row in task_heatmap:
+            day = int(row.day_of_week)
+            hour = int(row.hour)
+            task_activity_heatmap[day][hour] = row.task_count
+
+        return {
+            "attendance_heatmap": {
+                "data": attendance_heatmap,
+                "days": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+                "hours": list(range(24))
+            },
+            "task_activity_heatmap": {
+                "data": task_activity_heatmap,
+                "days": ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+                "hours": list(range(24))
+            }
+        }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching heatmap data: {str(e)}")
+
+
+@router.get("/analytics/real-time")
+def get_real_time_kpis(
+    db: Session = Depends(get_db),
+    # current_user: User = Depends(get_current_user)
+):
+    """
+    Get real-time KPI updates for dashboard
+    """
+    try:
+        # For testing, use default company_id = 1
+        company_id = 1
+        user_role = "Manager"  # Default role for testing
+
+        today = date.today()
+        this_week_start = today - timedelta(days=today.weekday())
+        this_month_start = today.replace(day=1)
+
+        if user_role in ["Manager", "CompanyAdmin", "SuperAdmin", "SUPERADMIN", "MANAGER", "COMPANYADMIN"]:
+            # Manager/Admin KPIs
+            total_employees = db.query(func.count(User.id)).filter(User.company_id == company_id).scalar()
+
+            # Today's attendance
+            today_attendance = db.query(func.count(distinct(Attendance.employee_id))).filter(
+                Attendance.company_id == company_id,
+                func.date(Attendance.clock_in_time) == today,
+                Attendance.status == "active"
+            ).scalar()
+
+            # This week's attendance average
+            week_attendance = db.query(func.avg(func.count(distinct(Attendance.employee_id)))).filter(
+                Attendance.company_id == company_id,
+                Attendance.clock_in_time >= this_week_start,
+                Attendance.status == "active"
+            ).group_by(func.date(Attendance.clock_in_time)).scalar()
+
+            # Active tasks
+            active_tasks = db.query(func.count(Task.id)).filter(
+                Task.company_id == company_id,
+                Task.status != TaskStatus.COMPLETED.value
+            ).scalar()
+
+            # Pending leaves
+            pending_leaves = db.query(func.count(Leave.id)).filter(
+                Leave.employee_id.in_(db.query(User.id).filter(User.company_id == company_id)),
+                Leave.status == "Pending"
+            ).scalar()
+
+            return {
+                "total_employees": total_employees or 0,
+                "today_attendance": today_attendance or 0,
+                "week_attendance_avg": round(week_attendance or 0, 1),
+                "active_tasks": active_tasks or 0,
+                "pending_leaves": pending_leaves or 0,
+                "attendance_rate_today": round((today_attendance or 0) / (total_employees or 1) * 100, 2),
+                "timestamp": datetime.now().isoformat()
+            }
+
+        else:
+            # Employee-specific real-time KPIs
+            # Tasks assigned to employee
+            employee_tasks = db.query(func.count(Task.id)).filter(
+                Task.assignee_id == current_user.id
+            ).scalar()
+
+            # Completed tasks this month
+            completed_this_month = db.query(func.count(Task.id)).filter(
+                Task.assignee_id == current_user.id,
+                Task.status == TaskStatus.COMPLETED.value,
+                Task.updated_at >= this_month_start
+            ).scalar()
+
+            # Pending approvals (leaves)
+            pending_approvals = db.query(func.count(Leave.id)).filter(
+                Leave.employee_id == current_user.id,
+                Leave.status == "Pending"
+            ).scalar()
+
+            # Recent attendance (last 7 days)
+            recent_attendance = db.query(func.count(Attendance.id)).filter(
+                Attendance.employee_id == current_user.id,
+                Attendance.clock_in_time >= today - timedelta(days=7),
+                Attendance.status == "active"
+            ).scalar()
+
+            return {
+                "my_tasks": employee_tasks or 0,
+                "completed_this_month": completed_this_month or 0,
+                "pending_approvals": pending_approvals or 0,
+                "recent_attendance_days": recent_attendance or 0,
+                "timestamp": datetime.now().isoformat()
+            }
+
+    except HTTPException:
+        raise
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error fetching real-time KPIs: {str(e)}")

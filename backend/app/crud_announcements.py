@@ -1,6 +1,9 @@
+import structlog
 from sqlalchemy.orm import Session
-from .models.announcement import Announcement
-from .schemas.schemas import AnnouncementCreate
+from app.models.announcement import Announcement
+from app.schemas.schemas import AnnouncementCreate
+
+logger = structlog.get_logger(__name__)
 
 def create_announcement(db: Session, announcement: AnnouncementCreate, company_id: int, created_by: int):
     db_announcement = Announcement(**announcement.dict(), company_id=company_id, created_by=created_by)

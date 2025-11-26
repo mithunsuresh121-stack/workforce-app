@@ -1,6 +1,6 @@
 from sqlalchemy import Column, Integer, String, ForeignKey, JSON, Boolean
 from sqlalchemy.orm import relationship
-from ..db import Base
+from app.db import Base
 from .notification_digest import DigestMode
 
 class NotificationPreferences(Base):
