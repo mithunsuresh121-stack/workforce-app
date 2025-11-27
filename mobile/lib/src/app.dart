@@ -16,26 +16,8 @@ import 'screens/shift_management_screen.dart';
 import 'screens/notifications_screen.dart';
 import 'screens/notification_preferences_screen.dart';
 
-class WorkforceApp extends ConsumerStatefulWidget {
+class WorkforceApp extends ConsumerWidget {
   const WorkforceApp({super.key});
-  @override
-  ConsumerState<WorkforceApp> createState() => _WorkforceAppState();
-}
-
-class _WorkforceAppState extends ConsumerState<WorkforceApp> {
-  @override
-  void initState() {
-    super.initState();
-    // Load saved theme and check auth status on app start
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      try {
-        ref.read(themeProvider.notifier).loadTheme();
-        ref.read(authProvider.notifier).checkAuthStatus();
-      } catch (e) {
-        // Removed print statement
-      }
-    });
-  }
 
   void onLoggedIn() {
     // Auth state is managed by the provider, no need to set state here
@@ -123,15 +105,26 @@ class _AppShellState extends ConsumerState<AppShell> {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  // Logo placeholder
-                  Container(
-                    width: 60,
-                    height: 60,
-                    decoration: BoxDecoration(
-                      color: Colors.white,
-                      borderRadius: BorderRadius.circular(8),
+                  // Logo
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: Image.asset(
+                      'assets/images/logo.png',
+                      width: 60,
+                      height: 60,
+                      fit: BoxFit.cover,
+                      errorBuilder: (context, error, stackTrace) {
+                        return Container(
+                          width: 60,
+                          height: 60,
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(8),
+                          ),
+                          child: const Icon(Icons.business_center, color: Colors.blue),
+                        );
+                      },
                     ),
-                    child: const Icon(Icons.business_center, color: Colors.blue),
                   ),
                   const SizedBox(height: 12),
                   Text(
