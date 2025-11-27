@@ -1,7 +1,7 @@
 name: workforce_app
 description: Multi-tenant workforce management (Flutter)
 publish_to: "none"
-version: 0.1.0+1
+version: 1.0.0+1
 
 environment:
   sdk: ">=3.3.0 <4.0.0"
@@ -27,6 +27,8 @@ dependencies:
   json_annotation: ^4.8.1
   firebase_core: ^3.0.0
   firebase_messaging: ^15.0.0
+  flutter_native_splash: ^2.4.1
+  flutter_launcher_icons: ^0.13.1
 
 dev_dependencies:
   flutter_test:
@@ -43,3 +45,13 @@ flutter:
     - assets/images/
     - assets/icons/
     - assets/translations/
+
+flutter_native_splash:
+  color: "#ffffff"
+  android: true
+  ios: true
+
+flutter_launcher_icons:
+  android: "launcher_icon"
+  ios: true
+  image_path: "assets/images/logo.png"

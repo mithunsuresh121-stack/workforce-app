@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workforce_app/src/providers/auth_provider.dart';
+import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:workforce_app/src/services/api_service.dart';
 
 class LoginScreen extends ConsumerStatefulWidget {
   final VoidCallback onLoggedIn;
@@ -17,6 +20,13 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
   final _companyIdController = TextEditingController();
   bool _showPassword = false;
   bool _isLoading = false;
+  bool _isInitializing = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _initializeApp();
+  }
 
   @override
   void dispose() {
@@ -24,6 +34,74 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
     _passwordController.dispose();
     _companyIdController.dispose();
     super.dispose();
+  }
+
+  Future<void> _initializeApp() async {
+    try {
+      // Initialize Firebase
+      await Firebase.initializeApp();
+
+      // Initialize Firebase Messaging
+      FirebaseMessaging messaging = FirebaseMessaging.instance;
+
+      // Request permission for iOS
+      NotificationSettings settings = await messaging.requestPermission(
+        alert: true,
+        announcement: false,
+        badge: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+        sound: true,
+      );
+
+      // Get FCM token
+      String? token = await messaging.getToken();
+
+      // Send FCM token to backend if user is logged in
+      if (token != null) {
+        try {
+          final apiService = ApiService();
+          final authToken = await apiService.getToken();
+          if (authToken != null) {
+            await apiService.updateFCMToken(token);
+          }
+        } catch (e) {
+          // Error sending FCM token
+        }
+      }
+
+      // Handle foreground messages
+      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
+        // Handle foreground message
+      });
+
+      // Handle token refresh
+      FirebaseMessaging.instance.onTokenRefresh.listen((String token) async {
+        try {
+          final apiService = ApiService();
+          final authToken = await apiService.getToken();
+          if (authToken != null) {
+            await apiService.updateFCMToken(token);
+          }
+        } catch (e) {
+          // Error sending refreshed FCM token
+        }
+      });
+
+      // Handle background messages
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+
+      // Check auth status
+      final authNotifier = ref.read(authProvider.notifier);
+      await authNotifier.checkAuthStatus();
+    } catch (e) {
+      // Initialization error
+    }
+
+    if (mounted) {
+      setState(() => _isInitializing = false);
+    }
   }
 
   Future<void> _handleLogin() async {
@@ -80,15 +158,26 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                   child: Column(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      // Logo placeholder
-                      Container(
-                        width: 120,
-                        height: 120,
-                        decoration: BoxDecoration(
-                          color: Colors.grey[200],
-                          borderRadius: BorderRadius.circular(12),
+                      // Logo
+                      ClipRRect(
+                        borderRadius: BorderRadius.circular(12),
+                        child: Image.asset(
+                          'assets/images/logo.png',
+                          width: 120,
+                          height: 120,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              width: 120,
+                              height: 120,
+                              decoration: BoxDecoration(
+                                color: Colors.grey[200],
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: const Icon(Icons.business_center, size: 48, color: Colors.grey),
+                            );
+                          },
                         ),
-                        child: const Icon(Icons.business_center, size: 48, color: Colors.grey),
                       ),
                       const SizedBox(height: 16),
                       Text(
