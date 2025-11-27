@@ -19,18 +19,13 @@ jobs:
       with:
         flutter-version: '3.3.0'
 
-    - name: Change to mobile directory
-      run: cd mobile
-
     - name: Get dependencies
-      run: |
-        cd mobile
-        flutter pub get
+      working-directory: mobile
+      run: flutter pub get
 
     - name: Build APK
-      run: |
-        cd mobile
-        flutter build apk --debug
+      working-directory: mobile
+      run: flutter build apk --debug
 
     - name: Upload APK
       uses: actions/upload-artifact@v4
