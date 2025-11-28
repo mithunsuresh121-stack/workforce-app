@@ -5,5 +5,5 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
   // ← Remove ANY await Firebase.initializeApp(), heavy API calls, or SharedPreferences.getInstance() here
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: WorkforceApp()));
 }
