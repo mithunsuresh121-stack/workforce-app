@@ -22,7 +22,7 @@ class MockWebSocket {
   onmessage: ((event: MessageEvent) => void) | null = null;
   onclose: ((event: CloseEvent) => void) | null = null;
   onerror: ((event: Event) => void) | null = null;
-  readyState = 1; // OPEN
+  readyState = 0; // CONNECTING
   url: string;
   close = vi.fn();
   send = vi.fn();
@@ -32,12 +32,14 @@ class MockWebSocket {
   dispatchEvent(event: Event): boolean {
     switch (event.type) {
       case 'open':
+        this.readyState = 1; // OPEN
         if (this.onopen) this.onopen(event);
         break;
       case 'message':
         if (this.onmessage) this.onmessage(event as MessageEvent);
         break;
       case 'close':
+        this.readyState = 3; // CLOSED
         if (this.onclose) this.onclose(event as CloseEvent);
         break;
       case 'error':
@@ -51,6 +53,12 @@ class MockWebSocket {
     this.url = url;
     // Store reference for testing
     (global as any).lastMockWebSocket = this;
+    // Auto-dispatch open event after a short delay to simulate connection (fixes timing issue in Vitest 3+)
+    setTimeout(() => {
+      if (this.onopen) {
+        this.onopen(new Event('open'));
+      }
+    }, 0);
   }
 }
 
@@ -97,7 +105,7 @@ describe('useWebSocketNotifications', () => {
   test('handles WebSocket connection', async () => {
     // Override MSW handler to return empty array for notifications
     server.use(
-      http.get('/api/notifications/', () => {
+      http.get('http://localhost:3000/api/notifications/', () => {
         return HttpResponse.json([]);
       })
     );
@@ -123,18 +131,23 @@ describe('useWebSocketNotifications', () => {
       expect((global as any).lastMockWebSocket).toBeDefined();
     });
 
-    // Simulate WebSocket open
     const mockWS = (global as any).lastMockWebSocket;
-    await act(async () => {
-      if (mockWS) {
-        mockWS.dispatchEvent(new Event('open'));
-      }
+
+    // Wait for onopen handler to be assigned
+    await waitFor(() => {
+      expect(mockWS.onopen).toBeDefined();
     });
 
-    // Wait for connected to be true
+    // The auto-dispatch in constructor should have triggered; but add explicit act for React state update
+    await act(async () => {
+      // Flush any pending updates
+      await new Promise(resolve => setTimeout(resolve, 100));
+    });
+
+    // Wait for connected to be true with increased timeout for async state
     await waitFor(() => {
       expect(result.current.connected).toBe(true);
-    });
+    }, { timeout: 3000 });
   });
 
   test('handles mark as read', async () => {
@@ -248,7 +261,7 @@ describe('useWebSocketNotifications', () => {
       expect(mockWS.onmessage).toBeDefined();
     });
 
-    // Simulate WebSocket open
+    // The auto-dispatch should have set connected; add explicit for safety
     await act(async () => {
       if (mockWS && mockWS.onopen) {
         mockWS.onopen(new Event('open'));
@@ -258,7 +271,7 @@ describe('useWebSocketNotifications', () => {
     // Wait for connected to be true
     await waitFor(() => {
       expect(result.current.connected).toBe(true);
-    });
+    }, { timeout: 3000 });
 
     // Simulate receiving a WebSocket message
     const newNotification = {
@@ -283,13 +296,13 @@ describe('useWebSocketNotifications', () => {
     // Force a re-render to ensure state updates are reflected
     await act(async () => {
       // Small delay to allow state update
-      await new Promise(resolve => setTimeout(resolve, 0));
+      await new Promise(resolve => setTimeout(resolve, 100));
     });
 
     // Wait for the notification to be added
     await waitFor(() => {
       expect(result.current.notifications).toHaveLength(1);
       expect(result.current.notifications[0].id).toBe('2');
-    }, { timeout: 2000 });
+    }, { timeout: 3000 });
   });
 });

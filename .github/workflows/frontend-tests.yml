@@ -25,7 +25,7 @@ jobs:
       - name: Run tests
         run: |
           cd frontend-web/web-app
-          npm test -- --coverage --watchAll=false
+          npm test -- --coverage --watch=false
       - name: Build
         run: |
           cd frontend-web/web-app
@@ -38,6 +38,4 @@ jobs:
       - name: Run e2e WebSocket tests
         run: |
           cd frontend-web/web-app
-          npm install --save-dev playwright
-          npx playwright install
-          npx playwright test websocket-reconnect.spec.js --headed=false
+          npm run test:e2e -- websocket-reconnect.spec.js --headed=false

@@ -14,4 +14,12 @@ export default defineConfig({
       },
     },
   },
+  test: {
+    coverage: {
+      reporter: ['text', 'json', 'lcov'],
+      reportsDirectory: 'coverage',
+    },
+    globals: true,
+    environment: 'jsdom',
+  },
 })
