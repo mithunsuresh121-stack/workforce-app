@@ -27,7 +27,7 @@ jobs:
         cache: false
 
     - name: Accept Android licenses
-      run: flutter doctor --android-licenses
+      run: yes | flutter doctor --android-licenses
 
     - name: Get dependencies
       run: flutter pub get
