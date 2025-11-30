@@ -139,14 +139,14 @@ class _AppShellState extends ConsumerState<AppShell> {
                   Text(
                     'Company ID: ${authState.companyId ?? 'N/A'}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 204), // 0.8 opacity equivalent
+                      color: Colors.white.withOpacity(0.8), // 0.8 opacity equivalent
                       fontSize: 14,
                     ),
                   ),
                   Text(
                     'User: ${authState.email ?? 'N/A'}',
                     style: TextStyle(
-                      color: Colors.white.withValues(alpha: 204), // 0.8 opacity equivalent
+                      color: Colors.white.withOpacity(0.8), // 0.8 opacity equivalent
                       fontSize: 14,
                     ),
                   ),

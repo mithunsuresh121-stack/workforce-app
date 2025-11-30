@@ -55,7 +55,7 @@ class ThemeNotifier extends StateNotifier<ThemeState> {
           ? Colors.white 
           : Colors.black,
       ),
-      cardTheme: CardThemeData( // Change to CardThemeData
+      cardTheme: CardTheme(
         elevation: 2,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),

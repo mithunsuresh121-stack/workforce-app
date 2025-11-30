@@ -374,7 +374,7 @@ class _KpiCard extends StatelessWidget {
                 Container(
                   padding: const EdgeInsets.all(8),
                   decoration: BoxDecoration(
-                    color: color.withValues(alpha: 25), // Updated to withValues
+                    color: color.withOpacity(0.1), // Updated to withValues
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Icon(icon, color: color, size: 20),
@@ -425,7 +425,7 @@ class _ActivityItem extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 25), // Updated to withValues
+          color: color.withOpacity(0.1), // Updated to withValues
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(icon, color: color, size: 20),
@@ -474,7 +474,7 @@ class _TaskItem extends StatelessWidget {
       leading: Container(
         padding: const EdgeInsets.all(8),
         decoration: BoxDecoration(
-          color: priorityColor.withValues(alpha: 25), // Updated to withValues
+          color: priorityColor.withOpacity(0.1), // Updated to withValues
           borderRadius: BorderRadius.circular(8),
         ),
         child: Icon(

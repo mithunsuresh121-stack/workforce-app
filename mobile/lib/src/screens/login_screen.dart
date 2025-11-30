@@ -5,6 +5,11 @@ import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:workforce_app/src/services/api_service.dart';
 
+Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
+  await Firebase.initializeApp();
+  print('Handling a background message ${message.messageId}');
+}
+
 class LoginScreen extends ConsumerStatefulWidget {
   final VoidCallback onLoggedIn;
   const LoginScreen({super.key, required this.onLoggedIn});

@@ -1,3 +1,4 @@
+import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workforce_app/src/services/api_service.dart';
@@ -25,7 +26,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final response = await _apiService.getCurrentUserProfile();
     if (response.statusCode == 200) {
       setState(() {
-        _currentUser = response.body;
+        _currentUser = json.decode(response.body);
       });
     }
   }
@@ -35,7 +36,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final response = await _apiService.getTasks();
     if (response.statusCode == 200) {
       setState(() {
-        _tasks = response.body as List<dynamic>; // Cast to List<dynamic>
+        _tasks = json.decode(response.body) as List<dynamic>;
         _isLoading = false;
       });
     } else {
@@ -117,7 +118,7 @@ class _TasksScreenState extends ConsumerState<TasksScreen> {
     final response = await _apiService.createTask({
       'title': title,
       'description': description,
-      'company_id': _currentUser['company_id'],
+      'company_id': _currentUser!['company_id'],
     });
     if (response.statusCode == 201) {
       _fetchTasks(); // Refresh the task list

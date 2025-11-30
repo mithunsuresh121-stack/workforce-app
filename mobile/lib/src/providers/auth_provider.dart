@@ -51,33 +51,21 @@ class AuthNotifier extends StateNotifier<AuthState> {
     state = state.copyWith(isLoading: true, error: null);
     
     try {
-      final response = await _apiService.login(email, password, companyId);
+      final data = await _apiService.login(email, password, companyId);
+      final token = data['access_token'];
       
-      if (response.statusCode == 200) {
-        final data = json.decode(response.body);
-        final token = data['access_token'];
-        
-        await _apiService.saveToken(token);
-        
-        state = state.copyWith(
-          isAuthenticated: true,
-          token: token,
-          email: email,
-          companyId: companyId,
-          isLoading: false,
-          error: null,
-        );
-      } else {
-        final errorData = json.decode(response.body);
-        state = state.copyWith(
-          isLoading: false,
-          error: errorData['detail'] ?? 'Login failed',
-        );
-      }
+      state = state.copyWith(
+        isAuthenticated: true,
+        token: token,
+        email: email,
+        companyId: companyId,
+        isLoading: false,
+        error: null,
+      );
     } catch (e) {
       state = state.copyWith(
         isLoading: false,
-        error: 'Network error: ${e.toString()}',
+        error: e.toString(),
       );
     }
   }

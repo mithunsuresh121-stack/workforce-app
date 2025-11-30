@@ -476,7 +476,7 @@ class _ShiftManagementScreenState extends State<ShiftManagementScreen> {
                                                   title: Semantics(
                                                     label: 'Employee name',
                                                     child: Text(
-                                                      '${employee['full_name'] ?? 'Employee ${shift['employee_id']}}',
+                                                      '${employee['full_name'] ?? 'Employee ${shift['employee_id']}'}',
                                                       style: theme.textTheme.titleMedium,
                                                     ),
                                                   ),

@@ -111,7 +111,7 @@ class _ReportTypeChip extends StatelessWidget {
       onSelected: (_) => onTap(),
       showCheckmark: false,
         backgroundColor: isSelected 
-        ? Theme.of(context).colorScheme.primary.withValues(alpha: 25) // 0.1 opacity equivalent
+        ? Theme.of(context).colorScheme.primary.withOpacity(0.1) // 0.1 opacity equivalent
         : null,
       labelStyle: TextStyle(
         color: isSelected 
@@ -391,7 +391,7 @@ class _EmployeePerformanceRow extends StatelessWidget {
       subtitle: Text(department),
       trailing: Chip(
         label: Text(score),
-        backgroundColor: Colors.green.withValues(alpha: 51), // 0.2 opacity equivalent
+        backgroundColor: Colors.green.withOpacity(0.2), // 0.2 opacity equivalent
         labelStyle: const TextStyle(color: Colors.green),
       ),
     );
@@ -419,13 +419,13 @@ class _AttendanceSummaryRow extends StatelessWidget {
         children: [
           Chip(
             label: Text(rate),
-            backgroundColor: Colors.green.withValues(alpha: 51), // 0.2 opacity equivalent
+            backgroundColor: Colors.green.withOpacity(0.2), // 0.2 opacity equivalent
             labelStyle: const TextStyle(color: Colors.green),
           ),
           const SizedBox(width: 8),
           Chip(
             label: Text('$late late'),
-        backgroundColor: Colors.orange.withValues(alpha: 51), // 0.2 opacity equivalent
+        backgroundColor: Colors.orange.withOpacity(0.2), // 0.2 opacity equivalent
             labelStyle: const TextStyle(color: Colors.orange),
           ),
         ],
@@ -479,7 +479,7 @@ class _TaskStatusRow extends StatelessWidget {
       title: Text(status),
       trailing: Chip(
         label: Text(count.toString()),
-        backgroundColor: color.withValues(alpha: 51), // 0.2 opacity equivalent
+        backgroundColor: color.withOpacity(0.2), // 0.2 opacity equivalent
         labelStyle: TextStyle(color: color),
       ),
     );
