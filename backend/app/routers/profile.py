@@ -1,44 +1,50 @@
+from typing import List
+
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from typing import List
-from app.deps import get_db, get_current_user
-from app.schemas import ProfileUpdateRequestCreate, ProfileUpdateRequestOut, ProfileUpdateRequestReview, EmployeeProfileOut
-from app.crud import (
-    get_employee_profile_by_user_id,
-    create_profile_update_request,
-    list_profile_update_requests,
-    update_profile_update_request_status,
-    update_employee_profile
-)
-from app.models.user import User
+
+from app.crud import (create_profile_update_request,
+                      get_employee_profile_by_user_id,
+                      list_profile_update_requests, update_employee_profile,
+                      update_profile_update_request_status)
+from app.deps import get_current_user, get_db
 from app.models.profile_update_request import RequestStatus
+from app.models.user import User
+from app.schemas import (EmployeeProfileOut, ProfileUpdateRequestCreate,
+                         ProfileUpdateRequestOut, ProfileUpdateRequestReview)
 
 logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/profile", tags=["Profile"])
 
+
 @router.get("/me", response_model=EmployeeProfileOut)
 def get_my_profile(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get the current user's profile
     """
-    profile = get_employee_profile_by_user_id(db, current_user.id, current_user.company_id)
+    profile = get_employee_profile_by_user_id(
+        db, current_user.id, current_user.company_id
+    )
     if not profile:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Profile not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Profile not found"
         )
     return profile
 
-@router.post("/request-update", response_model=ProfileUpdateRequestOut, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/request-update",
+    response_model=ProfileUpdateRequestOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def request_profile_update(
     payload: ProfileUpdateRequestCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Request a profile update (for employees/managers)
@@ -47,14 +53,14 @@ def request_profile_update(
     if payload.user_id != current_user.id:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot request updates for other users"
+            detail="Cannot request updates for other users",
         )
 
     # Validate payload for update requests
     if payload.request_type == "update" and not payload.payload:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Payload required for update requests"
+            detail="Payload required for update requests",
         )
 
     request = create_profile_update_request(
@@ -62,14 +68,18 @@ def request_profile_update(
         user_id=payload.user_id,
         requested_by_id=current_user.id,
         request_type=payload.request_type,
-        payload=payload.payload
+        payload=payload.payload,
     )
     return request
 
-@router.post("/request-delete", response_model=ProfileUpdateRequestOut, status_code=status.HTTP_201_CREATED)
+
+@router.post(
+    "/request-delete",
+    response_model=ProfileUpdateRequestOut,
+    status_code=status.HTTP_201_CREATED,
+)
 def request_account_deletion(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Request account deletion (for employees/managers)
@@ -79,15 +89,16 @@ def request_account_deletion(
         user_id=current_user.id,
         requested_by_id=current_user.id,
         request_type="delete",
-        payload=None
+        payload=None,
     )
     return request
+
 
 @router.get("/requests", response_model=List[ProfileUpdateRequestOut])
 def get_profile_update_requests(
     status_filter: str = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get all profile update requests (Super Admin only)
@@ -95,7 +106,7 @@ def get_profile_update_requests(
     if current_user.role != "SuperAdmin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Super Admin can view all requests"
+            detail="Only Super Admin can view all requests",
         )
 
     # Fix: list_profile_update_requests takes only db argument, filter manually if needed
@@ -104,12 +115,13 @@ def get_profile_update_requests(
         requests = [r for r in requests if r.status == status_filter]
     return requests
 
+
 @router.put("/requests/{request_id}/approve", response_model=ProfileUpdateRequestOut)
 def approve_profile_update_request(
     request_id: int,
     review: ProfileUpdateRequestReview,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Approve a profile update request (Super Admin only)
@@ -117,7 +129,7 @@ def approve_profile_update_request(
     if current_user.role != "SuperAdmin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Super Admin can approve requests"
+            detail="Only Super Admin can approve requests",
         )
 
     request = update_profile_update_request_status(
@@ -125,12 +137,11 @@ def approve_profile_update_request(
         request_id=request_id,
         status=RequestStatus.approved,
         reviewed_by_id=current_user.id,
-        review_comment=review.review_comment
+        review_comment=review.review_comment,
     )
     if not request:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Request not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
         )
 
     # If approved and it's an update, apply the changes
@@ -147,17 +158,18 @@ def approve_profile_update_request(
             db=db,
             user_id=request.user_id,
             company_id=request.user.company_id,
-            is_active=False
+            is_active=False,
         )
 
     return request
+
 
 @router.put("/requests/{request_id}/reject", response_model=ProfileUpdateRequestOut)
 def reject_profile_update_request(
     request_id: int,
     review: ProfileUpdateRequestReview,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Reject a profile update request (Super Admin only)
@@ -165,7 +177,7 @@ def reject_profile_update_request(
     if current_user.role != "SuperAdmin":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only Super Admin can reject requests"
+            detail="Only Super Admin can reject requests",
         )
 
     request = update_profile_update_request_status(
@@ -173,11 +185,10 @@ def reject_profile_update_request(
         request_id=request_id,
         status=RequestStatus.rejected,
         reviewed_by_id=current_user.id,
-        review_comment=review.review_comment
+        review_comment=review.review_comment,
     )
     if not request:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Request not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Request not found"
         )
     return request

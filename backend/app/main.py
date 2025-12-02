@@ -1,11 +1,19 @@
-import structlog
 import asyncio
+
+import structlog
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
-from app.config import settings, engine, Base
-from app.models import *
-from app.routers import auth, tasks, companies, dashboard, employees, leaves, shifts, payroll, attendance, notifications_router as notifications, notification_preferences, profile, documents_router as documents, chat, meetings, websocket_manager, org, admin, ai, approvals, procurement
+
+from app.config import Base, engine, settings
 from app.custom_json_response import CustomJSONResponse
+from app.models import *
+from app.routers import (admin, ai, approvals, attendance, auth, chat,
+                         companies, dashboard)
+from app.routers import documents_router as documents
+from app.routers import employees, leaves, meetings, notification_preferences
+from app.routers import notifications_router as notifications
+from app.routers import (org, payroll, procurement, profile, shifts, tasks,
+                         websocket_manager)
 
 # Set up structured logging with structlog as primary logger
 shared_processors = [
@@ -21,14 +29,17 @@ shared_processors = [
     structlog.processors.add_log_level,
     structlog.processors.TimeStamper(fmt="%Y-%m-%d %H:%M:%S"),
     # Add mandatory fields processor
-    lambda logger, method_name, event_dict: event_dict.update({
-        'event': event_dict.get('event', method_name),
-        'timestamp': event_dict.get('timestamp'),
-        'user_id': event_dict.get('user_id', None),
-        'company_id': event_dict.get('company_id', None),
-        'level': event_dict.get('level', 'INFO')
-    }) or event_dict,
-    structlog.processors.JSONRenderer()  # For structured output
+    lambda logger, method_name, event_dict: event_dict.update(
+        {
+            "event": event_dict.get("event", method_name),
+            "timestamp": event_dict.get("timestamp"),
+            "user_id": event_dict.get("user_id", None),
+            "company_id": event_dict.get("company_id", None),
+            "level": event_dict.get("level", "INFO"),
+        }
+    )
+    or event_dict,
+    structlog.processors.JSONRenderer(),  # For structured output
 ]
 
 structlog.configure(
@@ -45,12 +56,16 @@ logger = structlog.get_logger()
 if __name__ == "__main__":
     Base.metadata.create_all(bind=engine)
 
-app = FastAPI(title="Workforce App", version="1.0", default_response_class=CustomJSONResponse)
+app = FastAPI(
+    title="Workforce App", version="1.0", default_response_class=CustomJSONResponse
+)
+
 
 # Add request logging middleware with contextual data
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
     import time
+
     start_time = time.time()
     response = await call_next(request)
     process_time = time.time() - start_time
@@ -65,20 +80,23 @@ async def log_requests(request: Request, call_next):
     # Enhanced observability: log admin actions and request duration
     is_admin_endpoint = request.url.path.startswith("/api/admin")
     if is_admin_endpoint:
-        from app.services.audit_service import AuditService
         from app.db import SessionLocal
+        from app.services.audit_service import AuditService
+
         db = SessionLocal()
         try:
             AuditService.log_admin_action(
                 db=db,
                 action="ENDPOINT_ACCESS",
-                user_id=int(user_id) if user_id and user_id != "extracted_user_id" else None,
+                user_id=(
+                    int(user_id) if user_id and user_id != "extracted_user_id" else None
+                ),
                 company_id=None,  # Will be set in endpoint if needed
                 details={
                     "endpoint": request.url.path,
                     "method": request.method,
-                    "duration_ms": process_time * 1000
-                }
+                    "duration_ms": process_time * 1000,
+                },
             )
         finally:
             db.close()
@@ -93,14 +111,15 @@ async def log_requests(request: Request, call_next):
         remote_addr=request.client.host if request.client else None,
         user_id=user_id,
         endpoint=request.url.path,
-        log_level="INFO"
+        log_level="INFO",
     )
     return response
+
 
 # Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
+    allow_origins=settings.ALLOWED_ORIGINS or [
         "http://localhost:3000",  # Development frontend
         "https://app.workforce.com",  # Production frontend
         "https://workforce-app.com",  # Alternative production domain
@@ -133,16 +152,9 @@ app.include_router(approvals.router, prefix="/api/approvals")
 app.include_router(procurement.router, prefix="/api")
 app.include_router(websocket_manager.router, prefix="/api/ws")
 
-from app.seed_demo_user import seed_demo_user
-from app.deps import get_db
-from app.services.redis_service import redis_service
-from app.services.ws_broadcast import ws_manager
-from prometheus_fastapi_instrumentator import Instrumentator
-from app.metrics import registry, initialize_counters_from_redis
-import json
-
 # Initialize Prometheus instrumentation
 instrumentator = Instrumentator().instrument(app)
+
 
 @app.on_event("startup")
 async def startup_event():
@@ -151,11 +163,17 @@ async def startup_event():
         await redis_service.initialize()
         healthy = await redis_service.health_check()
         if not healthy:
-            logger.warning("Redis health check failed, proceeding without Redis features")
+            logger.warning(
+                "Redis health check failed, proceeding without Redis features"
+            )
         else:
             logger.info("Redis initialized and healthy on startup")
     except Exception as e:
-        logger.error("Failed to initialize Redis on startup, proceeding without Redis features", error=str(e), exc_info=True)
+        logger.error(
+            "Failed to initialize Redis on startup, proceeding without Redis features",
+            error=str(e),
+            exc_info=True,
+        )
         # Do not raise to allow FastAPI to start; Redis-dependent features will be disabled
 
     # Initialize metrics counters from Redis
@@ -165,9 +183,12 @@ async def startup_event():
     except Exception as e:
         logger.warning("Failed to initialize metrics counters from Redis", error=str(e))
 
-    # Seed demo user
-    db = next(get_db())
-    seed_demo_user(db)
+    # Seed demo user conditionally
+    if settings.APP_ENV == "development":
+        from app.seed_demo_user import seed_demo_user
+
+        db = next(get_db())
+        seed_demo_user(db)
 
     # Start Redis subscriber for chat channels
     asyncio.create_task(redis_subscriber())
@@ -175,10 +196,11 @@ async def startup_event():
 
 async def redis_subscriber():
     """Subscribe to Redis pub/sub for chat channels and forward to WS"""
+
     async def callback(message_data: str):
         try:
             data = json.loads(message_data)
-            channel_id = int(data.get('channel_id', 0))  # Extract from payload if needed
+            channel_id = int(data.get("channel_id", 0))  # Extract from payload if needed
             await ws_manager.broadcast(channel_id, message_data)
             logger.info("redis_sub_forward", channel_id=channel_id)
         except Exception as e:
@@ -186,18 +208,24 @@ async def redis_subscriber():
 
     await redis_service.psubscribe("chat:channel:*:pub", callback)
 
+
 app.include_router(dashboard.router, prefix="/api")
+
+
 @app.get("/")
 def root():
     return {"message": f"Welcome to the Workforce App! Environment: {settings.APP_ENV}"}
+
 
 @app.get("/health")
 def health_check():
     return {"status": "healthy", "version": "1.0.0"}
 
+
 @app.get("/test")
 def test_endpoint():
     return {"test": "value", "number": 123, "boolean": True}
+
 
 @app.get("/welcome")
 def welcome_endpoint(request: Request):
@@ -206,9 +234,10 @@ def welcome_endpoint(request: Request):
         method=request.method,
         path=request.url.path,
         user_agent=request.headers.get("user-agent", ""),
-        remote_addr=request.client.host if request.client else None
+        remote_addr=request.client.host if request.client else None,
     )
     return {"message": "Welcome to the Workforce App!"}
+
 
 @app.get("/hello")
 def hello_endpoint(request: Request):
@@ -217,13 +246,18 @@ def hello_endpoint(request: Request):
         method=request.method,
         path=request.url.path,
         user_agent=request.headers.get("user-agent", ""),
-        remote_addr=request.client.host if request.client else None
+        remote_addr=request.client.host if request.client else None,
     )
     return {"message": "Hello, welcome to the Workforce API!"}
+
 
 @app.get("/metrics")
 def metrics_endpoint():
     """Expose Prometheus metrics from FastAPI app"""
     from prometheus_client import generate_latest
+
     from app.metrics import registry
-    return Response(content=generate_latest(registry), media_type="text/plain; charset=utf-8")
+
+    return Response(
+        content=generate_latest(registry), media_type="text/plain; charset=utf-8"
+    )

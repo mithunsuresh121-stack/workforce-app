@@ -1,32 +1,42 @@
-import structlog
-from sqlalchemy.orm import Session
-from sqlalchemy import and_, func
 from datetime import datetime, timedelta
-from typing import List, Dict, Any
+from typing import Any, Dict, List
+
+import structlog
+from sqlalchemy import and_, func
+from sqlalchemy.orm import Session
 
 from app.models.notification import Notification, NotificationType
-from app.models.notification_digest import NotificationDigest, DigestType, DigestStatus
-from app.models.notification_preferences import NotificationPreferences, DigestMode
+from app.models.notification_digest import (DigestStatus, DigestType,
+                                            NotificationDigest)
+from app.models.notification_preferences import (DigestMode,
+                                                 NotificationPreferences)
 from app.models.user import User
 
 logger = structlog.get_logger(__name__)
+
 
 class DigestService:
     def __init__(self, db: Session):
         self.db = db
 
-    def create_daily_digest(self, user_id: int, company_id: int = None) -> NotificationDigest:
+    def create_daily_digest(
+        self, user_id: int, company_id: int = None
+    ) -> NotificationDigest:
         """Create a daily digest for a user"""
         # Get notifications from the last 24 hours that should be included in digest
         yesterday = datetime.utcnow() - timedelta(days=1)
 
-        notifications = self.db.query(Notification).filter(
-            and_(
-                Notification.user_id == user_id,
-                Notification.created_at >= yesterday,
-                Notification.status == "unread"
+        notifications = (
+            self.db.query(Notification)
+            .filter(
+                and_(
+                    Notification.user_id == user_id,
+                    Notification.created_at >= yesterday,
+                    Notification.status == "unread",
+                )
             )
-        ).all()
+            .all()
+        )
 
         if not notifications:
             return None
@@ -34,7 +44,9 @@ class DigestService:
         # Group notifications by type
         type_counts = {}
         for notification in notifications:
-            type_counts[notification.type.value] = type_counts.get(notification.type.value, 0) + 1
+            type_counts[notification.type.value] = (
+                type_counts.get(notification.type.value, 0) + 1
+            )
 
         # Create digest summary
         total_count = len(notifications)
@@ -52,28 +64,36 @@ class DigestService:
             summary=summary,
             notification_count=total_count,
             notification_ids=[n.id for n in notifications],
-            scheduled_for=datetime.utcnow() + timedelta(hours=1)  # Send in 1 hour
+            scheduled_for=datetime.utcnow() + timedelta(hours=1),  # Send in 1 hour
         )
 
         self.db.add(digest)
         self.db.commit()
         self.db.refresh(digest)
 
-        logger.info(f"Created daily digest for user {user_id} with {total_count} notifications")
+        logger.info(
+            f"Created daily digest for user {user_id} with {total_count} notifications"
+        )
         return digest
 
-    def create_weekly_digest(self, user_id: int, company_id: int = None) -> NotificationDigest:
+    def create_weekly_digest(
+        self, user_id: int, company_id: int = None
+    ) -> NotificationDigest:
         """Create a weekly digest for a user"""
         # Get notifications from the last 7 days
         last_week = datetime.utcnow() - timedelta(days=7)
 
-        notifications = self.db.query(Notification).filter(
-            and_(
-                Notification.user_id == user_id,
-                Notification.created_at >= last_week,
-                Notification.status == "unread"
+        notifications = (
+            self.db.query(Notification)
+            .filter(
+                and_(
+                    Notification.user_id == user_id,
+                    Notification.created_at >= last_week,
+                    Notification.status == "unread",
+                )
             )
-        ).all()
+            .all()
+        )
 
         if not notifications:
             return None
@@ -84,11 +104,15 @@ class DigestService:
             day = notification.created_at.date()
             if day not in daily_counts:
                 daily_counts[day] = {}
-            daily_counts[day][notification.type.value] = daily_counts[day].get(notification.type.value, 0) + 1
+            daily_counts[day][notification.type.value] = (
+                daily_counts[day].get(notification.type.value, 0) + 1
+            )
 
         # Create digest summary
         total_count = len(notifications)
-        summary = f"Weekly summary: {total_count} notifications from the past 7 days\n\n"
+        summary = (
+            f"Weekly summary: {total_count} notifications from the past 7 days\n\n"
+        )
 
         for day in sorted(daily_counts.keys(), reverse=True):
             day_str = day.strftime("%A, %B %d")
@@ -107,21 +131,25 @@ class DigestService:
             summary=summary,
             notification_count=total_count,
             notification_ids=[n.id for n in notifications],
-            scheduled_for=datetime.utcnow() + timedelta(hours=2)  # Send in 2 hours
+            scheduled_for=datetime.utcnow() + timedelta(hours=2),  # Send in 2 hours
         )
 
         self.db.add(digest)
         self.db.commit()
         self.db.refresh(digest)
 
-        logger.info(f"Created weekly digest for user {user_id} with {total_count} notifications")
+        logger.info(
+            f"Created weekly digest for user {user_id} with {total_count} notifications"
+        )
         return digest
 
     def should_create_digest(self, user_id: int, digest_type: DigestType) -> bool:
         """Check if a digest should be created for the user based on their preferences"""
-        prefs = self.db.query(NotificationPreferences).filter(
-            NotificationPreferences.user_id == user_id
-        ).first()
+        prefs = (
+            self.db.query(NotificationPreferences)
+            .filter(NotificationPreferences.user_id == user_id)
+            .first()
+        )
 
         if not prefs:
             return False
@@ -129,7 +157,9 @@ class DigestService:
         # Check if user has digest mode enabled
         if digest_type == DigestType.DAILY and prefs.digest_mode == DigestMode.DAILY:
             return True
-        elif digest_type == DigestType.WEEKLY and prefs.digest_mode == DigestMode.WEEKLY:
+        elif (
+            digest_type == DigestType.WEEKLY and prefs.digest_mode == DigestMode.WEEKLY
+        ):
             return True
 
         return False
@@ -147,12 +177,16 @@ class DigestService:
         """Get all pending digests that are ready to be sent"""
         now = datetime.utcnow()
 
-        return self.db.query(NotificationDigest).filter(
-            and_(
-                NotificationDigest.status == DigestStatus.PENDING,
-                NotificationDigest.scheduled_for <= now
+        return (
+            self.db.query(NotificationDigest)
+            .filter(
+                and_(
+                    NotificationDigest.status == DigestStatus.PENDING,
+                    NotificationDigest.scheduled_for <= now,
+                )
             )
-        ).all()
+            .all()
+        )
 
     def send_digest(self, digest: NotificationDigest) -> bool:
         """Send a digest notification to the user"""
@@ -166,7 +200,7 @@ class DigestService:
                 "title": digest.title,
                 "message": digest.summary,
                 "type": NotificationType.SYSTEM_MESSAGE,
-                "status": "unread"
+                "status": "unread",
             }
 
             # Create the digest notification
@@ -203,16 +237,20 @@ class DigestService:
             else:
                 failed_count += 1
 
-        logger.info(f"Processed {len(pending_digests)} digests: {sent_count} sent, {failed_count} failed")
+        logger.info(
+            f"Processed {len(pending_digests)} digests: {sent_count} sent, {failed_count} failed"
+        )
         return sent_count, failed_count
 
     def cleanup_old_digests(self, days_old: int = 30):
         """Clean up old digest records"""
         cutoff_date = datetime.utcnow() - timedelta(days=days_old)
 
-        deleted_count = self.db.query(NotificationDigest).filter(
-            NotificationDigest.created_at < cutoff_date
-        ).delete()
+        deleted_count = (
+            self.db.query(NotificationDigest)
+            .filter(NotificationDigest.created_at < cutoff_date)
+            .delete()
+        )
 
         self.db.commit()
         logger.info(f"Cleaned up {deleted_count} old digest records")

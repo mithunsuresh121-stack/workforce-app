@@ -1,9 +1,13 @@
 import hashlib
 import json
-from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, ForeignKey
+
+from sqlalchemy import (Boolean, Column, DateTime, ForeignKey, Integer, String,
+                        Text)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db import Base
+
 
 class AuditChain(Base):
     __tablename__ = "audit_chains"
@@ -12,7 +16,9 @@ class AuditChain(Base):
     chain_id = Column(String, nullable=False, index=True)  # Unique chain identifier
     sequence_number = Column(Integer, nullable=False, index=True)  # Position in chain
     previous_hash = Column(String(64), nullable=False)  # SHA-256 hash of previous entry
-    current_hash = Column(String(64), nullable=True, unique=True, index=True)  # SHA-256 hash of this entry
+    current_hash = Column(
+        String(64), nullable=True, unique=True, index=True
+    )  # SHA-256 hash of this entry
     event_type = Column(String, nullable=False, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
     company_id = Column(Integer, nullable=True, index=True)
@@ -38,12 +44,12 @@ class AuditChain(Base):
             "user_id": self.user_id,
             "company_id": self.company_id,
             "data": self.data,
-            "created_at": self.created_at.isoformat() if self.created_at else None
+            "created_at": self.created_at.isoformat() if self.created_at else None,
         }
 
         # Serialize to JSON with sorted keys for consistency
-        json_data = json.dumps(hash_data, sort_keys=True, separators=(',', ':'))
-        return hashlib.sha256(json_data.encode('utf-8')).hexdigest()
+        json_data = json.dumps(hash_data, sort_keys=True, separators=(",", ":"))
+        return hashlib.sha256(json_data.encode("utf-8")).hexdigest()
 
     def verify_integrity(self) -> bool:
         """Verify that current_hash matches computed hash"""
@@ -58,8 +64,8 @@ class AuditChain(Base):
         user_id: int,
         company_id: int = None,
         data: dict = None,
-        signature: str = None
-    ) -> 'AuditChain':
+        signature: str = None,
+    ) -> "AuditChain":
         """Create a new audit chain entry"""
         entry = AuditChain(
             chain_id=chain_id,
@@ -69,7 +75,7 @@ class AuditChain(Base):
             user_id=user_id,
             company_id=company_id,
             data=json.dumps(data or {}, sort_keys=True),
-            signature=signature
+            signature=signature,
         )
 
         # Hash will be computed after saving to include created_at

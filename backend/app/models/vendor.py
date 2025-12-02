@@ -1,12 +1,16 @@
-from sqlalchemy import Column, Integer, String, Enum, ForeignKey, DateTime
+from enum import Enum as PyEnum
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from enum import Enum as PyEnum
+
 from app.db import Base
+
 
 class VendorStatus(str, PyEnum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+
 
 class Vendor(Base):
     __tablename__ = "vendors"
@@ -22,7 +26,9 @@ class Vendor(Base):
 
     # Relationships
     company = relationship("Company", back_populates="vendors")
-    purchase_orders = relationship("PurchaseOrder", back_populates="vendor", cascade="all, delete-orphan")
+    purchase_orders = relationship(
+        "PurchaseOrder", back_populates="vendor", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<Vendor {self.name}>"

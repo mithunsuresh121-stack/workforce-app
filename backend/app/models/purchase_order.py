@@ -1,14 +1,19 @@
-from sqlalchemy import Column, Integer, String, Float, Enum, ForeignKey, DateTime, Text
+from enum import Enum as PyEnum
+
+from sqlalchemy import (Column, DateTime, Enum, Float, ForeignKey, Integer,
+                        String, Text)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from enum import Enum as PyEnum
+
 from app.db import Base
+
 
 class PurchaseOrderStatus(str, PyEnum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     COMPLETED = "COMPLETED"
+
 
 class PurchaseOrder(Base):
     __tablename__ = "purchase_orders"
@@ -31,7 +36,9 @@ class PurchaseOrder(Base):
     approver = relationship("User", foreign_keys=[approver_id])
     creator = relationship("User", foreign_keys=[created_by])
     company = relationship("Company", back_populates="purchase_orders")
-    inventory_items = relationship("InventoryItem", back_populates="purchase_order", cascade="all, delete-orphan")
+    inventory_items = relationship(
+        "InventoryItem", back_populates="purchase_order", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return f"<PurchaseOrder {self.item_name}>"

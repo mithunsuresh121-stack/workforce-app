@@ -1,11 +1,13 @@
-from app.config import DATABASE_URL
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+from app.config import DATABASE_URL
 from app.models import User
 
 # Setup engine and session
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_user_role(email: str = "admin@app.com"):
     """Fetch a user by email and print their role and company."""
@@ -21,6 +23,7 @@ def get_user_role(email: str = "admin@app.com"):
             print(f"User with email '{email}' not found.")
     finally:
         db.close()
+
 
 if __name__ == "__main__":
     # Default check for admin@app.com

@@ -1,15 +1,19 @@
-import structlog
 from datetime import datetime, timedelta
-from typing import List, Dict, Optional, Tuple
+from typing import Dict, List, Optional, Tuple
+
+import structlog
+from sqlalchemy import and_, desc, or_
 from sqlalchemy.orm import Session
-from sqlalchemy import and_, or_, desc
-from app.models.approval_queue import ApprovalQueue, ApprovalQueueItem, ApprovalStatus, ApprovalPriority
+
+from app.models.approval_queue import (ApprovalPriority, ApprovalQueue,
+                                       ApprovalQueueItem, ApprovalStatus)
 from app.models.user import User, UserRole
-from app.services.audit_service import AuditService
 from app.services.audit_chain_service import AuditChainService
+from app.services.audit_service import AuditService
 from app.services.security_service import SecurityService, SecuritySeverity
 
 logger = structlog.get_logger(__name__)
+
 
 class ApprovalService:
     """Service for managing approval queues and workflows"""
@@ -28,12 +32,14 @@ class ApprovalService:
         request_data: dict,
         risk_score: int = None,
         priority: ApprovalPriority = ApprovalPriority.MEDIUM,
-        notes: str = None
+        notes: str = None,
     ) -> ApprovalQueue:
         """Create a new approval request"""
 
         # Determine initial approver based on request type and risk
-        initial_approver = ApprovalService._determine_initial_approver(db, requestor, request_type, risk_score)
+        initial_approver = ApprovalService._determine_initial_approver(
+            db, requestor, request_type, risk_score
+        )
 
         # Calculate expiration time
         timeout_hours = ApprovalService._get_timeout_hours(priority)
@@ -50,7 +56,7 @@ class ApprovalService:
             requestor_notes=notes,
             current_approver_id=initial_approver.id if initial_approver else None,
             assigned_at=datetime.utcnow(),
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
         db.add(approval)
@@ -72,8 +78,10 @@ class ApprovalService:
                 "request_type": request_type,
                 "priority": priority.value,
                 "risk_score": risk_score,
-                "initial_approver_id": initial_approver.id if initial_approver else None
-            }
+                "initial_approver_id": (
+                    initial_approver.id if initial_approver else None
+                ),
+            },
         )
 
         # Audit chain
@@ -85,8 +93,8 @@ class ApprovalService:
             data={
                 "approval_id": approval.id,
                 "request_type": request_type,
-                "risk_score": risk_score
-            }
+                "risk_score": risk_score,
+            },
         )
 
         logger.info(
@@ -94,17 +102,14 @@ class ApprovalService:
             approval_id=approval.id,
             requestor_id=requestor.id,
             request_type=request_type,
-            priority=priority.value
+            priority=priority.value,
         )
 
         return approval
 
     @staticmethod
     def _determine_initial_approver(
-        db: Session,
-        requestor: User,
-        request_type: str,
-        risk_score: int = None
+        db: Session, requestor: User, request_type: str, risk_score: int = None
     ) -> Optional[User]:
         """Determine who should initially review this approval"""
 
@@ -112,33 +117,45 @@ class ApprovalService:
         if request_type == "ai_capability":
             if risk_score and risk_score >= 80:
                 # Critical risk - go straight to SUPERADMIN
-                approver = db.query(User).filter(
-                    and_(
-                        User.company_id == requestor.company_id,
-                        User.role == UserRole.SUPERADMIN,
-                        User.is_active == True
+                approver = (
+                    db.query(User)
+                    .filter(
+                        and_(
+                            User.company_id == requestor.company_id,
+                            User.role == UserRole.SUPERADMIN,
+                            User.is_active == True,
+                        )
                     )
-                ).first()
+                    .first()
+                )
                 return approver
             elif risk_score and risk_score >= 60:
                 # High risk - COMPANY_ADMIN
-                approver = db.query(User).filter(
-                    and_(
-                        User.company_id == requestor.company_id,
-                        User.role == UserRole.COMPANY_ADMIN,
-                        User.is_active == True
+                approver = (
+                    db.query(User)
+                    .filter(
+                        and_(
+                            User.company_id == requestor.company_id,
+                            User.role == UserRole.COMPANY_ADMIN,
+                            User.is_active == True,
+                        )
                     )
-                ).first()
+                    .first()
+                )
                 return approver
             else:
                 # Medium/low risk - DEPARTMENT_ADMIN
-                approver = db.query(User).filter(
-                    and_(
-                        User.company_id == requestor.company_id,
-                        User.role == UserRole.DEPARTMENT_ADMIN,
-                        User.is_active == True
+                approver = (
+                    db.query(User)
+                    .filter(
+                        and_(
+                            User.company_id == requestor.company_id,
+                            User.role == UserRole.DEPARTMENT_ADMIN,
+                            User.is_active == True,
+                        )
                     )
-                ).first()
+                    .first()
+                )
                 return approver
 
         # Default fallback
@@ -151,7 +168,7 @@ class ApprovalService:
             ApprovalPriority.LOW: ApprovalService.APPROVAL_TIMEOUT_LOW,
             ApprovalPriority.MEDIUM: ApprovalService.APPROVAL_TIMEOUT_MEDIUM,
             ApprovalPriority.HIGH: ApprovalService.APPROVAL_TIMEOUT_HIGH,
-            ApprovalPriority.CRITICAL: ApprovalService.APPROVAL_TIMEOUT_CRITICAL
+            ApprovalPriority.CRITICAL: ApprovalService.APPROVAL_TIMEOUT_CRITICAL,
         }
         return timeout_map.get(priority, ApprovalService.APPROVAL_TIMEOUT_MEDIUM)
 
@@ -165,8 +182,12 @@ class ApprovalService:
             approval_queue_id=approval.id,
             step_number=1,
             step_type="human_review",
-            required_role=approval.current_approver.role.value if approval.current_approver else None,
-            assigned_to_id=approval.current_approver_id
+            required_role=(
+                approval.current_approver.role.value
+                if approval.current_approver
+                else None
+            ),
+            assigned_to_id=approval.current_approver_id,
         )
 
         db.add(step)
@@ -174,15 +195,13 @@ class ApprovalService:
 
     @staticmethod
     def process_approval(
-        db: Session,
-        approval_id: int,
-        approver: User,
-        decision: str,
-        notes: str = None
+        db: Session, approval_id: int, approver: User, decision: str, notes: str = None
     ) -> bool:
         """Process an approval decision"""
 
-        approval = db.query(ApprovalQueue).filter(ApprovalQueue.id == approval_id).first()
+        approval = (
+            db.query(ApprovalQueue).filter(ApprovalQueue.id == approval_id).first()
+        )
         if not approval:
             return False
 
@@ -192,7 +211,11 @@ class ApprovalService:
                 "Unauthorized approval attempt",
                 approval_id=approval_id,
                 approver_id=approver.id,
-                required_role=approval.current_approver.role.value if approval.current_approver else None
+                required_role=(
+                    approval.current_approver.role.value
+                    if approval.current_approver
+                    else None
+                ),
             )
             return False
 
@@ -204,12 +227,16 @@ class ApprovalService:
         approval.approval_notes = notes
 
         # Update approval step
-        step = db.query(ApprovalQueueItem).filter(
-            and_(
-                ApprovalQueueItem.approval_queue_id == approval_id,
-                ApprovalQueueItem.status == ApprovalStatus.PENDING
+        step = (
+            db.query(ApprovalQueueItem)
+            .filter(
+                and_(
+                    ApprovalQueueItem.approval_queue_id == approval_id,
+                    ApprovalQueueItem.status == ApprovalStatus.PENDING,
+                )
             )
-        ).first()
+            .first()
+        )
 
         if step:
             step.status = ApprovalStatus(decision)
@@ -235,8 +262,8 @@ class ApprovalService:
                 "decision": decision,
                 "old_status": old_status.value,
                 "new_status": approval.status.value,
-                "approver_notes": notes
-            }
+                "approver_notes": notes,
+            },
         )
 
         # Audit chain
@@ -249,15 +276,15 @@ class ApprovalService:
             data={
                 "approval_id": approval_id,
                 "request_type": approval.request_type,
-                "decision": decision
-            }
+                "decision": decision,
+            },
         )
 
         logger.info(
             "Approval processed",
             approval_id=approval_id,
             approver_id=approver.id,
-            decision=decision
+            decision=decision,
         )
 
         return True
@@ -275,10 +302,17 @@ class ApprovalService:
                 return True
             # COMPANY_ADMIN can approve DEPARTMENT_ADMIN and below
             elif approver.role == UserRole.COMPANY_ADMIN:
-                return approval.requestor.role in [UserRole.DEPARTMENT_ADMIN, UserRole.TEAM_LEAD, UserRole.EMPLOYEE]
+                return approval.requestor.role in [
+                    UserRole.DEPARTMENT_ADMIN,
+                    UserRole.TEAM_LEAD,
+                    UserRole.EMPLOYEE,
+                ]
             # DEPARTMENT_ADMIN can approve TEAM_LEAD and EMPLOYEE
             elif approver.role == UserRole.DEPARTMENT_ADMIN:
-                return approval.requestor.role in [UserRole.TEAM_LEAD, UserRole.EMPLOYEE]
+                return approval.requestor.role in [
+                    UserRole.TEAM_LEAD,
+                    UserRole.EMPLOYEE,
+                ]
 
         return False
 
@@ -291,7 +325,7 @@ class ApprovalService:
         logger.info(
             "Executing approved action",
             approval_id=approval.id,
-            request_type=approval.request_type
+            request_type=approval.request_type,
         )
 
         # In production, this would call the appropriate service
@@ -299,35 +333,38 @@ class ApprovalService:
 
     @staticmethod
     def get_pending_approvals(
-        db: Session,
-        approver: User,
-        limit: int = 50
+        db: Session, approver: User, limit: int = 50
     ) -> List[ApprovalQueue]:
         """Get pending approvals for a user"""
 
-        approvals = db.query(ApprovalQueue).filter(
-            and_(
-                ApprovalQueue.current_approver_id == approver.id,
-                ApprovalQueue.status == ApprovalStatus.PENDING,
-                or_(
-                    ApprovalQueue.expires_at.is_(None),
-                    ApprovalQueue.expires_at > datetime.utcnow()
+        approvals = (
+            db.query(ApprovalQueue)
+            .filter(
+                and_(
+                    ApprovalQueue.current_approver_id == approver.id,
+                    ApprovalQueue.status == ApprovalStatus.PENDING,
+                    or_(
+                        ApprovalQueue.expires_at.is_(None),
+                        ApprovalQueue.expires_at > datetime.utcnow(),
+                    ),
                 )
             )
-        ).order_by(desc(ApprovalQueue.priority), ApprovalQueue.created_at).limit(limit).all()
+            .order_by(desc(ApprovalQueue.priority), ApprovalQueue.created_at)
+            .limit(limit)
+            .all()
+        )
 
         return approvals
 
     @staticmethod
     def escalate_approval(
-        db: Session,
-        approval_id: int,
-        escalation_reason: str,
-        escalated_by: User
+        db: Session, approval_id: int, escalation_reason: str, escalated_by: User
     ) -> bool:
         """Escalate an approval to higher authority"""
 
-        approval = db.query(ApprovalQueue).filter(ApprovalQueue.id == approval_id).first()
+        approval = (
+            db.query(ApprovalQueue).filter(ApprovalQueue.id == approval_id).first()
+        )
         if not approval:
             return False
 
@@ -362,44 +399,56 @@ class ApprovalService:
             details={
                 "escalation_reason": escalation_reason,
                 "new_approver_id": next_approver.id,
-                "escalation_level": approval.escalation_level
-            }
+                "escalation_level": approval.escalation_level,
+            },
         )
 
         logger.info(
             "Approval escalated",
             approval_id=approval_id,
             escalated_by=escalated_by.id,
-            new_approver_id=next_approver.id
+            new_approver_id=next_approver.id,
         )
 
         return True
 
     @staticmethod
-    def _get_escalation_approver(db: Session, approval: ApprovalQueue) -> Optional[User]:
+    def _get_escalation_approver(
+        db: Session, approval: ApprovalQueue
+    ) -> Optional[User]:
         """Get the next level approver for escalation"""
 
-        current_role = approval.current_approver.role if approval.current_approver else None
+        current_role = (
+            approval.current_approver.role if approval.current_approver else None
+        )
 
         if current_role == UserRole.DEPARTMENT_ADMIN:
             # Escalate to COMPANY_ADMIN
-            approver = db.query(User).filter(
-                and_(
-                    User.company_id == approval.company_id,
-                    User.role == UserRole.COMPANY_ADMIN,
-                    User.is_active == True
+            approver = (
+                db.query(User)
+                .filter(
+                    and_(
+                        User.company_id == approval.company_id,
+                        User.role == UserRole.COMPANY_ADMIN,
+                        User.is_active == True,
+                    )
                 )
-            ).first()
+                .first()
+            )
             return approver
         elif current_role in [UserRole.COMPANY_ADMIN, UserRole.TEAM_LEAD]:
             # Escalate to SUPERADMIN
-            approver = db.query(User).filter(
-                and_(
-                    User.company_id == approval.company_id,
-                    User.role == UserRole.SUPERADMIN,
-                    User.is_active == True
+            approver = (
+                db.query(User)
+                .filter(
+                    and_(
+                        User.company_id == approval.company_id,
+                        User.role == UserRole.SUPERADMIN,
+                        User.is_active == True,
+                    )
                 )
-            ).first()
+                .first()
+            )
             return approver
 
         return None
@@ -408,15 +457,16 @@ class ApprovalService:
     def cleanup_expired_approvals(db: Session) -> int:
         """Clean up expired pending approvals"""
 
-        expired_count = db.query(ApprovalQueue).filter(
-            and_(
-                ApprovalQueue.status == ApprovalStatus.PENDING,
-                ApprovalQueue.expires_at <= datetime.utcnow()
+        expired_count = (
+            db.query(ApprovalQueue)
+            .filter(
+                and_(
+                    ApprovalQueue.status == ApprovalStatus.PENDING,
+                    ApprovalQueue.expires_at <= datetime.utcnow(),
+                )
             )
-        ).update({
-            "status": ApprovalStatus.EXPIRED,
-            "updated_at": datetime.utcnow()
-        })
+            .update({"status": ApprovalStatus.EXPIRED, "updated_at": datetime.utcnow()})
+        )
 
         db.commit()
 

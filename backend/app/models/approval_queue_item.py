@@ -1,15 +1,19 @@
-from sqlalchemy import Column, Integer, String, DateTime, Boolean, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db import Base
-from app.models.user import User
 from app.models.approval_queue import ApprovalQueue
+from app.models.user import User
+
 
 class ApprovalQueueItem(Base):
     __tablename__ = "approval_queue_items"
 
     id = Column(Integer, primary_key=True, index=True)
-    approval_queue_id = Column(Integer, ForeignKey("approval_queues.id"), nullable=False)
+    approval_queue_id = Column(
+        Integer, ForeignKey("approval_queues.id"), nullable=False
+    )
     assigned_to_id = Column(Integer, ForeignKey("users.id"), nullable=False)
     status = Column(String, default="pending")  # pending, approved, rejected
     reviewed_at = Column(DateTime, nullable=True)

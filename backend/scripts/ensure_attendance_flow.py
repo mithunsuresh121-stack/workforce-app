@@ -1,11 +1,12 @@
 #!/usr/bin/env python3
-import os
-import sys
-import json
-import time
-import requests
-import subprocess
 import glob
+import json
+import os
+import subprocess
+import sys
+import time
+
+import requests
 
 # Config
 BASE_URL = "http://localhost:8000"
@@ -14,16 +15,19 @@ PASSWORD = "password123"
 EMPLOYEE_ID = 30  # Updated to ID 30 as requested
 TOKEN_FILE = os.path.join(os.path.dirname(__file__), "..", "..", "token.txt")
 
+
 def save_token(token):
     with open(TOKEN_FILE, "w") as f:
         f.write(token)
     print(f"Token saved to {TOKEN_FILE}")
+
 
 def load_token():
     if os.path.exists(TOKEN_FILE):
         with open(TOKEN_FILE, "r") as f:
             return f.read().strip()
     return None
+
 
 def request_json(method, url, **kwargs):
     kwargs.setdefault("timeout", 10)
@@ -34,11 +38,14 @@ def request_json(method, url, **kwargs):
         body = r.text
     return r.status_code, body, r
 
+
 def main():
     print("=== Step 1: Employee JWT Token Refresh ===")
     # Login to get fresh token
     login_payload = {"email": EMPLOYEE_EMAIL, "password": PASSWORD}
-    status, body, resp = request_json("POST", f"{BASE_URL}/auth/login", json=login_payload)
+    status, body, resp = request_json(
+        "POST", f"{BASE_URL}/auth/login", json=login_payload
+    )
     if status != 200:
         print(f"ERROR: Login failed with status {status}: {body}")
         sys.exit(1)
@@ -57,12 +64,14 @@ def main():
         print(f"ERROR: Token verification failed: {status} {body}")
         sys.exit(1)
     print(f"Authenticated as: {body.get('email')} role: {body.get('role')}")
-    if body.get('role') != 'Employee':
+    if body.get("role") != "Employee":
         print(f"ERROR: Token role is {body.get('role')}, expected Employee")
         sys.exit(1)
 
     print("\n=== Step 2: Verify Active Attendance Session ===")
-    status, body, resp = request_json("GET", f"{BASE_URL}/attendance/active/{EMPLOYEE_ID}", headers=headers)
+    status, body, resp = request_json(
+        "GET", f"{BASE_URL}/attendance/active/{EMPLOYEE_ID}", headers=headers
+    )
     if status == 200 and body:
         print("Active attendance session exists.")
         active_exists = True
@@ -75,8 +84,16 @@ def main():
 
     if not active_exists:
         print("\n=== Step 3: Create Active Attendance Session ===")
-        clockin_payload = {"employee_id": EMPLOYEE_ID, "notes": "Automatic test clock-in"}
-        status, body, resp = request_json("POST", f"{BASE_URL}/attendance/clock-in", headers=headers, json=clockin_payload)
+        clockin_payload = {
+            "employee_id": EMPLOYEE_ID,
+            "notes": "Automatic test clock-in",
+        }
+        status, body, resp = request_json(
+            "POST",
+            f"{BASE_URL}/attendance/clock-in",
+            headers=headers,
+            json=clockin_payload,
+        )
         if status not in (200, 201):
             print(f"ERROR: Clock-in failed: {status} {body}")
             sys.exit(1)
@@ -84,7 +101,9 @@ def main():
 
         # Confirm active session
         time.sleep(1)
-        status, body, resp = request_json("GET", f"{BASE_URL}/attendance/active/{EMPLOYEE_ID}", headers=headers)
+        status, body, resp = request_json(
+            "GET", f"{BASE_URL}/attendance/active/{EMPLOYEE_ID}", headers=headers
+        )
         if status == 200 and body:
             print("Confirmed active attendance session created.")
         else:
@@ -99,7 +118,9 @@ def main():
     # Dynamically find all attendance test files matching pattern
     test_files = glob.glob("tests/test_attendance_*.py")
     if not test_files:
-        print("ERROR: No attendance test files found matching tests/test_attendance_*.py")
+        print(
+            "ERROR: No attendance test files found matching tests/test_attendance_*.py"
+        )
         sys.exit(1)
 
     cmd = ["python", "-m", "pytest"] + test_files + ["-v", "--tb=short"]
@@ -136,6 +157,7 @@ def main():
     print(f"Fresh token saved to {TOKEN_FILE}: ✅")
     print(f"Tests executed without skipping: {'❌' if skipped else '✅'}")
     print(f"Test results: {'Passed' if result.returncode == 0 else 'Failed'}")
+
 
 if __name__ == "__main__":
     main()

@@ -1,10 +1,13 @@
-import structlog
 from datetime import datetime
+
+import structlog
 from sqlalchemy.orm import Session
+
 from app.db import SessionLocal
 from app.models.audit_log import AuditLog
 
 logger = structlog.get_logger(__name__)
+
 
 class AuditService:
     @staticmethod
@@ -17,7 +20,7 @@ class AuditService:
         resource_id: int = None,
         details: dict = None,
         ip_address: str = None,
-        user_agent: str = None
+        user_agent: str = None,
     ):
         """Log an audit event"""
         audit_log = AuditLog(
@@ -28,7 +31,7 @@ class AuditService:
             resource_id=resource_id,
             details=details or {},
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
         db.add(audit_log)
         db.commit()
@@ -36,11 +39,13 @@ class AuditService:
             "Audit event logged",
             event_type=event_type,
             user_id=user_id,
-            company_id=company_id
+            company_id=company_id,
         )
 
     @staticmethod
-    def log_company_bootstrapped(db: Session, user_id: int, company_id: int, details: dict = None):
+    def log_company_bootstrapped(
+        db: Session, user_id: int, company_id: int, details: dict = None
+    ):
         """Log company bootstrap event"""
         AuditService.log_event(
             db=db,
@@ -49,11 +54,17 @@ class AuditService:
             company_id=company_id,
             resource_type="company",
             resource_id=company_id,
-            details=details or {}
+            details=details or {},
         )
 
     @staticmethod
-    def log_admin_action(db: Session, action: str, user_id: int, company_id: int = None, details: dict = None):
+    def log_admin_action(
+        db: Session,
+        action: str,
+        user_id: int,
+        company_id: int = None,
+        details: dict = None,
+    ):
         """Log admin action for observability"""
         AuditService.log_event(
             db=db,
@@ -62,11 +73,18 @@ class AuditService:
             company_id=company_id,
             resource_type="admin",
             resource_id=None,
-            details=details or {}
+            details=details or {},
         )
 
     @staticmethod
-    def log_org_created(db: Session, user_id: int, company_id: int, resource_type: str, resource_id: int, details: dict = None):
+    def log_org_created(
+        db: Session,
+        user_id: int,
+        company_id: int,
+        resource_type: str,
+        resource_id: int,
+        details: dict = None,
+    ):
         """Log organization creation events"""
         AuditService.log_event(
             db=db,
@@ -75,11 +93,17 @@ class AuditService:
             company_id=company_id,
             resource_type=resource_type,
             resource_id=resource_id,
-            details=details or {}
+            details=details or {},
         )
 
     @staticmethod
-    def log_channel_created(db: Session, user_id: int, company_id: int, channel_id: int, details: dict = None):
+    def log_channel_created(
+        db: Session,
+        user_id: int,
+        company_id: int,
+        channel_id: int,
+        details: dict = None,
+    ):
         """Log channel creation events"""
         AuditService.log_event(
             db=db,
@@ -88,11 +112,17 @@ class AuditService:
             company_id=company_id,
             resource_type="channel",
             resource_id=channel_id,
-            details=details or {}
+            details=details or {},
         )
 
     @staticmethod
-    def log_meeting_created(db: Session, user_id: int, company_id: int, meeting_id: int, details: dict = None):
+    def log_meeting_created(
+        db: Session,
+        user_id: int,
+        company_id: int,
+        meeting_id: int,
+        details: dict = None,
+    ):
         """Log meeting creation events"""
         AuditService.log_event(
             db=db,
@@ -101,11 +131,18 @@ class AuditService:
             company_id=company_id,
             resource_type="meeting",
             resource_id=meeting_id,
-            details=details or {}
+            details=details or {},
         )
 
     @staticmethod
-    def log_user_assigned_role(db: Session, user_id: int, target_user_id: int, company_id: int, role: str, details: dict = None):
+    def log_user_assigned_role(
+        db: Session,
+        user_id: int,
+        target_user_id: int,
+        company_id: int,
+        role: str,
+        details: dict = None,
+    ):
         """Log user role assignment events"""
         AuditService.log_event(
             db=db,
@@ -114,11 +151,19 @@ class AuditService:
             company_id=company_id,
             resource_type="user",
             resource_id=target_user_id,
-            details={"assigned_role": role, **(details or {})}
+            details={"assigned_role": role, **(details or {})},
         )
 
     @staticmethod
-    def log_permission_denied(db: Session, user_id: int, company_id: int, action: str, resource_type: str = None, resource_id: int = None, details: dict = None):
+    def log_permission_denied(
+        db: Session,
+        user_id: int,
+        company_id: int,
+        action: str,
+        resource_type: str = None,
+        resource_id: int = None,
+        details: dict = None,
+    ):
         """Log permission denial events"""
         AuditService.log_event(
             db=db,
@@ -127,11 +172,19 @@ class AuditService:
             company_id=company_id,
             resource_type=resource_type,
             resource_id=resource_id,
-            details={"denied_action": action, **(details or {})}
+            details={"denied_action": action, **(details or {})},
         )
 
     @staticmethod
-    def log_user_invited(db: Session, user_id: int, target_user_id: int, company_id: int, resource_type: str, resource_id: int, details: dict = None):
+    def log_user_invited(
+        db: Session,
+        user_id: int,
+        target_user_id: int,
+        company_id: int,
+        resource_type: str,
+        resource_id: int,
+        details: dict = None,
+    ):
         """Log user invitation events"""
         AuditService.log_event(
             db=db,
@@ -140,16 +193,27 @@ class AuditService:
             company_id=company_id,
             resource_type=resource_type,
             resource_id=resource_id,
-            details={"invited_user_id": target_user_id, **(details or {})}
+            details={"invited_user_id": target_user_id, **(details or {})},
         )
 
     @staticmethod
-    def log_auth_failure(db: Session, user_id: int, company_id: int = None, details: dict = None, ip_address: str = None, user_agent: str = None):
+    def log_auth_failure(
+        db: Session,
+        user_id: int,
+        company_id: int = None,
+        details: dict = None,
+        ip_address: str = None,
+        user_agent: str = None,
+    ):
         """Log authentication failure events"""
-        from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
+        from app.services.security_service import (SecurityEvent,
+                                                   SecurityService,
+                                                   SecuritySeverity)
 
         # Check for anomalies
-        escalated_severity = SecurityService.check_anomaly_rules(db, user_id, SecurityEvent.AUTH_FAILURE, details)
+        escalated_severity = SecurityService.check_anomaly_rules(
+            db, user_id, SecurityEvent.AUTH_FAILURE, details
+        )
 
         SecurityService.log_security_event(
             db=db,
@@ -159,18 +223,32 @@ class AuditService:
             severity=escalated_severity or SecuritySeverity.LOW,
             details=details,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
 
     @staticmethod
-    def log_role_attempt(db: Session, user_id: int, target_user_id: int, company_id: int, attempted_role: str, details: dict = None):
+    def log_role_attempt(
+        db: Session,
+        user_id: int,
+        target_user_id: int,
+        company_id: int,
+        attempted_role: str,
+        details: dict = None,
+    ):
         """Log role change attempt events"""
-        from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
+        from app.services.security_service import (SecurityEvent,
+                                                   SecurityService,
+                                                   SecuritySeverity)
 
         # Check for superadmin downgrade
         escalated_severity = SecurityService.check_anomaly_rules(
-            db, user_id, SecurityEvent.ROLE_ATTEMPT,
-            {"target_role": attempted_role, "action": "downgrade" if attempted_role != "SUPERADMIN" else "attempt"}
+            db,
+            user_id,
+            SecurityEvent.ROLE_ATTEMPT,
+            {
+                "target_role": attempted_role,
+                "action": "downgrade" if attempted_role != "SUPERADMIN" else "attempt",
+            },
         )
 
         SecurityService.log_security_event(
@@ -179,16 +257,30 @@ class AuditService:
             user_id=user_id,
             company_id=company_id,
             severity=escalated_severity or SecuritySeverity.MEDIUM,
-            details={"target_user_id": target_user_id, "attempted_role": attempted_role, **(details or {})},
+            details={
+                "target_user_id": target_user_id,
+                "attempted_role": attempted_role,
+                **(details or {}),
+            },
         )
 
     @staticmethod
-    def log_cross_org_access(db: Session, user_id: int, attempted_company_id: int, action: str, details: dict = None):
+    def log_cross_org_access(
+        db: Session,
+        user_id: int,
+        attempted_company_id: int,
+        action: str,
+        details: dict = None,
+    ):
         """Log cross-organization access attempts"""
-        from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
+        from app.services.security_service import (SecurityEvent,
+                                                   SecurityService,
+                                                   SecuritySeverity)
 
         # Check for repeated attempts
-        escalated_severity = SecurityService.check_anomaly_rules(db, user_id, SecurityEvent.CROSS_ORG_ACCESS, details)
+        escalated_severity = SecurityService.check_anomaly_rules(
+            db, user_id, SecurityEvent.CROSS_ORG_ACCESS, details
+        )
 
         SecurityService.log_security_event(
             db=db,
@@ -200,9 +292,17 @@ class AuditService:
         )
 
     @staticmethod
-    def log_admin_impersonation(db: Session, user_id: int, target_user_id: int, company_id: int, details: dict = None):
+    def log_admin_impersonation(
+        db: Session,
+        user_id: int,
+        target_user_id: int,
+        company_id: int,
+        details: dict = None,
+    ):
         """Log admin impersonation attempts"""
-        from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
+        from app.services.security_service import (SecurityEvent,
+                                                   SecurityService,
+                                                   SecuritySeverity)
 
         SecurityService.log_security_event(
             db=db,
@@ -225,7 +325,7 @@ class AuditService:
         required_role: str,
         user_role: str,
         severity: str = "low",
-        details: dict = None
+        details: dict = None,
     ):
         """Log AI request events"""
         audit_log = AuditLog(
@@ -241,13 +341,14 @@ class AuditService:
             ai_scope_valid=scope_valid,
             ai_required_role=required_role,
             ai_user_role=user_role,
-            ai_severity=severity
+            ai_severity=severity,
         )
         db.add(audit_log)
         db.commit()
 
         # Also log to cryptographic audit chain
         from app.services.audit_chain_service import AuditChainService
+
         AuditChainService.log_ai_event(
             db=db,
             user_id=user_id,
@@ -261,8 +362,8 @@ class AuditService:
                 "required_role": required_role,
                 "user_role": user_role,
                 "severity": severity,
-                "details": details or {}
-            }
+                "details": details or {},
+            },
         )
 
         logger.info(
@@ -271,8 +372,9 @@ class AuditService:
             company_id=company_id,
             capability=capability,
             decision=decision,
-            severity=severity
+            severity=severity,
         )
+
 
 # Convenience functions
 def log_audit_event(
@@ -283,7 +385,7 @@ def log_audit_event(
     resource_id: int = None,
     details: dict = None,
     ip_address: str = None,
-    user_agent: str = None
+    user_agent: str = None,
 ):
     """Convenience function to log audit events"""
     db = SessionLocal()
@@ -297,10 +399,11 @@ def log_audit_event(
             resource_id=resource_id,
             details=details,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
         )
     finally:
         db.close()
+
 
 def log_company_bootstrapped(user_id: int, company_id: int, details: dict = None):
     """Convenience function to log company bootstrap"""

@@ -1,15 +1,27 @@
+from typing import Any, Dict, Optional
+
 from sqlalchemy.orm import Session
+
 from app.models.notification_preferences import NotificationPreferences
-from typing import Optional, Dict, Any
 
-def get_user_preferences(db: Session, user_id: int, company_id: int) -> Optional[NotificationPreferences]:
+
+def get_user_preferences(
+    db: Session, user_id: int, company_id: int
+) -> Optional[NotificationPreferences]:
     """Get notification preferences for a user"""
-    return db.query(NotificationPreferences).filter(
-        NotificationPreferences.user_id == user_id,
-        NotificationPreferences.company_id == company_id
-    ).first()
+    return (
+        db.query(NotificationPreferences)
+        .filter(
+            NotificationPreferences.user_id == user_id,
+            NotificationPreferences.company_id == company_id,
+        )
+        .first()
+    )
 
-def create_user_preferences(db: Session, user_id: int, company_id: int, preferences: Dict[str, Any] = None) -> NotificationPreferences:
+
+def create_user_preferences(
+    db: Session, user_id: int, company_id: int, preferences: Dict[str, Any] = None
+) -> NotificationPreferences:
     """Create notification preferences for a user"""
     if preferences is None:
         preferences = {
@@ -20,21 +32,22 @@ def create_user_preferences(db: Session, user_id: int, company_id: int, preferen
                 "TASK_ASSIGNED": True,
                 "SHIFT_SCHEDULED": True,
                 "SYSTEM_MESSAGE": True,
-                "ADMIN_MESSAGE": True
-            }
+                "ADMIN_MESSAGE": True,
+            },
         }
 
     db_preferences = NotificationPreferences(
-        user_id=user_id,
-        company_id=company_id,
-        preferences=preferences
+        user_id=user_id, company_id=company_id, preferences=preferences
     )
     db.add(db_preferences)
     db.commit()
     db.refresh(db_preferences)
     return db_preferences
 
-def update_user_preferences(db: Session, user_id: int, company_id: int, preferences: Dict[str, Any]) -> Optional[NotificationPreferences]:
+
+def update_user_preferences(
+    db: Session, user_id: int, company_id: int, preferences: Dict[str, Any]
+) -> Optional[NotificationPreferences]:
     """Update notification preferences for a user"""
     db_preferences = get_user_preferences(db, user_id, company_id)
     if db_preferences:
@@ -42,6 +55,7 @@ def update_user_preferences(db: Session, user_id: int, company_id: int, preferen
         db.commit()
         db.refresh(db_preferences)
     return db_preferences
+
 
 def delete_user_preferences(db: Session, user_id: int, company_id: int) -> bool:
     """Delete notification preferences for a user"""
@@ -52,14 +66,20 @@ def delete_user_preferences(db: Session, user_id: int, company_id: int) -> bool:
         return True
     return False
 
-def get_or_create_user_preferences(db: Session, user_id: int, company_id: int) -> NotificationPreferences:
+
+def get_or_create_user_preferences(
+    db: Session, user_id: int, company_id: int
+) -> NotificationPreferences:
     """Get existing preferences or create default ones for a user"""
     preferences = get_user_preferences(db, user_id, company_id)
     if not preferences:
         preferences = create_user_preferences(db, user_id, company_id)
     return preferences
 
-def should_send_notification(db: Session, user_id: int, company_id: int, notification_type: str) -> bool:
+
+def should_send_notification(
+    db: Session, user_id: int, company_id: int, notification_type: str
+) -> bool:
     """Check if a notification should be sent based on user preferences"""
     preferences = get_user_preferences(db, user_id, company_id)
     if not preferences:
@@ -80,14 +100,22 @@ def should_send_notification(db: Session, user_id: int, company_id: int, notific
     notification_types = prefs.get("notification_types", {})
     return notification_types.get(notification_type, True)
 
-def should_send_push_notification(db: Session, user_id: int, company_id: int, notification_type: str) -> bool:
+
+def should_send_push_notification(
+    db: Session, user_id: int, company_id: int, notification_type: str
+) -> bool:
     """Check if a push notification should be sent based on user preferences"""
     # Get user preferences (company_id needed for consistency with other methods)
     from app.models.notification_preferences import NotificationPreferences
-    preferences = db.query(NotificationPreferences).filter(
-        NotificationPreferences.user_id == user_id,
-        NotificationPreferences.company_id == company_id
-    ).first()
+
+    preferences = (
+        db.query(NotificationPreferences)
+        .filter(
+            NotificationPreferences.user_id == user_id,
+            NotificationPreferences.company_id == company_id,
+        )
+        .first()
+    )
 
     if not preferences:
         return True  # Default to sending push if no preferences set
@@ -106,7 +134,10 @@ def should_send_push_notification(db: Session, user_id: int, company_id: int, no
     notification_types = prefs.get("notification_types", {})
     return notification_types.get(notification_type, True)
 
-def should_send_email_notification(db: Session, user_id: int, company_id: int, notification_type: str) -> bool:
+
+def should_send_email_notification(
+    db: Session, user_id: int, company_id: int, notification_type: str
+) -> bool:
     """Check if an email notification should be sent based on user preferences"""
     preferences = get_user_preferences(db, user_id, company_id)
     if not preferences:

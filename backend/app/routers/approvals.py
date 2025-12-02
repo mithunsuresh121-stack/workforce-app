@@ -1,25 +1,29 @@
+from typing import List
+
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List
+
+from app.core.rbac import UserRole, require_role
 from app.db import get_db
-from app.schemas.ai import ApprovalRequest, ApprovalDecision
-from app.services.approval_service import ApprovalService
 from app.deps import get_current_user
 from app.models.user import User
-from app.core.rbac import require_role, UserRole
+from app.schemas.ai import ApprovalDecision, ApprovalRequest
+from app.services.approval_service import ApprovalService
 
 router = APIRouter()
+
 
 @router.post("/", response_model=dict)
 @require_role([UserRole.DEPARTMENT_ADMIN, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN])
 def create_approval_request(
     request: ApprovalRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Create a new approval request"""
     try:
         from app.schemas.ai import ApprovalPriority
+
         priority = ApprovalPriority(request.priority.lower())
 
         approval = ApprovalService.create_approval_request(
@@ -29,23 +33,25 @@ def create_approval_request(
             request_data=request.request_data,
             risk_score=request.risk_score,
             priority=priority,
-            notes=request.notes
+            notes=request.notes,
         )
 
         return {
             "message": "Approval request created",
             "approval_id": approval.id,
-            "status": approval.status.value
+            "status": approval.status.value,
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to create approval: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to create approval: {str(e)}"
+        )
+
 
 @router.get("/pending", response_model=dict)
 @require_role([UserRole.DEPARTMENT_ADMIN, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN])
 def get_my_pending_approvals(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """Get pending approvals assigned to current user"""
     try:
@@ -61,14 +67,18 @@ def get_my_pending_approvals(
                     "priority": a.priority.value,
                     "created_at": a.created_at.isoformat(),
                     "expires_at": a.expires_at.isoformat() if a.expires_at else None,
-                    "request_data": a.request_data
-                } for a in approvals
+                    "request_data": a.request_data,
+                }
+                for a in approvals
             ],
-            "count": len(approvals)
+            "count": len(approvals),
         }
 
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to get approvals: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to get approvals: {str(e)}"
+        )
+
 
 @router.post("/{approval_id}/decide", response_model=dict)
 @require_role([UserRole.DEPARTMENT_ADMIN, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN])
@@ -76,7 +86,7 @@ def decide_approval(
     approval_id: int,
     decision: ApprovalDecision,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Make decision on approval request"""
     try:
@@ -92,7 +102,10 @@ def decide_approval(
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to process approval: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to process approval: {str(e)}"
+        )
+
 
 @router.post("/{approval_id}/escalate", response_model=dict)
 @require_role([UserRole.DEPARTMENT_ADMIN, UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN])
@@ -100,7 +113,7 @@ def escalate_approval(
     approval_id: int,
     escalation_reason: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Escalate approval to higher authority"""
     try:
@@ -109,21 +122,26 @@ def escalate_approval(
         )
 
         if not success:
-            raise HTTPException(status_code=404, detail="Approval not found or cannot be escalated")
+            raise HTTPException(
+                status_code=404, detail="Approval not found or cannot be escalated"
+            )
 
         return {"message": "Approval escalated", "approval_id": approval_id}
 
     except HTTPException:
         raise
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Failed to escalate approval: {str(e)}")
+        raise HTTPException(
+            status_code=500, detail=f"Failed to escalate approval: {str(e)}"
+        )
+
 
 @router.get("/stats", response_model=dict)
 @require_role([UserRole.COMPANY_ADMIN, UserRole.SUPERADMIN])
 def get_approval_stats(
     company_id: int = None,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """Get approval queue statistics"""
     try:
@@ -137,11 +155,11 @@ def get_approval_stats(
     except Exception as e:
         raise HTTPException(status_code=500, detail=f"Failed to get stats: {str(e)}")
 
+
 @router.post("/cleanup", response_model=dict)
 @require_role([UserRole.SUPERADMIN])
 def cleanup_expired_approvals(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """Clean up expired pending approvals (superadmin only)"""
     try:

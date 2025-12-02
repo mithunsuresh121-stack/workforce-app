@@ -1,11 +1,14 @@
-from pydantic import BaseModel, EmailStr, Field
-from typing import Optional, List
 from datetime import datetime
 from enum import Enum
+from typing import List, Optional
+
+from pydantic import BaseModel, EmailStr, Field
+
 
 class VendorStatus(str, Enum):
     ACTIVE = "active"
     INACTIVE = "inactive"
+
 
 class PurchaseOrderStatus(str, Enum):
     PENDING = "PENDING"
@@ -13,10 +16,12 @@ class PurchaseOrderStatus(str, Enum):
     REJECTED = "REJECTED"
     COMPLETED = "COMPLETED"
 
+
 class InventoryStatus(str, Enum):
     IN_STOCK = "in_stock"
     LOW_STOCK = "low_stock"
     OUT_OF_STOCK = "out_of_stock"
+
 
 class VendorBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
@@ -24,8 +29,10 @@ class VendorBase(BaseModel):
     phone: Optional[str] = None
     status: VendorStatus = VendorStatus.ACTIVE
 
+
 class VendorCreate(VendorBase):
     pass
+
 
 class VendorOut(VendorBase):
     id: int
@@ -36,14 +43,17 @@ class VendorOut(VendorBase):
     class Config:
         from_attributes = True
 
+
 class PurchaseOrderBase(BaseModel):
     vendor_id: int
     item_name: str = Field(..., min_length=1, max_length=100)
     quantity: int = Field(..., gt=0)
     amount: float = Field(..., gt=0)
 
+
 class PurchaseOrderCreate(PurchaseOrderBase):
     pass
+
 
 class PurchaseOrderOut(PurchaseOrderBase):
     id: int
@@ -58,6 +68,7 @@ class PurchaseOrderOut(PurchaseOrderBase):
     class Config:
         from_attributes = True
 
+
 class InventoryItemBase(BaseModel):
     name: str = Field(..., min_length=1, max_length=100)
     quantity: int = Field(..., ge=0)
@@ -65,8 +76,10 @@ class InventoryItemBase(BaseModel):
     expiry_date: Optional[datetime] = None
     status: InventoryStatus = InventoryStatus.IN_STOCK
 
+
 class InventoryItemCreate(InventoryItemBase):
     purchase_order_id: Optional[int] = None
+
 
 class InventoryItemOut(InventoryItemBase):
     id: int
@@ -77,6 +90,7 @@ class InventoryItemOut(InventoryItemBase):
 
     class Config:
         from_attributes = True
+
 
 class BidCreate(BaseModel):
     vendor_id: int

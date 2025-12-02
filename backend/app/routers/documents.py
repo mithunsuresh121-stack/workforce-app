@@ -1,15 +1,18 @@
-import structlog
-from fastapi import APIRouter, Depends, HTTPException, UploadFile, File, Form, status
-from fastapi.responses import FileResponse
-from sqlalchemy.orm import Session
-from typing import List
 import os
 import shutil
+from typing import List
+
+import structlog
+from fastapi import (APIRouter, Depends, File, Form, HTTPException, UploadFile,
+                     status)
+from fastapi.responses import FileResponse
+from sqlalchemy.orm import Session
+
 from app.db import get_db
-from app.models.document import Document, DocumentType
-from app.schemas.schemas import DocumentOut, DocumentCreate
 from app.deps import get_current_user
+from app.models.document import Document, DocumentType
 from app.models.user import User
+from app.schemas.schemas import DocumentCreate, DocumentOut
 
 logger = structlog.get_logger(__name__)
 
@@ -17,14 +20,17 @@ router = APIRouter()
 
 UPLOAD_DIR = "backend/uploads"
 
+
 def get_role_level(role: str) -> int:
     levels = {"Employee": 1, "Manager": 2, "CompanyAdmin": 3, "SuperAdmin": 3}
     return levels.get(role, 0)
+
 
 def can_access_document(user_role: str, doc_access_role: str) -> bool:
     user_level = get_role_level(user_role)
     doc_level = get_role_level(doc_access_role.upper())
     return user_level >= doc_level
+
 
 @router.post("/upload", response_model=DocumentOut)
 def upload_document(
@@ -32,7 +38,7 @@ def upload_document(
     type: str = Form(...),
     access_role: str = Form(...),
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
     # Check role: only MANAGER, ADMIN
     if current_user.role not in ["Manager", "CompanyAdmin", "SuperAdmin"]:
@@ -68,34 +74,42 @@ def upload_document(
         user_id=current_user.id,
         file_path=file_path,
         type=doc_type,
-        access_role=access_role
+        access_role=access_role,
     )
     db.add(document)
     db.commit()
     db.refresh(document)
     return document
 
+
 @router.get("/list", response_model=List[DocumentOut])
 def list_documents(
-    db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user=Depends(get_current_user)
 ):
     query = db.query(Document).filter(Document.company_id == current_user.company_id)
     documents = query.all()
     # Filter based on access
-    visible_docs = [doc for doc in documents if can_access_document(current_user.role, doc.access_role)]
+    visible_docs = [
+        doc
+        for doc in documents
+        if can_access_document(current_user.role, doc.access_role)
+    ]
     return visible_docs
+
 
 @router.get("/download/{document_id}")
 def download_document(
     document_id: int,
     db: Session = Depends(get_db),
-    current_user = Depends(get_current_user)
+    current_user=Depends(get_current_user),
 ):
-    document = db.query(Document).filter(
-        Document.id == document_id,
-        Document.company_id == current_user.company_id
-    ).first()
+    document = (
+        db.query(Document)
+        .filter(
+            Document.id == document_id, Document.company_id == current_user.company_id
+        )
+        .first()
+    )
     if not document:
         raise HTTPException(status_code=404, detail="Document not found")
 
@@ -105,4 +119,8 @@ def download_document(
     if not os.path.exists(document.file_path):
         raise HTTPException(status_code=404, detail="File not found")
 
-    return FileResponse(path=document.file_path, filename=os.path.basename(document.file_path), media_type='application/octet-stream')
+    return FileResponse(
+        path=document.file_path,
+        filename=os.path.basename(document.file_path),
+        media_type="application/octet-stream",
+    )

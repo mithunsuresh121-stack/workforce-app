@@ -1,13 +1,17 @@
+import json
+from typing import Dict, List
+
 import structlog
 from fastapi import WebSocket
-from typing import Dict, List
-import json
 
 logger = structlog.get_logger(__name__)
 
+
 class ConnectionManager:
     def __init__(self):
-        self.active_connections: Dict[int, List[WebSocket]] = {}  # company_id -> list of websockets
+        self.active_connections: Dict[int, List[WebSocket]] = (
+            {}
+        )  # company_id -> list of websockets
 
     async def connect(self, websocket: WebSocket, company_id: int):
         await websocket.accept()
@@ -33,5 +37,6 @@ class ConnectionManager:
     async def broadcast_to_user(self, user_id: int, message: dict):
         # If needed, broadcast to specific user across companies
         pass
+
 
 manager = ConnectionManager()

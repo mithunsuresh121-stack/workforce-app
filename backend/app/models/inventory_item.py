@@ -1,13 +1,18 @@
-from sqlalchemy import Column, Integer, String, Float, Enum, ForeignKey, DateTime
+from enum import Enum as PyEnum
+
+from sqlalchemy import (Column, DateTime, Enum, Float, ForeignKey, Integer,
+                        String)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
-from enum import Enum as PyEnum
+
 from app.db import Base
+
 
 class InventoryStatus(str, PyEnum):
     IN_STOCK = "in_stock"
     LOW_STOCK = "low_stock"
     OUT_OF_STOCK = "out_of_stock"
+
 
 class InventoryItem(Base):
     __tablename__ = "inventory_items"

@@ -1,7 +1,9 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Boolean
+from sqlalchemy import Boolean, Column, DateTime, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db import Base
+
 
 class EmployeeProfile(Base):
     __tablename__ = "employee_profiles"
@@ -26,7 +28,9 @@ class EmployeeProfile(Base):
     updated_at = Column(DateTime, server_default=func.now(), onupdate=func.now())
 
     # Relationships
-    user = relationship("User", back_populates="employee_profile", foreign_keys=[user_id])
+    user = relationship(
+        "User", back_populates="employee_profile", foreign_keys=[user_id]
+    )
     company = relationship("Company", back_populates="employee_profiles")
     manager = relationship("User", foreign_keys=[manager_id])
 

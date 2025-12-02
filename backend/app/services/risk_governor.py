@@ -1,16 +1,19 @@
-import structlog
 from datetime import datetime, timedelta
 from typing import Dict, List, Optional, Tuple
+
+import structlog
 from sqlalchemy.orm import Session
+
 from app.models.user import User
 from app.schemas.ai import AICapability, AIDecision
-from app.services.trust_service import TrustService
-from app.services.policy_engine import policy_engine
-from app.services.approval_service import ApprovalService, ApprovalPriority
-from app.services.audit_service import AuditService
+from app.services.approval_service import ApprovalPriority, ApprovalService
 from app.services.audit_chain_service import AuditChainService
+from app.services.audit_service import AuditService
+from app.services.policy_engine import policy_engine
+from app.services.trust_service import TrustService
 
 logger = structlog.get_logger(__name__)
+
 
 class RiskGovernor:
     """Adaptive risk governor with auto-restrictions and graceful degradation"""
@@ -32,10 +35,7 @@ class RiskGovernor:
 
     @staticmethod
     def evaluate_request(
-        db: Session,
-        user: User,
-        capability: str,
-        request_data: dict = None
+        db: Session, user: User, capability: str, request_data: dict = None
     ) -> Tuple[AIDecision, str, Dict[str, any]]:
         """
         Comprehensive risk evaluation and decision making
@@ -48,7 +48,7 @@ class RiskGovernor:
             "user_id": user.id,
             "capability": capability,
             "timestamp": datetime.utcnow(),
-            "request_data": request_data or {}
+            "request_data": request_data or {},
         }
 
         # Check for active restrictions first
@@ -62,18 +62,20 @@ class RiskGovernor:
         recent_violations = TrustService.get_recent_violations(db, user.id, hours=24)
         context = {
             "current_time": datetime.utcnow(),
-            "recent_violations": recent_violations
+            "recent_violations": recent_violations,
         }
         risk_score = TrustService.calculate_risk_score(db, user, capability, context)
         risk_level = TrustService.assess_risk_level(risk_score)
 
-        evaluation_context.update({
-            "risk_score": risk_score,
-            "risk_level": risk_level,
-            "recent_violations": recent_violations,
-            "trust_score": user.trust_score,
-            "user_role": user.role.value
-        })
+        evaluation_context.update(
+            {
+                "risk_score": risk_score,
+                "risk_level": risk_level,
+                "recent_violations": recent_violations,
+                "trust_score": user.trust_score,
+                "user_role": user.role.value,
+            }
+        )
 
         # Evaluate against policy engine
         policy_context = {
@@ -86,11 +88,13 @@ class RiskGovernor:
             "recent_violations": recent_violations,
             "is_off_peak": RiskGovernor._is_off_peak(),
             "is_weekend": RiskGovernor._is_weekend(),
-            "company_id": user.company_id
+            "company_id": user.company_id,
         }
 
-        policy_decision, matched_rules, policy_details = policy_engine.evaluate_policies(
-            db, user.id, user.company_id, policy_context
+        policy_decision, matched_rules, policy_details = (
+            policy_engine.evaluate_policies(
+                db, user.id, user.company_id, policy_context
+            )
         )
 
         evaluation_context["policy_decision"] = policy_decision
@@ -107,23 +111,34 @@ class RiskGovernor:
             reason = f"Policy blocks request (rules: {', '.join(matched_rules)})"
 
             # Apply auto-restriction for denied requests
-            RiskGovernor._apply_auto_restriction(db, user, risk_level, f"Policy violation: {matched_rules}")
+            RiskGovernor._apply_auto_restriction(
+                db, user, risk_level, f"Policy violation: {matched_rules}"
+            )
 
         elif policy_decision == policy_engine.ACTION_CHALLENGE:
             decision = AIDecision.PENDING_APPROVAL
             reason = f"Request requires approval (rules: {', '.join(matched_rules)})"
 
             # Create approval request
-            RiskGovernor._create_approval_request(db, user, capability, request_data, risk_score, matched_rules)
+            RiskGovernor._create_approval_request(
+                db, user, capability, request_data, risk_score, matched_rules
+            )
 
         elif policy_decision == policy_engine.ACTION_ESCALATE:
             decision = AIDecision.PENDING_APPROVAL
-            reason = f"Request escalated for approval (rules: {', '.join(matched_rules)})"
+            reason = (
+                f"Request escalated for approval (rules: {', '.join(matched_rules)})"
+            )
 
             # Create high-priority approval request
             RiskGovernor._create_approval_request(
-                db, user, capability, request_data, risk_score, matched_rules,
-                priority=ApprovalPriority.HIGH
+                db,
+                user,
+                capability,
+                request_data,
+                risk_score,
+                matched_rules,
+                priority=ApprovalPriority.HIGH,
             )
 
         else:
@@ -139,7 +154,7 @@ class RiskGovernor:
             company_id=user.company_id,
             resource_type="ai_capability",
             resource_id=capability,
-            details=evaluation_context
+            details=evaluation_context,
         )
 
         # Audit chain
@@ -152,8 +167,8 @@ class RiskGovernor:
                 "capability": capability,
                 "decision": decision.value,
                 "risk_score": risk_score,
-                "policy_decision": policy_decision
-            }
+                "policy_decision": policy_decision,
+            },
         )
 
         logger.info(
@@ -162,7 +177,7 @@ class RiskGovernor:
             capability=capability,
             decision=decision.value,
             risk_score=risk_score,
-            policy_decision=policy_decision
+            policy_decision=policy_decision,
         )
 
         return decision, reason, evaluation_context
@@ -189,23 +204,27 @@ class RiskGovernor:
         restriction_level = restriction.get("level", RiskGovernor.RESTRICTION_NONE)
 
         if restriction_level == RiskGovernor.RESTRICTION_BLOCKED:
-            return AIDecision.BLOCKED, f"User is blocked until {restriction.get('expires_at')}"
+            return (
+                AIDecision.BLOCKED,
+                f"User is blocked until {restriction.get('expires_at')}",
+            )
 
         elif restriction_level == RiskGovernor.RESTRICTION_LIMITED:
-            return AIDecision.BLOCKED, f"User has limited access until {restriction.get('expires_at')}"
+            return (
+                AIDecision.BLOCKED,
+                f"User has limited access until {restriction.get('expires_at')}",
+            )
 
         elif restriction_level == RiskGovernor.RESTRICTION_COOLDOWN:
-            return AIDecision.BLOCKED, f"User is in cooldown until {restriction.get('expires_at')}"
+            return (
+                AIDecision.BLOCKED,
+                f"User is in cooldown until {restriction.get('expires_at')}",
+            )
 
         return AIDecision.ALLOWED, "No active restrictions"
 
     @staticmethod
-    def _apply_auto_restriction(
-        db: Session,
-        user: User,
-        risk_level: str,
-        reason: str
-    ):
+    def _apply_auto_restriction(db: Session, user: User, risk_level: str, reason: str):
         """Apply automatic restriction based on risk level"""
 
         # Determine restriction level and duration
@@ -229,7 +248,7 @@ class RiskGovernor:
             "reason": reason,
             "applied_at": datetime.utcnow(),
             "expires_at": expires_at,
-            "risk_level": risk_level
+            "risk_level": risk_level,
         }
 
         # Store restriction (in production, save to database)
@@ -243,7 +262,7 @@ class RiskGovernor:
             company_id=user.company_id,
             resource_type="user_access",
             resource_id=user.id,
-            details=restriction
+            details=restriction,
         )
 
         # Audit chain
@@ -255,8 +274,8 @@ class RiskGovernor:
             data={
                 "restriction_level": level,
                 "reason": reason,
-                "duration_minutes": duration_minutes
-            }
+                "duration_minutes": duration_minutes,
+            },
         )
 
         logger.warning(
@@ -264,7 +283,7 @@ class RiskGovernor:
             user_id=user.id,
             restriction_level=level,
             reason=reason,
-            expires_at=expires_at
+            expires_at=expires_at,
         )
 
     @staticmethod
@@ -275,7 +294,7 @@ class RiskGovernor:
         request_data: dict,
         risk_score: int,
         matched_rules: List[str],
-        priority: ApprovalPriority = ApprovalPriority.MEDIUM
+        priority: ApprovalPriority = ApprovalPriority.MEDIUM,
     ):
         """Create an approval request for the user"""
 
@@ -284,7 +303,7 @@ class RiskGovernor:
             "request_data": request_data,
             "risk_score": risk_score,
             "matched_rules": matched_rules,
-            "evaluation_timestamp": datetime.utcnow().isoformat()
+            "evaluation_timestamp": datetime.utcnow().isoformat(),
         }
 
         approval = ApprovalService.create_approval_request(
@@ -294,7 +313,7 @@ class RiskGovernor:
             request_data=request_data_full,
             risk_score=risk_score,
             priority=priority,
-            notes=f"Auto-generated approval request for {capability} (rules: {', '.join(matched_rules)})"
+            notes=f"Auto-generated approval request for {capability} (rules: {', '.join(matched_rules)})",
         )
 
         logger.info(
@@ -302,7 +321,7 @@ class RiskGovernor:
             user_id=user.id,
             capability=capability,
             approval_id=approval.id,
-            risk_score=risk_score
+            risk_score=risk_score,
         )
 
     @staticmethod
@@ -317,7 +336,9 @@ class RiskGovernor:
         return datetime.utcnow().weekday() >= 5
 
     @staticmethod
-    def lift_restriction(db: Session, user_id: int, lifted_by: User, reason: str = "") -> bool:
+    def lift_restriction(
+        db: Session, user_id: int, lifted_by: User, reason: str = ""
+    ) -> bool:
         """Manually lift a user's restriction"""
 
         restriction = RiskGovernor.get_active_restriction(db, user_id)
@@ -339,15 +360,12 @@ class RiskGovernor:
             details={
                 "target_user_id": user_id,
                 "reason": reason,
-                "previous_restriction": restriction
-            }
+                "previous_restriction": restriction,
+            },
         )
 
         logger.info(
-            "Restriction lifted",
-            user_id=user_id,
-            lifted_by=lifted_by.id,
-            reason=reason
+            "Restriction lifted", user_id=user_id, lifted_by=lifted_by.id, reason=reason
         )
 
         return True
@@ -360,13 +378,17 @@ class RiskGovernor:
         active_restrictions = len(RiskGovernor().active_restrictions)
 
         # Get recent high-risk evaluations
-        recent_high_risk = db.query(AuditService).filter(
-            and_(
-                AuditService.event_type == "RISK_EVALUATION",
-                AuditService.created_at >= datetime.utcnow() - timedelta(hours=1),
-                AuditService.details['risk_level'].astext.in_(['HIGH', 'CRITICAL'])
+        recent_high_risk = (
+            db.query(AuditService)
+            .filter(
+                and_(
+                    AuditService.event_type == "RISK_EVALUATION",
+                    AuditService.created_at >= datetime.utcnow() - timedelta(hours=1),
+                    AuditService.details["risk_level"].astext.in_(["HIGH", "CRITICAL"]),
+                )
             )
-        ).count()
+            .count()
+        )
 
         # Calculate system risk level
         if active_restrictions > 10 or recent_high_risk > 20:
@@ -382,7 +404,7 @@ class RiskGovernor:
             "system_risk_level": system_risk,
             "active_restrictions": active_restrictions,
             "recent_high_risk_evaluations": recent_high_risk,
-            "timestamp": datetime.utcnow().isoformat()
+            "timestamp": datetime.utcnow().isoformat(),
         }
 
     @staticmethod
@@ -393,17 +415,21 @@ class RiskGovernor:
 
         # Define degradation thresholds
         should_degrade = (
-            status["active_restrictions"] > 15 or
-            status["recent_high_risk_evaluations"] > 30 or
-            status["system_risk_level"] == "CRITICAL"
+            status["active_restrictions"] > 15
+            or status["recent_high_risk_evaluations"] > 30
+            or status["system_risk_level"] == "CRITICAL"
         )
 
         return {
             "should_degrade": should_degrade,
             "reason": "High system risk levels detected" if should_degrade else None,
-            "degradation_actions": [
-                "Increase approval requirements",
-                "Enable additional monitoring",
-                "Reduce concurrent request limits"
-            ] if should_degrade else []
+            "degradation_actions": (
+                [
+                    "Increase approval requirements",
+                    "Enable additional monitoring",
+                    "Reduce concurrent request limits",
+                ]
+                if should_degrade
+                else []
+            ),
         }

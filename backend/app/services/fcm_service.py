@@ -1,11 +1,13 @@
-import structlog
-import firebase_admin
-from firebase_admin import messaging, credentials
-from sqlalchemy.orm import Session
-from typing import Optional, Dict, Any
 import os
+from typing import Any, Dict, Optional
+
+import firebase_admin
+import structlog
+from firebase_admin import credentials, messaging
+from sqlalchemy.orm import Session
 
 logger = structlog.get_logger(__name__)
+
 
 class FCMService:
     def __init__(self):
@@ -21,7 +23,7 @@ class FCMService:
                 return
 
             # Try to get credentials from environment or file
-            cred_path = os.getenv('FIREBASE_CREDENTIALS_PATH')
+            cred_path = os.getenv("FIREBASE_CREDENTIALS_PATH")
             if cred_path and os.path.exists(cred_path):
                 cred = credentials.Certificate(cred_path)
                 firebase_admin.initialize_app(cred)
@@ -36,7 +38,9 @@ class FCMService:
             logger.error(f"Failed to initialize Firebase Admin SDK: {str(e)}")
             self._initialized = False
 
-    def send_meeting_invite(self, db: Session, user_id: int, meeting_id: int, meeting_title: str) -> bool:
+    def send_meeting_invite(
+        self, db: Session, user_id: int, meeting_id: int, meeting_title: str
+    ) -> bool:
         """
         Send meeting invite push notification with deep link
         """
@@ -48,17 +52,19 @@ class FCMService:
             "type": "MEETING_INVITE",
             "meeting_id": str(meeting_id),
             "deep_link": f"workforce://meeting/{meeting_id}",
-            "click_action": "FLUTTER_NOTIFICATION_CLICK"  # For Flutter deep linking
+            "click_action": "FLUTTER_NOTIFICATION_CLICK",  # For Flutter deep linking
         }
 
         return self.send_push_notification(
             token=fcm_token,
             title=f"Meeting Invitation: {meeting_title}",
             body="You have been invited to a meeting. Tap to join.",
-            data=data
+            data=data,
         )
 
-    def send_chat_notification(self, db: Session, user_id: int, channel_id: int, sender_name: str, message: str) -> bool:
+    def send_chat_notification(
+        self, db: Session, user_id: int, channel_id: int, sender_name: str, message: str
+    ) -> bool:
         """
         Send chat message push notification
         """
@@ -70,17 +76,19 @@ class FCMService:
             "type": "CHAT_MESSAGE",
             "channel_id": str(channel_id),
             "deep_link": f"workforce://chat/{channel_id}",
-            "click_action": "FLUTTER_NOTIFICATION_CLICK"
+            "click_action": "FLUTTER_NOTIFICATION_CLICK",
         }
 
         return self.send_push_notification(
             token=fcm_token,
             title=f"New message from {sender_name}",
             body=message[:100] + "..." if len(message) > 100 else message,
-            data=data
+            data=data,
         )
 
-    def send_push_notification(self, token: str, title: str, body: str, data: Optional[Dict[str, str]] = None) -> bool:
+    def send_push_notification(
+        self, token: str, title: str, body: str, data: Optional[Dict[str, str]] = None
+    ) -> bool:
         """
         Send a push notification to a specific FCM token
         """
@@ -113,7 +121,9 @@ class FCMService:
             logger.error(f"Failed to send push notification: {str(e)}")
             return False
 
-    def send_multicast_notification(self, tokens: list, title: str, body: str, data: Optional[Dict[str, str]] = None) -> Dict[str, Any]:
+    def send_multicast_notification(
+        self, tokens: list, title: str, body: str, data: Optional[Dict[str, str]] = None
+    ) -> Dict[str, Any]:
         """
         Send push notification to multiple tokens
         """
@@ -139,7 +149,9 @@ class FCMService:
             success_count = response.success_count
             failure_count = response.failure_count
 
-            logger.info(f"Multicast notification sent: {success_count} success, {failure_count} failure")
+            logger.info(
+                f"Multicast notification sent: {success_count} success, {failure_count} failure"
+            )
 
             # Log failures for debugging
             if response.responses:
@@ -150,7 +162,7 @@ class FCMService:
             return {
                 "success": success_count,
                 "failure": failure_count,
-                "total": len(tokens)
+                "total": len(tokens),
             }
 
         except Exception as e:
@@ -163,6 +175,7 @@ class FCMService:
         """
         try:
             from app.models.user import User
+
             user = db.query(User).filter(User.id == user_id).first()
             if user:
                 user.fcm_token = fcm_token
@@ -183,11 +196,13 @@ class FCMService:
         """
         try:
             from app.models.user import User
+
             user = db.query(User).filter(User.id == user_id).first()
             return user.fcm_token if user else None
         except Exception as e:
             logger.error(f"Failed to get FCM token for user {user_id}: {str(e)}")
             return None
+
 
 # Global FCM service instance
 fcm_service = FCMService()

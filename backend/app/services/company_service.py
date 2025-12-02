@@ -1,34 +1,34 @@
-import structlog
-from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
-from datetime import datetime, timedelta
-from typing import Optional, Dict, Any
 import secrets
 import string
-from passlib.context import CryptContext
+from datetime import datetime, timedelta
+from typing import Any, Dict, Optional
 
-from app.models.company import Company
-from app.models.company_settings import CompanySettings
-from app.models.company_department import CompanyDepartment
-from app.models.company_team import CompanyTeam
-from app.models.user import User, UserRole
-from app.models.channels import Channel, ChannelType, ChannelMember
-from app.models.meetings import Meeting, MeetingStatus
-from app.models.meeting_participants import MeetingParticipant, ParticipantRole
-from app.models.audit_log import AuditLog
-from app.services.audit_service import AuditService
-from app.metrics import company_created_total, company_admin_created_total
+import structlog
+from passlib.context import CryptContext
+from sqlalchemy.exc import SQLAlchemyError
+from sqlalchemy.orm import Session
+
 from app.base_crud import create_user
+from app.metrics import company_admin_created_total, company_created_total
+from app.models.audit_log import AuditLog
+from app.models.channels import Channel, ChannelMember, ChannelType
+from app.models.company import Company
+from app.models.company_department import CompanyDepartment
+from app.models.company_settings import CompanySettings
+from app.models.company_team import CompanyTeam
+from app.models.meeting_participants import MeetingParticipant, ParticipantRole
+from app.models.meetings import Meeting, MeetingStatus
+from app.models.user import User, UserRole
+from app.services.audit_service import AuditService
 
 logger = structlog.get_logger(__name__)
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+
 class CompanyService:
     @staticmethod
     def bootstrap_company(
-        db: Session,
-        company_name: str,
-        superadmin_user: User
+        db: Session, company_name: str, superadmin_user: User
     ) -> Dict[str, Any]:
         """
         Bootstrap a new company with all required components.
@@ -54,23 +54,21 @@ class CompanyService:
                 hashed_password=hashed_password,
                 full_name=f"{company_name} Admin",
                 role=UserRole.COMPANY_ADMIN,
-                company_id=company.id
+                company_id=company.id,
             )
             db.add(admin_user)
             db.flush()
 
             # 3. Create default General Department
             general_department = CompanyDepartment(
-                company_id=company.id,
-                name="General Department"
+                company_id=company.id, name="General Department"
             )
             db.add(general_department)
             db.flush()
 
             # 4. Create default General Team
             general_team = CompanyTeam(
-                department_id=general_department.id,
-                name="General Team"
+                department_id=general_department.id, name="General Team"
             )
             db.add(general_team)
             db.flush()
@@ -86,15 +84,14 @@ class CompanyService:
                 type=ChannelType.PUBLIC,
                 company_id=company.id,
                 created_by=admin_user.id,
-                team_id=general_team.id
+                team_id=general_team.id,
             )
             db.add(general_channel)
             db.flush()
 
             # Add admin to General channel
             channel_member = ChannelMember(
-                channel_id=general_channel.id,
-                user_id=admin_user.id
+                channel_id=general_channel.id, user_id=admin_user.id
             )
             db.add(channel_member)
 
@@ -106,7 +103,7 @@ class CompanyService:
                 start_time=datetime.utcnow(),
                 end_time=datetime.utcnow() + timedelta(hours=1),
                 status=MeetingStatus.SCHEDULED,
-                team_id=general_team.id
+                team_id=general_team.id,
             )
             db.add(meeting_room)
             db.flush()
@@ -115,7 +112,7 @@ class CompanyService:
             meeting_participant = MeetingParticipant(
                 meeting_id=meeting_room.id,
                 user_id=admin_user.id,
-                role=ParticipantRole.ORGANIZER
+                role=ParticipantRole.ORGANIZER,
             )
             db.add(meeting_participant)
 
@@ -134,8 +131,8 @@ class CompanyService:
                     "general_team_id": general_team.id,
                     "general_channel_id": general_channel.id,
                     "meeting_room_id": meeting_room.id,
-                    "settings_id": company_settings.id
-                }
+                    "settings_id": company_settings.id,
+                },
             )
 
             # 7. Increment metrics
@@ -162,7 +159,7 @@ class CompanyService:
                 "Company bootstrapped successfully",
                 company_id=company.id,
                 admin_user_id=admin_user.id,
-                superadmin_id=superadmin_user.id
+                superadmin_id=superadmin_user.id,
             )
 
             return {
@@ -171,7 +168,7 @@ class CompanyService:
                 "bootstrap_status": "success",
                 "temporary_access_link": f"/setup/{temp_token}",
                 "temp_password": temp_password,  # In production, send via email
-                "token_expiry": expiry_time.isoformat()
+                "token_expiry": expiry_time.isoformat(),
             }
 
         except Exception as e:
@@ -180,7 +177,7 @@ class CompanyService:
                 "Company bootstrap failed",
                 error=str(e),
                 company_name=company_name,
-                superadmin_id=superadmin_user.id
+                superadmin_id=superadmin_user.id,
             )
             raise ValueError(f"Company bootstrap failed: {str(e)}")
 
@@ -188,14 +185,16 @@ class CompanyService:
     def _generate_temp_password(length: int = 12) -> str:
         """Generate a secure temporary password ensuring all required character types"""
         if length < 4:
-            raise ValueError("Password length must be at least 4 to include all character types")
+            raise ValueError(
+                "Password length must be at least 4 to include all character types"
+            )
 
         # Ensure at least one of each required type
         password = [
             secrets.choice(string.ascii_uppercase),
             secrets.choice(string.ascii_lowercase),
             secrets.choice(string.digits),
-            secrets.choice("!@#$%^&*")
+            secrets.choice("!@#$%^&*"),
         ]
 
         # Fill the rest randomly
@@ -205,7 +204,7 @@ class CompanyService:
         # Shuffle to avoid predictable order
         secrets.SystemRandom().shuffle(password)
 
-        return ''.join(password)
+        return "".join(password)
 
     @staticmethod
     def _generate_temp_token() -> str:

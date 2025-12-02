@@ -1,21 +1,24 @@
-import pytest
+import json
+
 import httpx
+import pytest
 from fastapi.testclient import TestClient
-from app.main import app
-from app.db import get_db, SessionLocal
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
+from app.db import SessionLocal, get_db
 from app.deps import get_current_user
-from app.models.user import User
+from app.main import app
 from app.models.company import Company
-from app.models.vendor import Vendor
 from app.models.inventory_item import InventoryItem
 from app.models.purchase_order import PurchaseOrder
-from sqlalchemy.orm import Session
-import json
-from passlib.context import CryptContext
+from app.models.user import User
+from app.models.vendor import Vendor
 
 client = TestClient(app)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def override_get_db():
     db = SessionLocal()
@@ -24,13 +27,22 @@ def override_get_db():
     finally:
         db.close()
 
+
 def override_get_current_user():
     # Mock a user for testing
-    user = User(id=1, email="demo@company.com", full_name="Demo User", role="COMPANY_ADMIN", company_id=1)
+    user = User(
+        id=1,
+        email="demo@company.com",
+        full_name="Demo User",
+        role="COMPANY_ADMIN",
+        company_id=1,
+    )
     return user
+
 
 app.dependency_overrides[get_db] = override_get_db
 app.dependency_overrides[get_current_user] = override_get_current_user
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_data():
@@ -54,19 +66,23 @@ def setup_test_data():
                 hashed_password=hashed_password,
                 full_name="Demo User",
                 role="EMPLOYEE",
-                company_id=company.id
+                company_id=company.id,
             )
             db.add(user)
             db.commit()
             db.refresh(user)
 
             # Create test vendor if not exists
-            vendor = db.query(Vendor).filter_by(name="Test Vendor", company_id=company.id).first()
+            vendor = (
+                db.query(Vendor)
+                .filter_by(name="Test Vendor", company_id=company.id)
+                .first()
+            )
             if not vendor:
                 vendor = Vendor(
                     name="Test Vendor",
                     contact_email="vendor@test.com",
-                    company_id=company.id
+                    company_id=company.id,
                 )
                 db.add(vendor)
                 db.commit()
@@ -89,16 +105,17 @@ def setup_test_data():
     finally:
         db.close()
 
+
 class TestE2EFlows:
     """End-to-end tests for key flows: auth, notifications, procurement"""
 
     def test_auth_login_flow(self):
         """Test authentication login flow"""
         # Simulate login (in real E2E, this would use Playwright for browser login)
-        response = client.post("/api/auth/login", json={
-            "email": "demo@company.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "demo@company.com", "password": "password123"},
+        )
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
@@ -124,6 +141,7 @@ class TestE2EFlows:
         # Clean up existing data
         from app.db import SessionLocal
         from app.models.vendor import Vendor
+
         db = SessionLocal()
         try:
             # Delete existing purchase orders and vendors for company 1
@@ -136,9 +154,7 @@ class TestE2EFlows:
         # Create a vendor first
         db = SessionLocal()
         vendor = Vendor(
-            name="Test Vendor",
-            contact_email="vendor@test.com",
-            company_id=1
+            name="Test Vendor", contact_email="vendor@test.com", company_id=1
         )
         db.add(vendor)
         db.commit()
@@ -147,12 +163,15 @@ class TestE2EFlows:
         db.close()
 
         # Create a purchase order (mock data)
-        response = client.post("/api/procurement/purchase-orders/", json={
-            "vendor_id": vendor_id,
-            "item_name": "Test Item",
-            "quantity": 10,
-            "amount": 100.0
-        })
+        response = client.post(
+            "/api/procurement/purchase-orders/",
+            json={
+                "vendor_id": vendor_id,
+                "item_name": "Test Item",
+                "quantity": 10,
+                "amount": 100.0,
+            },
+        )
         assert response.status_code == 201
         po_data = response.json()
         po_id = po_data["id"]

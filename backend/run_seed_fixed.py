@@ -4,24 +4,27 @@ Script to run the seed demo user function with proper database permissions.
 This script connects directly to the database to create employee profiles.
 """
 
-import sys
 import os
+import sys
+
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 
 # Add the backend directory to the Python path
-sys.path.append(os.path.join(os.path.dirname(__file__), 'app'))
+sys.path.append(os.path.join(os.path.dirname(__file__), "app"))
 
 # Import with absolute paths
-from crud import create_user, get_company_by_id, get_company_by_name, create_company, create_employee_profile
-from models.user import User
+from crud import (create_company, create_employee_profile, create_user,
+                  get_company_by_id, get_company_by_name)
 from models.company import Company
 from models.employee_profile import EmployeeProfile
+from models.user import User
 
 # Create a direct database connection with superuser privileges
 DATABASE_URL = "postgresql://postgres:postgres@localhost:5432/workforce"
 engine = create_engine(DATABASE_URL)
 SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
+
 
 def get_db():
     db = SessionLocal()
@@ -29,6 +32,7 @@ def get_db():
         yield db
     finally:
         db.close()
+
 
 def seed_demo_user(db):
     print("Starting seed process...")
@@ -43,8 +47,14 @@ def seed_demo_user(db):
         print("Super Admin user already exists.")
     else:
         # Create Super Admin user (no company_id needed)
-        create_user(db, super_admin_email, super_admin_password,
-                   full_name="Super Administrator", role="SuperAdmin", company_id=None)
+        create_user(
+            db,
+            super_admin_email,
+            super_admin_password,
+            full_name="Super Administrator",
+            role="SuperAdmin",
+            company_id=None,
+        )
         print("Super Admin user created successfully.")
 
     # Create demo company and user (optional, for backward compatibility)
@@ -62,22 +72,36 @@ def seed_demo_user(db):
             city="Demo City",
             state="Demo State",
             country="Demo Country",
-            postal_code="12345"
+            postal_code="12345",
         )
         print("Demo company created successfully.")
 
     demo_email = "demo@company.com"
     demo_password = "password123"
-    existing_user = db.query(User).filter_by(email=demo_email, company_id=company.id).first()
+    existing_user = (
+        db.query(User).filter_by(email=demo_email, company_id=company.id).first()
+    )
     if existing_user:
         print("Demo user already exists.")
         # Fix role if invalid
-        if existing_user.role not in ["SuperAdmin", "CompanyAdmin", "Manager", "Employee"]:
+        if existing_user.role not in [
+            "SuperAdmin",
+            "CompanyAdmin",
+            "Manager",
+            "Employee",
+        ]:
             existing_user.role = "Employee"
             db.commit()
             print("Fixed demo user role to Employee.")
     else:
-        create_user(db, demo_email, demo_password, full_name="Demo User", role="Employee", company_id=company.id)
+        create_user(
+            db,
+            demo_email,
+            demo_password,
+            full_name="Demo User",
+            role="Employee",
+            company_id=company.id,
+        )
         print("Demo user created successfully.")
 
     # Create employee profiles for demo users
@@ -87,7 +111,9 @@ def seed_demo_user(db):
     super_admin = db.query(User).filter_by(email=super_admin_email).first()
     if super_admin:
         # Check if profile already exists
-        existing_profile = db.query(EmployeeProfile).filter_by(user_id=super_admin.id).first()
+        existing_profile = (
+            db.query(EmployeeProfile).filter_by(user_id=super_admin.id).first()
+        )
         if not existing_profile:
             create_employee_profile(
                 db=db,
@@ -97,15 +123,19 @@ def seed_demo_user(db):
                 position="System Administrator",
                 phone="+1234567890",
                 hire_date="2023-01-01",
-                manager_id=None
+                manager_id=None,
             )
             print("Created employee profile for Super Admin")
 
     # Create profile for demo user
-    demo_user = db.query(User).filter_by(email=demo_email, company_id=company.id).first()
+    demo_user = (
+        db.query(User).filter_by(email=demo_email, company_id=company.id).first()
+    )
     if demo_user:
         # Check if profile already exists
-        existing_profile = db.query(EmployeeProfile).filter_by(user_id=demo_user.id).first()
+        existing_profile = (
+            db.query(EmployeeProfile).filter_by(user_id=demo_user.id).first()
+        )
         if not existing_profile:
             create_employee_profile(
                 db=db,
@@ -115,11 +145,12 @@ def seed_demo_user(db):
                 position="Software Engineer",
                 phone="+1234567891",
                 hire_date="2023-06-01",
-                manager_id=None
+                manager_id=None,
             )
             print("Created employee profile for Demo User")
 
     print("Seed process completed successfully!")
+
 
 if __name__ == "__main__":
     db = next(get_db())

@@ -1,12 +1,15 @@
+import asyncio
+import json
+import os
+from typing import Callable, List, Optional
+
 import aioredis
 import structlog
-from typing import Optional, List, Callable
-import os
-import json
-import asyncio
-from tenacity import retry, stop_after_attempt, wait_exponential, wait_exponential_jitter, retry_if_exception_type
+from tenacity import (retry, retry_if_exception_type, stop_after_attempt,
+                      wait_exponential, wait_exponential_jitter)
 
 logger = structlog.get_logger(__name__)
+
 
 class RedisService:
     def __init__(self):
@@ -21,25 +24,36 @@ class RedisService:
 
     def _build_redis_url(self) -> str:
         """Build Redis URL conditionally based on password presence"""
-        password = os.getenv('REDIS_PASSWORD', '').strip()
+        password = os.getenv("REDIS_PASSWORD", "").strip()
         if password:
             return f"redis://:{password}@localhost:6379"
         else:
             return "redis://localhost:6379"
 
-    @retry(stop=stop_after_attempt(5), wait=wait_exponential_jitter(initial=1, max=10), retry=retry_if_exception_type((aioredis.RedisError, aioredis.errors.ReplyError)))
+    @retry(
+        stop=stop_after_attempt(5),
+        wait=wait_exponential_jitter(initial=1, max=10),
+        retry=retry_if_exception_type(
+            (aioredis.RedisError, aioredis.errors.ReplyError)
+        ),
+    )
     async def initialize(self):
         """Initialize Redis connection with retry logic and Sentinel support"""
         redis_url = os.getenv("REDIS_URL") or self._build_redis_url()
-        password = os.getenv('REDIS_PASSWORD', '').strip()
-        sanitized_url = redis_url.replace(password, '***') if password else redis_url
+        password = os.getenv("REDIS_PASSWORD", "").strip()
+        sanitized_url = redis_url.replace(password, "***") if password else redis_url
         try:
-            sentinel_hosts = os.getenv("REDIS_SENTINEL_HOSTS")  # e.g., "host1:26379,host2:26379"
+            sentinel_hosts = os.getenv(
+                "REDIS_SENTINEL_HOSTS"
+            )  # e.g., "host1:26379,host2:26379"
             sentinel_master = os.getenv("REDIS_SENTINEL_MASTER", "mymaster")
 
             if sentinel_hosts:
                 # Use Redis Sentinel for HA
-                sentinel_hosts_list = [(host.split(':')[0], int(host.split(':')[1])) for host in sentinel_hosts.split(',')]
+                sentinel_hosts_list = [
+                    (host.split(":")[0], int(host.split(":")[1]))
+                    for host in sentinel_hosts.split(",")
+                ]
                 self.sentinel = aioredis.sentinel.Sentinel(
                     sentinel_hosts_list,
                     password=password if password else None,
@@ -47,36 +61,54 @@ class RedisService:
                 )
                 self.redis = self.sentinel.master_for(sentinel_master)
                 self.pubsub = self.sentinel.slave_for(sentinel_master)
-                logger.info("Redis Sentinel initialized", sentinel_hosts=sentinel_hosts, master=sentinel_master)
+                logger.info(
+                    "Redis Sentinel initialized",
+                    sentinel_hosts=sentinel_hosts,
+                    master=sentinel_master,
+                )
             else:
                 # Standard Redis pool - pass password explicitly if set
                 self.redis = await aioredis.create_redis_pool(
                     redis_url,
                     password=password if password else None,
-                    encoding='utf-8',
+                    encoding="utf-8",
                     minsize=5,
                     maxsize=50,
-                    timeout=5.0
+                    timeout=5.0,
                 )
 
                 # Create separate pubsub connection
                 self.pubsub = await aioredis.create_redis_pool(
                     redis_url,
                     password=password if password else None,
-                    encoding='utf-8',
+                    encoding="utf-8",
                     minsize=2,
                     maxsize=10,
-                    timeout=5.0
+                    timeout=5.0,
                 )
 
             self._initialized = True
-            logger.info("Redis service initialized", redis_url=sanitized_url, minsize=5, maxsize=50, sentinel=bool(sentinel_hosts), password_set=bool(password))
+            logger.info(
+                "Redis service initialized",
+                redis_url=sanitized_url,
+                minsize=5,
+                maxsize=50,
+                sentinel=bool(sentinel_hosts),
+                password_set=bool(password),
+            )
         except (aioredis.errors.ReplyError, aioredis.AuthenticationError) as e:
-            logger.error("Redis authentication failed", error=str(e), redis_url=sanitized_url, password_set=bool(password))
+            logger.error(
+                "Redis authentication failed",
+                error=str(e),
+                redis_url=sanitized_url,
+                password_set=bool(password),
+            )
             self._initialized = False
             raise
         except Exception as e:
-            logger.error("Failed to initialize Redis after retries", error=str(e), exc_info=True)
+            logger.error(
+                "Failed to initialize Redis after retries", error=str(e), exc_info=True
+            )
             self._initialized = False
             raise
 
@@ -87,7 +119,7 @@ class RedisService:
         try:
             pong = await self.redis.ping()
             logger.debug("Redis health check passed", pong=pong)
-            return pong == 'PONG'
+            return pong == "PONG"
         except Exception as e:
             logger.error("Redis health check failed", error=str(e))
             return False
@@ -106,29 +138,32 @@ class RedisService:
 
     async def _auto_reconnect(self):
         """Auto-reconnect to Redis with exponential backoff"""
-        password = os.getenv('REDIS_PASSWORD', '').strip()
+        password = os.getenv("REDIS_PASSWORD", "").strip()
         redis_url = os.getenv("REDIS_URL") or self._build_redis_url()
         while self._reconnect_attempts < self._max_reconnect_attempts:
             try:
-                delay = self._base_reconnect_delay * (2 ** self._reconnect_attempts)
-                logger.info(f"Attempting Redis reconnection in {delay:.1f}s (attempt {self._reconnect_attempts + 1}/{self._max_reconnect_attempts})")
+                delay = self._base_reconnect_delay * (2**self._reconnect_attempts)
+                logger.info(
+                    f"Attempting Redis reconnection in {delay:.1f}s (attempt {self._reconnect_attempts + 1}/{self._max_reconnect_attempts})"
+                )
                 await asyncio.sleep(delay)
 
                 self.redis = await aioredis.create_redis_pool(
                     redis_url,
                     password=password if password else None,
-                    encoding='utf-8',
+                    encoding="utf-8",
                     minsize=5,
                     maxsize=50,
-                    timeout=5.0
+                    timeout=5.0,
                 )
 
                 # Test connection
                 pong = await self.redis.ping()
-                if pong == 'PONG':
+                if pong == "PONG":
                     self._initialized = True
                     self._reconnect_attempts = 0
                     from app.metrics import record_redis_reconnection
+
                     record_redis_reconnection()
                     logger.info("Redis reconnected successfully")
                     return
@@ -137,7 +172,10 @@ class RedisService:
 
             except Exception as e:
                 self._reconnect_attempts += 1
-                logger.error(f"Redis reconnection attempt {self._reconnect_attempts} failed", error=str(e))
+                logger.error(
+                    f"Redis reconnection attempt {self._reconnect_attempts} failed",
+                    error=str(e),
+                )
 
         logger.error("Max Redis reconnection attempts reached, giving up")
         self._initialized = False
@@ -151,7 +189,7 @@ class RedisService:
 
         try:
             pong = await self.redis.ping()
-            return pong == 'PONG'
+            return pong == "PONG"
         except Exception as e:
             logger.warning("Redis connection lost, triggering reconnect", error=str(e))
             self._initialized = False
@@ -159,7 +197,9 @@ class RedisService:
                 self._reconnect_task = asyncio.create_task(self._auto_reconnect())
             return False
 
-    async def set_user_online(self, company_id: int, user_id: int, expire_seconds: int = 30):
+    async def set_user_online(
+        self, company_id: int, user_id: int, expire_seconds: int = 30
+    ):
         """Mark user as online with expiration"""
         if not self._initialized:
             return
@@ -190,7 +230,9 @@ class RedisService:
                 continue
         return user_ids
 
-    async def set_typing_indicator(self, channel_id: int, user_id: int, expire_seconds: int = 5):
+    async def set_typing_indicator(
+        self, channel_id: int, user_id: int, expire_seconds: int = 5
+    ):
         """Set typing indicator for user in channel"""
         if not self._initialized:
             return
@@ -238,28 +280,43 @@ class RedisService:
             return
         try:
             await self.redis.publish(channel, json.dumps(message))
-            logger.info("Published event to Redis", channel=channel, message_size=len(json.dumps(message)), event_type=message.get('type', 'unknown'))
-            from app.metrics import record_redis_publish, redis_pubsub_messages_total
-            record_redis_publish(channel.split(':')[0])  # chat or meeting
-            channel_type = channel.split(':')[0]  # e.g., 'chat' or 'meeting'
+            logger.info(
+                "Published event to Redis",
+                channel=channel,
+                message_size=len(json.dumps(message)),
+                event_type=message.get("type", "unknown"),
+            )
+            from app.metrics import (record_redis_publish,
+                                     redis_pubsub_messages_total)
+
+            record_redis_publish(channel.split(":")[0])  # chat or meeting
+            channel_type = channel.split(":")[0]  # e.g., 'chat' or 'meeting'
             redis_pubsub_messages_total.labels(channel_type=channel_type).inc()
         except Exception as e:
             from app.metrics import record_redis_error
-            record_redis_error()
-            logger.error("Failed to publish event to Redis", channel=channel, error=str(e), exc_info=True)
 
-    async def create_redis_pool(self, url: str, password: Optional[str] = None) -> Optional[aioredis.Redis]:
+            record_redis_error()
+            logger.error(
+                "Failed to publish event to Redis",
+                channel=channel,
+                error=str(e),
+                exc_info=True,
+            )
+
+    async def create_redis_pool(
+        self, url: str, password: Optional[str] = None
+    ) -> Optional[aioredis.Redis]:
         """Create a new Redis pool connection"""
         try:
             redis_pool = await aioredis.create_redis_pool(
                 url,
                 password=password,
-                encoding='utf-8',
+                encoding="utf-8",
                 minsize=5,
                 maxsize=50,
-                timeout=5.0
+                timeout=5.0,
             )
-            sanitized_url = url.replace(password or '', '***') if password else url
+            sanitized_url = url.replace(password or "", "***") if password else url
             logger.info("Created Redis pool", url=sanitized_url)
             return redis_pool
         except Exception as e:
@@ -273,11 +330,21 @@ class RedisService:
             return
         try:
             await self.redis.publish(channel_name, message)
-            logger.info("Published message to Redis", channel=channel_name, message_size=len(message))
+            logger.info(
+                "Published message to Redis",
+                channel=channel_name,
+                message_size=len(message),
+            )
         except Exception as e:
             from app.metrics import record_redis_error
+
             record_redis_error()
-            logger.error("Failed to publish message to Redis", channel=channel_name, error=str(e), exc_info=True)
+            logger.error(
+                "Failed to publish message to Redis",
+                channel=channel_name,
+                error=str(e),
+                exc_info=True,
+            )
 
     async def psubscribe(self, pattern: str, callback: Callable[[str], None]):
         """Subscribe to Redis pub/sub pattern and call callback on messages"""
@@ -289,10 +356,15 @@ class RedisService:
                 await pubsub.psubscribe(pattern)
                 logger.info("Subscribed to Redis pattern", pattern=pattern)
                 async for message in pubsub.listen():
-                    if message['type'] == 'pmessage':
-                        await callback(message['data'])
+                    if message["type"] == "pmessage":
+                        await callback(message["data"])
         except Exception as e:
-            logger.error("Failed to psubscribe to Redis pattern", pattern=pattern, error=str(e), exc_info=True)
+            logger.error(
+                "Failed to psubscribe to Redis pattern",
+                pattern=pattern,
+                error=str(e),
+                exc_info=True,
+            )
 
     async def subscribe_to_events(self, channel: str):
         """Subscribe to Redis pub/sub channel (returns channel object for aioredis 1.3.1)"""
@@ -305,7 +377,12 @@ class RedisService:
             logger.info("Subscribed to Redis channel", channel=channel)
             return ch
         except Exception as e:
-            logger.error("Failed to subscribe to Redis channel", channel=channel, error=str(e), exc_info=True)
+            logger.error(
+                "Failed to subscribe to Redis channel",
+                channel=channel,
+                error=str(e),
+                exc_info=True,
+            )
             return None
 
     async def store_read_receipt(self, channel_id: int, user_id: int, message_id: int):
@@ -338,26 +415,43 @@ class RedisService:
             return None
         try:
             result = await self.redis.get(key)
-            return result.decode('utf-8') if result else None
+            return result.decode("utf-8") if result else None
         except Exception as e:
             logger.error("Failed to get from Redis", key=key, error=str(e))
             return None
 
-    async def set_notification_cache(self, company_id: int, user_id: int, offset: int, limit: int, notifications: List[dict], ttl: int = 300) -> bool:
+    async def set_notification_cache(
+        self,
+        company_id: int,
+        user_id: int,
+        offset: int,
+        limit: int,
+        notifications: List[dict],
+        ttl: int = 300,
+    ) -> bool:
         """Cache notifications for a user with pagination"""
         if not self._initialized:
             return False
         key = f"notifications:{company_id}:{user_id}:{offset}:{limit}"
         try:
             import json
+
             await self.redis.setex(key, ttl, json.dumps(notifications))
-            logger.debug("Cached notifications", company_id=company_id, user_id=user_id, offset=offset, limit=limit)
+            logger.debug(
+                "Cached notifications",
+                company_id=company_id,
+                user_id=user_id,
+                offset=offset,
+                limit=limit,
+            )
             return True
         except Exception as e:
             logger.error("Failed to cache notifications", key=key, error=str(e))
             return False
 
-    async def get_notification_cache(self, company_id: int, user_id: int, offset: int, limit: int) -> Optional[List[dict]]:
+    async def get_notification_cache(
+        self, company_id: int, user_id: int, offset: int, limit: int
+    ) -> Optional[List[dict]]:
         """Get cached notifications for a user with pagination"""
         if not self._initialized:
             return None
@@ -366,8 +460,15 @@ class RedisService:
             result = await self.redis.get(key)
             if result:
                 import json
-                notifications = json.loads(result.decode('utf-8'))
-                logger.debug("Retrieved cached notifications", company_id=company_id, user_id=user_id, offset=offset, limit=limit)
+
+                notifications = json.loads(result.decode("utf-8"))
+                logger.debug(
+                    "Retrieved cached notifications",
+                    company_id=company_id,
+                    user_id=user_id,
+                    offset=offset,
+                    limit=limit,
+                )
                 return notifications
             return None
         except Exception as e:
@@ -383,11 +484,18 @@ class RedisService:
             keys = await self.redis.keys(pattern)
             if keys:
                 deleted = await self.redis.delete(*keys)
-                logger.info("Invalidated notification cache", company_id=company_id, user_id=user_id, keys_deleted=deleted)
+                logger.info(
+                    "Invalidated notification cache",
+                    company_id=company_id,
+                    user_id=user_id,
+                    keys_deleted=deleted,
+                )
                 return deleted
             return 0
         except Exception as e:
-            logger.error("Failed to invalidate notification cache", pattern=pattern, error=str(e))
+            logger.error(
+                "Failed to invalidate notification cache", pattern=pattern, error=str(e)
+            )
             return 0
 
     async def setex(self, key: str, seconds: int, value: str):
@@ -413,6 +521,7 @@ class RedisService:
         except Exception as e:
             logger.error("Failed to delete from Redis", key=key, error=str(e))
             return 0
+
 
 # Global Redis service instance
 redis_service = RedisService()

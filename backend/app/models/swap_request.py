@@ -1,14 +1,18 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
+import enum
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db import Base
-import enum
+
 
 class SwapStatus(str, enum.Enum):
     PENDING = "PENDING"
     APPROVED = "APPROVED"
     REJECTED = "REJECTED"
     CANCELLED = "CANCELLED"
+
 
 class SwapRequest(Base):
     __tablename__ = "swap_requests"

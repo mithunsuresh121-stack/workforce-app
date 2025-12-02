@@ -1,11 +1,14 @@
-import pytest
 import asyncio
 import time
 from collections import deque
-from unittest.mock import Mock, AsyncMock, patch
+from unittest.mock import AsyncMock, Mock, patch
+
+import pytest
+
+from app.metrics import (record_redis_reconnection, record_ws_reconnect,
+                         record_ws_timeout, set_ws_backpressure_queue_size)
 from app.routers.websocket_manager import WebSocketManager, ws_manager
 from app.services.redis_service import RedisService
-from app.metrics import record_ws_reconnect, record_ws_timeout, record_redis_reconnection, set_ws_backpressure_queue_size
 
 
 class TestWebSocketReliability:
@@ -50,11 +53,17 @@ class TestWebSocketReliability:
         ws_manager.heartbeat_timeout = 0.2
 
         # Mock pong response
-        mock_websocket.receive_json.side_effect = [{"type": "pong"}] * 3  # Enough for a few iterations
+        mock_websocket.receive_json.side_effect = [
+            {"type": "pong"}
+        ] * 3  # Enough for a few iterations
 
         try:
             # Run heartbeat for short duration
-            task = asyncio.create_task(ws_manager._heartbeat_loop(mock_websocket, connection_key, user_id, room_type))
+            task = asyncio.create_task(
+                ws_manager._heartbeat_loop(
+                    mock_websocket, connection_key, user_id, room_type
+                )
+            )
             await asyncio.sleep(0.3)  # Let it run a few iterations
             task.cancel()
 
@@ -82,10 +91,16 @@ class TestWebSocketReliability:
         mock_websocket.send_json = AsyncMock()
         mock_websocket.close = AsyncMock()
 
-        with patch('app.routers.websocket_manager.record_ws_timeout') as mock_record, \
-             patch('asyncio.sleep', return_value=None), \
-             patch('asyncio.wait_for', side_effect=asyncio.TimeoutError()):
-            task = asyncio.create_task(ws_manager._heartbeat_loop(mock_websocket, connection_key, user_id, room_type))
+        with patch(
+            "app.routers.websocket_manager.record_ws_timeout"
+        ) as mock_record, patch("asyncio.sleep", return_value=None), patch(
+            "asyncio.wait_for", side_effect=asyncio.TimeoutError()
+        ):
+            task = asyncio.create_task(
+                ws_manager._heartbeat_loop(
+                    mock_websocket, connection_key, user_id, room_type
+                )
+            )
             await task
 
             # Should record timeout
@@ -123,7 +138,7 @@ class TestWebSocketReliability:
         user.id = 1
         db = Mock()
 
-        with patch('app.routers.websocket_manager.logger') as mock_logger:
+        with patch("app.routers.websocket_manager.logger") as mock_logger:
             await ws_manager.handle_message(mock_websocket, data, "chat", 1, user, db)
 
             # Should log backpressure warning
@@ -145,18 +160,21 @@ class TestRedisReliability:
         redis_service.redis.ping = AsyncMock(side_effect=Exception("Connection lost"))
 
         # Mock successful reconnect
-        with patch('app.services.redis_service.aioredis') as mock_aioredis:
+        with patch("app.services.redis_service.aioredis") as mock_aioredis:
             mock_pool = AsyncMock()
             mock_pool.ping = AsyncMock(return_value="PONG")
             mock_aioredis.create_redis_pool = AsyncMock(return_value=mock_pool)
 
-            with patch('app.metrics.record_redis_reconnection') as mock_record:
+            with patch("app.metrics.record_redis_reconnection") as mock_record:
                 # Trigger reconnect
                 result = await redis_service.ensure_connection()
 
                 # Wait for reconnect task to complete
-                with patch('asyncio.sleep', return_value=None):
-                    if redis_service._reconnect_task and not redis_service._reconnect_task.done():
+                with patch("asyncio.sleep", return_value=None):
+                    if (
+                        redis_service._reconnect_task
+                        and not redis_service._reconnect_task.done()
+                    ):
                         await redis_service._reconnect_task
 
                 # Should record reconnection
@@ -168,10 +186,10 @@ class TestRedisReliability:
         redis_service._reconnect_attempts = 3
 
         # Calculate expected delay
-        expected_delay = 1.0 * (2 ** 3)  # base_delay * 2^attempts
+        expected_delay = 1.0 * (2**3)  # base_delay * 2^attempts
 
-        with patch('asyncio.sleep') as mock_sleep:
-            with patch('app.services.redis_service.aioredis') as mock_aioredis:
+        with patch("asyncio.sleep") as mock_sleep:
+            with patch("app.services.redis_service.aioredis") as mock_aioredis:
                 mock_pool = AsyncMock()
                 mock_pool.ping = AsyncMock(return_value="PONG")
                 mock_aioredis.create_redis_pool = AsyncMock(return_value=mock_pool)
@@ -187,27 +205,27 @@ class TestMetricsReliability:
 
     def test_ws_reconnect_metric(self):
         """Test WS reconnect metric recording"""
-        with patch('app.metrics.ws_reconnects_total') as mock_metric:
+        with patch("app.metrics.ws_reconnects_total") as mock_metric:
             record_ws_reconnect("chat")
             mock_metric.labels.assert_called_with(room_type="chat")
             mock_metric.labels().inc.assert_called()
 
     def test_ws_timeout_metric(self):
         """Test WS timeout metric recording"""
-        with patch('app.metrics.ws_timeouts_total') as mock_metric:
+        with patch("app.metrics.ws_timeouts_total") as mock_metric:
             record_ws_timeout("meeting")
             mock_metric.labels.assert_called_with(room_type="meeting")
             mock_metric.labels().inc.assert_called()
 
     def test_redis_reconnection_metric(self):
         """Test Redis reconnection metric recording"""
-        with patch('app.metrics.redis_reconnections_total') as mock_metric:
+        with patch("app.metrics.redis_reconnections_total") as mock_metric:
             record_redis_reconnection()
             mock_metric.inc.assert_called()
 
     def test_backpressure_queue_size_metric(self):
         """Test backpressure queue size metric"""
-        with patch('app.metrics.ws_backpressure_queue_size') as mock_metric:
+        with patch("app.metrics.ws_backpressure_queue_size") as mock_metric:
             set_ws_backpressure_queue_size("chat", 50)
             mock_metric.labels.assert_called_with(room_type="chat")
             mock_metric.labels().set.assert_called_with(50)
@@ -271,6 +289,7 @@ class TestWebSocketPingPong:
 
         # Mock pong response
         pong_received = False
+
         async def mock_receive():
             nonlocal pong_received
             if not pong_received:
@@ -283,7 +302,11 @@ class TestWebSocketPingPong:
 
         try:
             # Run heartbeat for short duration
-            task = asyncio.create_task(ws_manager._heartbeat_loop(mock_websocket, connection_key, user_id, room_type))
+            task = asyncio.create_task(
+                ws_manager._heartbeat_loop(
+                    mock_websocket, connection_key, user_id, room_type
+                )
+            )
             await asyncio.sleep(0.15)  # Let it send ping and receive pong
             task.cancel()
 
@@ -312,8 +335,12 @@ class TestWebSocketPingPong:
         # Mock websocket to timeout
         mock_websocket.receive_json = AsyncMock(side_effect=asyncio.TimeoutError())
 
-        with patch('app.routers.websocket_manager.record_ws_timeout') as mock_record:
-            task = asyncio.create_task(ws_manager._heartbeat_loop(mock_websocket, connection_key, user_id, room_type))
+        with patch("app.routers.websocket_manager.record_ws_timeout") as mock_record:
+            task = asyncio.create_task(
+                ws_manager._heartbeat_loop(
+                    mock_websocket, connection_key, user_id, room_type
+                )
+            )
             await task
 
             # Should record timeout
@@ -328,58 +355,70 @@ class TestCORSConfiguration:
     def test_cors_origins_include_production(self):
         """Test that CORS allows production origins"""
         from fastapi.middleware.cors import CORSMiddleware
+
         from app.main import app
 
         # Find CORS middleware in the app's middleware
         cors_middleware = None
         for middleware in app.user_middleware:
-            if isinstance(middleware.cls, type) and issubclass(middleware.cls, CORSMiddleware):
+            if isinstance(middleware.cls, type) and issubclass(
+                middleware.cls, CORSMiddleware
+            ):
                 cors_middleware = middleware.kwargs
                 break
 
         assert cors_middleware is not None
-        assert "https://app.workforce.com" in cors_middleware.get('allow_origins', [])
-        assert "https://workforce-app.com" in cors_middleware.get('allow_origins', [])
-        assert "http://localhost:3000" in cors_middleware.get('allow_origins', [])
+        assert "https://app.workforce.com" in cors_middleware.get("allow_origins", [])
+        assert "https://workforce-app.com" in cors_middleware.get("allow_origins", [])
+        assert "http://localhost:3000" in cors_middleware.get("allow_origins", [])
 
     def test_cors_credentials_allowed(self):
         """Test that CORS allows credentials"""
         from fastapi.middleware.cors import CORSMiddleware
+
         from app.main import app
 
         cors_middleware = None
         for middleware in app.user_middleware:
-            if isinstance(middleware.cls, type) and issubclass(middleware.cls, CORSMiddleware):
+            if isinstance(middleware.cls, type) and issubclass(
+                middleware.cls, CORSMiddleware
+            ):
                 cors_middleware = middleware.kwargs
                 break
 
         assert cors_middleware is not None
-        assert cors_middleware.get('allow_credentials') == True
+        assert cors_middleware.get("allow_credentials") == True
 
     def test_cors_methods_allowed(self):
         """Test that CORS allows all methods"""
         from fastapi.middleware.cors import CORSMiddleware
+
         from app.main import app
 
         cors_middleware = None
         for middleware in app.user_middleware:
-            if isinstance(middleware.cls, type) and issubclass(middleware.cls, CORSMiddleware):
+            if isinstance(middleware.cls, type) and issubclass(
+                middleware.cls, CORSMiddleware
+            ):
                 cors_middleware = middleware.kwargs
                 break
 
         assert cors_middleware is not None
-        assert cors_middleware.get('allow_methods') == ["*"]
+        assert cors_middleware.get("allow_methods") == ["*"]
 
     def test_cors_headers_allowed(self):
         """Test that CORS allows all headers"""
         from fastapi.middleware.cors import CORSMiddleware
+
         from app.main import app
 
         cors_middleware = None
         for middleware in app.user_middleware:
-            if isinstance(middleware.cls, type) and issubclass(middleware.cls, CORSMiddleware):
+            if isinstance(middleware.cls, type) and issubclass(
+                middleware.cls, CORSMiddleware
+            ):
                 cors_middleware = middleware.kwargs
                 break
 
         assert cors_middleware is not None
-        assert cors_middleware.get('allow_headers') == ["*"]
+        assert cors_middleware.get("allow_headers") == ["*"]

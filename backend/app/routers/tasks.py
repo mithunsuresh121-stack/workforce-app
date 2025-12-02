@@ -1,22 +1,28 @@
-import structlog
-from fastapi import APIRouter, Depends, HTTPException, status, Query, UploadFile, File
-from sqlalchemy.orm import Session
-from typing import List, Optional
-from app.deps import get_db, get_current_user
-from app.schemas import TaskCreate, TaskOut, AttachmentOut
-from app.crud import list_tasks, create_task, get_task_by_id, update_task, delete_task, create_attachment, delete_attachment, list_attachments_by_task
-from app.crud_notifications import create_notification
-from app.models.user import User
-from app.models.task import Task, TaskStatus, TaskPriority
-from app.models.attachment import Attachment
-from app.models.notification import NotificationType
 import os
 import shutil
 from datetime import datetime
+from typing import List, Optional
+
+import structlog
+from fastapi import (APIRouter, Depends, File, HTTPException, Query,
+                     UploadFile, status)
+from sqlalchemy.orm import Session
+
+from app.crud import (create_attachment, create_task, delete_attachment,
+                      delete_task, get_task_by_id, list_attachments_by_task,
+                      list_tasks, update_task)
+from app.crud_notifications import create_notification
+from app.deps import get_current_user, get_db
+from app.models.attachment import Attachment
+from app.models.notification import NotificationType
+from app.models.task import Task, TaskPriority, TaskStatus
+from app.models.user import User
+from app.schemas import AttachmentOut, TaskCreate, TaskOut
 
 logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/tasks", tags=["Tasks"])
+
 
 @router.get("/", response_model=List[TaskOut])
 def get_tasks(
@@ -24,12 +30,13 @@ def get_tasks(
     priority: Optional[str] = Query(None, description="Filter by task priority"),
     assignee_id: Optional[int] = Query(None, description="Filter by assignee ID"),
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get all tasks for the current user's company with optional filters
     """
     from sqlalchemy import and_
+
     query = db.query(Task).filter(Task.company_id == current_user.company_id)
 
     if status:
@@ -42,28 +49,36 @@ def get_tasks(
     tasks = query.all()
     return tasks
 
+
 @router.post("/", response_model=TaskOut, status_code=status.HTTP_201_CREATED)
 def add_task(
     payload: TaskCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Create a new task for the current user's company
     Only managers can assign tasks to others
     """
     # Ensure the task is created for the user's company (SuperAdmin can create for any company)
-    if current_user.role != "SuperAdmin" and payload.company_id != current_user.company_id:
+    if (
+        current_user.role != "SuperAdmin"
+        and payload.company_id != current_user.company_id
+    ):
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Cannot create task for another company"
+            detail="Cannot create task for another company",
         )
 
     # Role-based permissions: Only managers can assign tasks to others
-    if payload.assignee_id and current_user.role not in ["Manager", "CompanyAdmin", "SuperAdmin"]:
+    if payload.assignee_id and current_user.role not in [
+        "Manager",
+        "CompanyAdmin",
+        "SuperAdmin",
+    ]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only managers can assign tasks to others"
+            detail="Only managers can assign tasks to others",
         )
 
     # Set assigned_by to current user if not provided
@@ -90,17 +105,14 @@ def add_task(
             priority=payload.priority or "Medium",
             due_at=payload.due_at,
             assignee_id=payload.assignee_id,
-            company_id=company_id  # Pass fixed company_id explicitly to create_task
+            company_id=company_id,  # Pass fixed company_id explicitly to create_task
         )
     except ValueError as ve:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=str(ve)
-        )
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(ve))
     except Exception as e:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Internal server error: {str(e)}"
+            detail=f"Internal server error: {str(e)}",
         )
 
     # Create notification for task assignment (respects user preferences)
@@ -113,17 +125,18 @@ def add_task(
                 company_id=company_id,  # Use the fixed company_id variable
                 title="New Task Assigned",
                 message=f"You have been assigned a new task: {payload.title}",
-                type=NotificationType.TASK_ASSIGNED
+                type=NotificationType.TASK_ASSIGNED,
             )
             # Notification creation is handled silently - if user disabled this type, no notification is created
 
     return task
 
+
 @router.get("/{task_id}", response_model=TaskOut)
 def get_task(
     task_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get a specific task by ID
@@ -131,17 +144,17 @@ def get_task(
     task = get_task_by_id(db, task_id, current_user.company_id)
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
         )
     return task
+
 
 @router.put("/{task_id}", response_model=TaskOut)
 def update_task_endpoint(
     task_id: int,
     payload: TaskCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Update a task
@@ -150,8 +163,7 @@ def update_task_endpoint(
     task = get_task_by_id(db, task_id, current_user.company_id)
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
         )
 
     # Role-based permissions
@@ -159,14 +171,18 @@ def update_task_endpoint(
         if task.assignee_id != current_user.id:
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
-                detail="You can only update your own tasks"
+                detail="You can only update your own tasks",
             )
 
     # Only managers can change assignee
-    if payload.assignee_id and current_user.role not in ["Manager", "CompanyAdmin", "SuperAdmin"]:
+    if payload.assignee_id and current_user.role not in [
+        "Manager",
+        "CompanyAdmin",
+        "SuperAdmin",
+    ]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only managers can reassign tasks"
+            detail="Only managers can reassign tasks",
         )
 
     updated_task = update_task(
@@ -178,15 +194,16 @@ def update_task_endpoint(
         status=payload.status,
         priority=payload.priority,
         due_at=payload.due_at,
-        assignee_id=payload.assignee_id
+        assignee_id=payload.assignee_id,
     )
     return updated_task
+
 
 @router.delete("/{task_id}")
 def delete_task_endpoint(
     task_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Delete a task
@@ -195,22 +212,21 @@ def delete_task_endpoint(
     task = get_task_by_id(db, task_id, current_user.company_id)
     if not task:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Task not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Task not found"
         )
 
     # Only managers can delete tasks
     if current_user.role not in ["Manager", "CompanyAdmin", "SuperAdmin"]:
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Only managers can delete tasks"
+            detail="Only managers can delete tasks",
         )
 
     success = delete_task(db, task_id)
     if not success:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to delete task"
+            detail="Failed to delete task",
         )
 
     return {"message": "Task deleted successfully"}

@@ -1,20 +1,28 @@
-from sqlalchemy import Column, Integer, String, ForeignKey, DateTime, Text
+from enum import Enum
+
+from sqlalchemy import Column, DateTime, ForeignKey, Integer, String, Text
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db import Base
-from enum import Enum
+
 
 class RequestStatus(str, Enum):
     PENDING = "pending"
     APPROVED = "approved"
     REJECTED = "rejected"
 
+
 class ProfileUpdateRequest(Base):
     __tablename__ = "profile_update_requests"
 
     id = Column(Integer, primary_key=True, index=True)
-    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # User whose profile is being updated
-    requested_by_id = Column(Integer, ForeignKey("users.id"), nullable=False)  # Who made the request (could be self or manager)
+    user_id = Column(
+        Integer, ForeignKey("users.id"), nullable=False
+    )  # User whose profile is being updated
+    requested_by_id = Column(
+        Integer, ForeignKey("users.id"), nullable=False
+    )  # Who made the request (could be self or manager)
     request_type = Column(String, nullable=False)  # "update" or "delete"
     payload = Column(Text, nullable=True)  # JSON string of requested changes
     status = Column(String, default=RequestStatus.PENDING.value)

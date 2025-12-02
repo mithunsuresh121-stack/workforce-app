@@ -1,42 +1,32 @@
+from datetime import datetime, timezone
+from typing import List
+
 import structlog
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from datetime import datetime, timezone
-from typing import List
-from app.deps import get_db, get_current_user
-from app.schemas.attendance import (
-    Attendance,
-    Break,
-    ClockInRequest,
-    ClockOutRequest,
-    BreakStartRequest,
-    BreakEndRequest,
-    AttendanceSummary
-)
-from app.crud import (
-    create_attendance,
-    get_active_attendance_by_employee,
-    clock_out_attendance,
-    list_attendance_by_employee,
-    create_break,
-    get_break_by_id,
-    end_break,
-    list_breaks_by_attendance,
-    get_attendance_by_id,
-    get_user_by_id
-)
+
+from app.crud import (clock_out_attendance, create_attendance, create_break,
+                      end_break, get_active_attendance_by_employee,
+                      get_attendance_by_id, get_break_by_id, get_user_by_id,
+                      list_attendance_by_employee, list_breaks_by_attendance)
+from app.deps import get_current_user, get_db
 from app.models.user import User
+from app.schemas.attendance import (Attendance, AttendanceSummary, Break,
+                                    BreakEndRequest, BreakStartRequest,
+                                    ClockInRequest, ClockOutRequest)
 
 logger = structlog.get_logger(__name__)
 
 router = APIRouter(prefix="/attendance", tags=["Attendance"])
 
 
-@router.post("/clock-in", response_model=Attendance, status_code=status.HTTP_201_CREATED)
+@router.post(
+    "/clock-in", response_model=Attendance, status_code=status.HTTP_201_CREATED
+)
 def clock_in(
     payload: ClockInRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Clock in for the specified employee
@@ -47,22 +37,24 @@ def clock_in(
     if active_attendance:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already has an active attendance record"
+            detail="User already has an active attendance record",
         )
 
     # Verify the employee_id matches the current user or user has permission
-    if current_user.id != payload.employee_id and current_user.role.upper() not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER"]:
+    if current_user.id != payload.employee_id and current_user.role.upper() not in [
+        "SUPERADMIN",
+        "COMPANYADMIN",
+        "MANAGER",
+    ]:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
     # Get the employee's company_id
     employee = get_user_by_id(db, payload.employee_id)
     if not employee:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Employee not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Employee not found"
         )
 
     attendance = create_attendance(
@@ -70,7 +62,7 @@ def clock_in(
         company_id=employee.company_id,
         employee_id=payload.employee_id,
         clock_in_time=datetime.now(timezone.utc),
-        notes=payload.notes
+        notes=payload.notes,
     )
     logger.info(
         "Attendance clock-in created",
@@ -78,7 +70,7 @@ def clock_in(
         employee_id=payload.employee_id,
         clock_in_time=str(attendance.clock_in_time),
         user_id=current_user.id,
-        company_id=employee.company_id
+        company_id=employee.company_id,
     )
     return attendance
 
@@ -87,7 +79,7 @@ def clock_in(
 def clock_out(
     payload: ClockOutRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Clock out the specified attendance record
@@ -96,20 +88,21 @@ def clock_out(
     attendance = get_attendance_by_id(db, payload.attendance_id)
     if not attendance:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attendance record not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Attendance record not found"
         )
 
     if attendance.employee_id != payload.employee_id:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Employee ID mismatch"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Employee ID mismatch"
         )
 
-    if current_user.id != payload.employee_id and current_user.role.upper() not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER"]:
+    if current_user.id != payload.employee_id and current_user.role.upper() not in [
+        "SUPERADMIN",
+        "COMPANYADMIN",
+        "MANAGER",
+    ]:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
     logger.info(
@@ -118,13 +111,11 @@ def clock_out(
         attendance_id=payload.attendance_id,
         employee_id=payload.employee_id,
         user_id=current_user.id,
-        company_id=attendance.company_id
+        company_id=attendance.company_id,
     )
 
     updated_attendance = clock_out_attendance(
-        db=db,
-        attendance_id=payload.attendance_id,
-        notes=payload.notes
+        db=db, attendance_id=payload.attendance_id, notes=payload.notes
     )
     if not updated_attendance:
         logger.error(
@@ -133,11 +124,11 @@ def clock_out(
             attendance_id=payload.attendance_id,
             employee_id=payload.employee_id,
             user_id=current_user.id,
-            company_id=attendance.company_id
+            company_id=attendance.company_id,
         )
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to clock out"
+            detail="Failed to clock out",
         )
     logger.info(
         "Successfully clocked out attendance",
@@ -145,7 +136,7 @@ def clock_out(
         attendance_id=updated_attendance.id,
         employee_id=payload.employee_id,
         user_id=current_user.id,
-        company_id=attendance.company_id
+        company_id=attendance.company_id,
     )
     return updated_attendance
 
@@ -154,7 +145,7 @@ def clock_out(
 def start_break(
     payload: BreakStartRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Start a break for the current active attendance or specified attendance_id
@@ -165,7 +156,7 @@ def start_break(
         if not active_attendance:
             raise HTTPException(
                 status_code=status.HTTP_400_BAD_REQUEST,
-                detail="No active attendance record found"
+                detail="No active attendance record found",
             )
         attendance_id = active_attendance.id
     else:
@@ -174,12 +165,15 @@ def start_break(
         if not attendance:
             raise HTTPException(
                 status_code=status.HTTP_404_NOT_FOUND,
-                detail="Attendance record not found"
+                detail="Attendance record not found",
             )
-        if attendance.employee_id != current_user.id and current_user.role.upper() not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER"]:
+        if (
+            attendance.employee_id != current_user.id
+            and current_user.role.upper()
+            not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER"]
+        ):
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
             )
 
     # Check if there's already an active break
@@ -188,14 +182,14 @@ def start_break(
     if active_break:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already has an active break"
+            detail="User already has an active break",
         )
 
     break_record = create_break(
         db=db,
         attendance_id=attendance_id,
         break_start=datetime.now(timezone.utc),
-        break_type=payload.break_type
+        break_type=payload.break_type,
     )
     return break_record
 
@@ -204,7 +198,7 @@ def start_break(
 def start_break_with_payload(
     payload: dict,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Start a break with employee_id and attendance_id in payload
@@ -217,8 +211,7 @@ def start_break_with_payload(
     attendance = get_attendance_by_id(db, attendance_id)
     if not attendance or attendance.employee_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
     # Check if there's already an active break
@@ -227,14 +220,14 @@ def start_break_with_payload(
     if active_break:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail="User already has an active break"
+            detail="User already has an active break",
         )
 
     break_record = create_break(
         db=db,
         attendance_id=attendance_id,
         break_start=datetime.now(timezone.utc),
-        break_type=break_type
+        break_type=break_type,
     )
     return break_record
 
@@ -243,7 +236,7 @@ def start_break_with_payload(
 def end_break_with_payload(
     payload: dict,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     End a break with employee_id and attendance_id in payload
@@ -255,8 +248,7 @@ def end_break_with_payload(
     attendance = get_attendance_by_id(db, attendance_id)
     if not attendance or attendance.employee_id != current_user.id:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
     # Find the active break for this attendance
@@ -264,15 +256,14 @@ def end_break_with_payload(
     active_break = next((b for b in breaks if b.break_end is None), None)
     if not active_break:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="No active break found"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="No active break found"
         )
 
     updated_break = end_break(db=db, break_id=active_break.id)
     if not updated_break:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to end break"
+            detail="Failed to end break",
         )
     return updated_break
 
@@ -282,7 +273,7 @@ def end_break_endpoint(
     break_id: int,
     payload: BreakEndRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     End a specific break
@@ -290,29 +281,30 @@ def end_break_endpoint(
     break_record = get_break_by_id(db, break_id)
     if not break_record:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Break record not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Break record not found"
         )
 
     # Check if the break belongs to the current user or user has permission
     attendance = get_attendance_by_id(db, break_record.attendance_id)
-    if attendance.employee_id != current_user.id and current_user.role.upper() not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER"]:
+    if attendance.employee_id != current_user.id and current_user.role.upper() not in [
+        "SUPERADMIN",
+        "COMPANYADMIN",
+        "MANAGER",
+    ]:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
     if break_record.break_end is not None:
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Break is already ended"
+            status_code=status.HTTP_400_BAD_REQUEST, detail="Break is already ended"
         )
 
     updated_break = end_break(db=db, break_id=break_id)
     if not updated_break:
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail="Failed to end break"
+            detail="Failed to end break",
         )
     return updated_break
 
@@ -321,7 +313,7 @@ def end_break_endpoint(
 def get_my_attendance(
     limit: int = 50,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get current user's attendance records
@@ -334,7 +326,7 @@ def get_employee_attendance(
     employee_id: int,
     limit: int = 50,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get attendance records for a specific employee (role-based access)
@@ -344,8 +336,7 @@ def get_employee_attendance(
         # Employees can only view their own records
         if current_user.id != employee_id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
             )
 
     return list_attendance_by_employee(db, employee_id, limit)
@@ -355,7 +346,7 @@ def get_employee_attendance(
 def get_active_attendance_by_id(
     employee_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get active attendance records for a specific employee (for cleanup/testing)
@@ -365,8 +356,7 @@ def get_active_attendance_by_id(
         # Employees can only view their own records
         if current_user.id != employee_id:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
             )
 
     active_attendance = get_active_attendance_by_employee(db, employee_id)
@@ -377,8 +367,7 @@ def get_active_attendance_by_id(
 
 @router.get("/active", response_model=Attendance)
 def get_active_attendance(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get current user's active attendance record
@@ -387,7 +376,7 @@ def get_active_attendance(
     if not active_attendance:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
-            detail="No active attendance record found"
+            detail="No active attendance record found",
         )
     return active_attendance
 
@@ -396,7 +385,7 @@ def get_active_attendance(
 def get_breaks_for_attendance(
     attendance_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user),
 ):
     """
     Get all breaks for a specific attendance record
@@ -405,16 +394,14 @@ def get_breaks_for_attendance(
     attendance = get_attendance_by_id(db, attendance_id)
     if not attendance:
         raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Attendance record not found"
+            status_code=status.HTTP_404_NOT_FOUND, detail="Attendance record not found"
         )
 
     if attendance.employee_id != current_user.id:
         # Allow managers/admins to view breaks
         if current_user.role.upper() not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER"]:
             raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Access denied"
+                status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
             )
 
     return list_breaks_by_attendance(db, attendance_id)
@@ -422,19 +409,20 @@ def get_breaks_for_attendance(
 
 @router.get("/admin/active-all", response_model=List[Attendance])
 def get_all_active_attendances(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(get_current_user)
+    db: Session = Depends(get_db), current_user: User = Depends(get_current_user)
 ):
     """
     Get all active attendance records (admin only)
     """
     if current_user.role.upper() not in ["SUPERADMIN", "COMPANYADMIN", "MANAGER"]:
         raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="Access denied"
+            status_code=status.HTTP_403_FORBIDDEN, detail="Access denied"
         )
 
     # Get all active attendances by querying the database directly
     from app.models.attendance import Attendance as AttendanceModel
-    active_attendances = db.query(AttendanceModel).filter(AttendanceModel.clock_out_time.is_(None)).all()
+
+    active_attendances = (
+        db.query(AttendanceModel).filter(AttendanceModel.clock_out_time.is_(None)).all()
+    )
     return active_attendances

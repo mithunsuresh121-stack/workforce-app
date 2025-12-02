@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, DateTime, Text, JSON, ForeignKey, Boolean
+from sqlalchemy import (JSON, Boolean, Column, DateTime, ForeignKey, Integer,
+                        String, Text)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db import Base
+
 
 class AuditLog(Base):
     __tablename__ = "audit_logs"
@@ -20,7 +23,9 @@ class AuditLog(Base):
     # AI-specific audit fields
     ai_request_text = Column(Text, nullable=True)
     ai_capability = Column(String, nullable=True)
-    ai_decision = Column(String, nullable=True)  # 'allowed', 'blocked', 'pending_approval'
+    ai_decision = Column(
+        String, nullable=True
+    )  # 'allowed', 'blocked', 'pending_approval'
     ai_scope_valid = Column(Boolean, nullable=True)
     ai_required_role = Column(String, nullable=True)
     ai_user_role = Column(String, nullable=True)

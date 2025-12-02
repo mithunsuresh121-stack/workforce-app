@@ -1,14 +1,18 @@
-from pydantic import BaseModel
 from datetime import datetime
 from typing import Optional
+
+from pydantic import BaseModel
+
 
 class SwapRequestBase(BaseModel):
     requester_shift_id: int
     target_shift_id: int
     reason: Optional[str] = None
 
+
 class SwapRequestCreate(SwapRequestBase):
     pass
+
 
 class SwapRequestOut(SwapRequestBase):
     id: int

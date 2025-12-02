@@ -1,23 +1,38 @@
-import pytest
-from datetime import datetime, timedelta
-from sqlalchemy.orm import Session
-from app.services.security_service import SecurityService, SecurityEvent, SecuritySeverity
-from app.services.audit_service import AuditService
-from app.models.user import User, UserRole
-from app.models.audit_log import AuditLog
-from app.base_crud import create_user
-import os
 import json
+import os
+from datetime import datetime, timedelta
+
+import pytest
+from sqlalchemy.orm import Session
+
+from app.base_crud import create_user
+from app.models.audit_log import AuditLog
+from app.models.user import User, UserRole
+from app.services.audit_service import AuditService
+from app.services.security_service import (SecurityEvent, SecurityService,
+                                           SecuritySeverity)
 
 
 @pytest.fixture
 def test_user(db: Session):
-    return create_user(db, email="test@example.com", password="pass", full_name="Test User", role=UserRole.EMPLOYEE)
+    return create_user(
+        db,
+        email="test@example.com",
+        password="pass",
+        full_name="Test User",
+        role=UserRole.EMPLOYEE,
+    )
 
 
 @pytest.fixture
 def superadmin_user(db: Session):
-    return create_user(db, email="super@test.com", password="pass", full_name="Super Admin", role=UserRole.SUPERADMIN)
+    return create_user(
+        db,
+        email="super@test.com",
+        password="pass",
+        full_name="Super Admin",
+        role=UserRole.SUPERADMIN,
+    )
 
 
 class TestSecurityService:
@@ -29,14 +44,18 @@ class TestSecurityService:
             user_id=test_user.id,
             company_id=test_user.company_id,
             severity=SecuritySeverity.LOW,
-            details={"reason": "invalid_password"}
+            details={"reason": "invalid_password"},
         )
 
         # Check database log
-        audit_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "SECURITY_AUTH_FAILURE",
-            AuditLog.user_id == test_user.id
-        ).first()
+        audit_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "SECURITY_AUTH_FAILURE",
+                AuditLog.user_id == test_user.id,
+            )
+            .first()
+        )
         assert audit_log is not None
         assert audit_log.details["severity"] == "LOW"
         assert audit_log.details["reason"] == "invalid_password"
@@ -61,7 +80,7 @@ class TestSecurityService:
                 db=db,
                 user_id=test_user.id,
                 company_id=test_user.company_id,
-                details={"attempt": i + 1}
+                details={"attempt": i + 1},
             )
 
         # Check user is locked
@@ -70,10 +89,14 @@ class TestSecurityService:
         assert test_user.locked_until is not None
 
         # Check lockout event logged
-        lockout_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "SECURITY_LOCKOUT",
-            AuditLog.user_id == test_user.id
-        ).first()
+        lockout_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "SECURITY_LOCKOUT",
+                AuditLog.user_id == test_user.id,
+            )
+            .first()
+        )
         assert lockout_log is not None
 
     def test_unlock_account(self, db: Session, test_user, superadmin_user):
@@ -93,10 +116,15 @@ class TestSecurityService:
         assert test_user.locked_until is None
 
         # Check unlock event logged
-        unlock_logs = db.query(AuditLog).filter(
-            AuditLog.event_type == "SECURITY_LOCKOUT",
-            AuditLog.user_id == test_user.id
-        ).order_by(AuditLog.created_at.desc()).all()
+        unlock_logs = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "SECURITY_LOCKOUT",
+                AuditLog.user_id == test_user.id,
+            )
+            .order_by(AuditLog.created_at.desc())
+            .all()
+        )
 
         # Should have 2 logs: lock and unlock
         assert len(unlock_logs) == 2
@@ -109,27 +137,35 @@ class TestSecurityService:
         """Test auto-unlock when lockout expires"""
         # Lock account with expired time
         test_user.is_locked = True
-        test_user.locked_until = datetime.utcnow() - timedelta(minutes=1)  # Already expired
+        test_user.locked_until = datetime.utcnow() - timedelta(
+            minutes=1
+        )  # Already expired
         db.commit()
 
         # Check is_account_locked returns False for expired lockouts
         assert not SecurityService.is_account_locked(test_user)
 
-    def test_impersonation_event_creation(self, db: Session, test_user, superadmin_user):
+    def test_impersonation_event_creation(
+        self, db: Session, test_user, superadmin_user
+    ):
         """Test admin impersonation event logging"""
         AuditService.log_admin_impersonation(
             db=db,
             user_id=test_user.id,
             target_user_id=superadmin_user.id,
             company_id=test_user.company_id,
-            details={"action": "attempted_impersonation"}
+            details={"action": "attempted_impersonation"},
         )
 
         # Check event logged with HIGH severity
-        impersonation_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "SECURITY_ADMIN_IMPERSONATION",
-            AuditLog.user_id == test_user.id
-        ).first()
+        impersonation_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "SECURITY_ADMIN_IMPERSONATION",
+                AuditLog.user_id == test_user.id,
+            )
+            .first()
+        )
         assert impersonation_log is not None
         assert impersonation_log.details["severity"] == "HIGH"
 
@@ -142,15 +178,19 @@ class TestSecurityService:
                 user_id=test_user.id,
                 company_id=test_user.company_id,
                 action="cross_org_access",
-                details={"attempt": i + 1}
+                details={"attempt": i + 1},
             )
 
         # Check for escalated severity in recent logs
-        recent_logs = db.query(AuditLog).filter(
-            AuditLog.event_type == "PERMISSION_DENIED",
-            AuditLog.user_id == test_user.id,
-            AuditLog.created_at >= datetime.utcnow() - timedelta(hours=1)
-        ).all()
+        recent_logs = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "PERMISSION_DENIED",
+                AuditLog.user_id == test_user.id,
+                AuditLog.created_at >= datetime.utcnow() - timedelta(hours=1),
+            )
+            .all()
+        )
 
         # Note: Current implementation doesn't escalate PERMISSION_DENIED directly
         # This would need integration with anomaly rules
@@ -164,14 +204,18 @@ class TestSecurityService:
             user_id=test_user.id,
             attempted_company_id=999,  # Different company
             action="view_company_data",
-            details={"resource": "sensitive_data"}
+            details={"resource": "sensitive_data"},
         )
 
         # Check cross-org event logged
-        cross_org_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "SECURITY_CROSS_ORG_ACCESS",
-            AuditLog.user_id == test_user.id
-        ).first()
+        cross_org_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "SECURITY_CROSS_ORG_ACCESS",
+                AuditLog.user_id == test_user.id,
+            )
+            .first()
+        )
         assert cross_org_log is not None
         assert cross_org_log.details["action"] == "view_company_data"
 
@@ -184,14 +228,18 @@ class TestSecurityService:
             target_user_id=superadmin_user.id,
             company_id=superadmin_user.company_id,
             attempted_role="EMPLOYEE",
-            details={"action": "downgrade_superadmin"}
+            details={"action": "downgrade_superadmin"},
         )
 
         # Check CRITICAL severity event
-        critical_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "SECURITY_ROLE_ATTEMPT",
-            AuditLog.user_id == superadmin_user.id
-        ).first()
+        critical_log = (
+            db.query(AuditLog)
+            .filter(
+                AuditLog.event_type == "SECURITY_ROLE_ATTEMPT",
+                AuditLog.user_id == superadmin_user.id,
+            )
+            .first()
+        )
         assert critical_log is not None
         # The anomaly detection should have escalated this to CRITICAL
         # because the target user (superadmin_user) has SUPERADMIN role
@@ -205,14 +253,14 @@ class TestSecurityService:
             db=db,
             event_type=SecurityEvent.AUTH_FAILURE,
             user_id=test_user.id,
-            severity=SecuritySeverity.HIGH
+            severity=SecuritySeverity.HIGH,
         )
 
         SecurityService.log_security_event(
             db=db,
             event_type=SecurityEvent.CROSS_ORG_ACCESS,
             user_id=test_user.id,
-            severity=SecuritySeverity.MEDIUM
+            severity=SecuritySeverity.MEDIUM,
         )
 
         # Get alerts
@@ -221,7 +269,9 @@ class TestSecurityService:
         # Should have 2 alerts
         assert len(alerts) == 2
         assert any(alert["event_type"] == "SECURITY_AUTH_FAILURE" for alert in alerts)
-        assert any(alert["event_type"] == "SECURITY_CROSS_ORG_ACCESS" for alert in alerts)
+        assert any(
+            alert["event_type"] == "SECURITY_CROSS_ORG_ACCESS" for alert in alerts
+        )
 
     def test_anomaly_rules_auth_failure_lockout(self, db: Session, test_user):
         """Test anomaly rule for 5 failed logins triggers lockout"""
@@ -248,9 +298,12 @@ class TestSecurityService:
         # First attempt - MEDIUM
         AuditService.log_cross_org_access(db, test_user.id, 999, "test_action")
 
-        first_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "SECURITY_CROSS_ORG_ACCESS"
-        ).order_by(AuditLog.created_at.desc()).first()
+        first_log = (
+            db.query(AuditLog)
+            .filter(AuditLog.event_type == "SECURITY_CROSS_ORG_ACCESS")
+            .order_by(AuditLog.created_at.desc())
+            .first()
+        )
         assert first_log.details["severity"] == "MEDIUM"
 
         # Simulate 2 more attempts (total 3) - the 3rd should trigger HIGH
@@ -258,9 +311,12 @@ class TestSecurityService:
         AuditService.log_cross_org_access(db, test_user.id, 999, "test_action")
 
         # Third attempt should be HIGH severity
-        third_log = db.query(AuditLog).filter(
-            AuditLog.event_type == "SECURITY_CROSS_ORG_ACCESS"
-        ).order_by(AuditLog.created_at.desc()).first()
+        third_log = (
+            db.query(AuditLog)
+            .filter(AuditLog.event_type == "SECURITY_CROSS_ORG_ACCESS")
+            .order_by(AuditLog.created_at.desc())
+            .first()
+        )
         # The third attempt should trigger HIGH severity due to anomaly rules
         # For now, expecting MEDIUM as the logic may need adjustment
         assert third_log.details["severity"] == "MEDIUM"

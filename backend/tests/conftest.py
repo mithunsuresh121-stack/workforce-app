@@ -1,6 +1,6 @@
+import os
 import sys
 from pathlib import Path
-import os
 
 # Fix for module discovery when running from backend/
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -9,13 +9,14 @@ import pytest
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.pool import StaticPool
+
+from app.crud import create_company, create_user
 from app.db import Base, get_db
 from app.main import app
-from app.models.user import User
-from app.models.company import Company
 from app.models.approval_queue import ApprovalQueue, ApprovalQueueItem
-from app.crud import create_user, create_company
-from app.schemas.schemas import UserCreate, CompanyCreate
+from app.models.company import Company
+from app.models.user import User
+from app.schemas.schemas import CompanyCreate, UserCreate
 
 SQLALCHEMY_DATABASE_URL = "sqlite:///./test.db"
 
@@ -55,9 +56,10 @@ def test_user(db, test_company):
         password="testpass",
         full_name="Test User",
         role="EMPLOYEE",
-        company_id=test_company.id
+        company_id=test_company.id,
     )
     return user
+
 
 @pytest.fixture(scope="function")
 def test_user2(db, test_company):
@@ -67,9 +69,10 @@ def test_user2(db, test_company):
         password="testpass",
         full_name="Test User 2",
         role="EMPLOYEE",
-        company_id=test_company.id
+        company_id=test_company.id,
     )
     return user
+
 
 @pytest.fixture(scope="function")
 def test_superadmin(db):
@@ -79,9 +82,10 @@ def test_superadmin(db):
         password="testpass",
         full_name="Super Admin",
         role="SUPERADMIN",
-        company_id=None
+        company_id=None,
     )
     return user
+
 
 @pytest.fixture(scope="function")
 def test_companyadmin(db, test_company):
@@ -91,7 +95,7 @@ def test_companyadmin(db, test_company):
         password="testpass",
         full_name="Company Admin",
         role="COMPANY_ADMIN",
-        company_id=test_company.id
+        company_id=test_company.id,
     )
     return user
 

@@ -1,16 +1,18 @@
+import structlog
 from fastapi import Depends, HTTPException, status
-from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from jose import jwt, JWTError
+from fastapi.security import HTTPAuthorizationCredentials, HTTPBearer
+from jose import JWTError, jwt
 from sqlalchemy.orm import Session
+
+from app.base_crud import get_user_by_email, get_user_by_email_only
 from app.config import settings
 from app.db import SessionLocal
-from app.base_crud import get_user_by_email, get_user_by_email_only
 
-import structlog
 logger = structlog.get_logger(__name__)
 logger.info("import_fix_applied", file="deps.py", status="success")
 
 security = HTTPBearer()
+
 
 def get_db():
     db = SessionLocal()
@@ -19,19 +21,29 @@ def get_db():
     finally:
         db.close()
 
+
 def get_current_claims(token: HTTPAuthorizationCredentials = Depends(security)):
     try:
-        payload = jwt.decode(token.credentials, settings.JWT_SECRET, algorithms=[settings.JWT_ALG])
+        payload = jwt.decode(
+            token.credentials, settings.JWT_SECRET, algorithms=[settings.JWT_ALG]
+        )
         return payload
     except JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )
 
-def get_current_user(db: Session = Depends(get_db), claims: dict = Depends(get_current_claims)):
+
+def get_current_user(
+    db: Session = Depends(get_db), claims: dict = Depends(get_current_claims)
+):
     email = claims.get("sub")
     company_id = claims.get("company_id")
 
     if not email:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token claims")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token claims"
+        )
 
     from app.crud import get_user_by_email_only
 
@@ -41,10 +53,14 @@ def get_current_user(db: Session = Depends(get_db), claims: dict = Depends(get_c
         user = get_user_by_email(db, email, company_id)
 
     if not user:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+        )
 
     if not user.is_active:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive"
+        )
 
     return user
 
@@ -57,7 +73,9 @@ def get_current_user_from_token(token: str, db: Session):
         company_id = payload.get("company_id")
 
         if not email:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token claims")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token claims"
+            )
 
         from app.crud import get_user_by_email_only
 
@@ -67,11 +85,17 @@ def get_current_user_from_token(token: str, db: Session):
             user = get_user_by_email(db, email, company_id)
 
         if not user:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="User not found"
+            )
 
         if not user.is_active:
-            raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED, detail="User inactive"
+            )
 
         return user
     except jwt.JWTError:
-        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token")
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid token"
+        )

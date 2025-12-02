@@ -1,9 +1,11 @@
 # app/config.py
-from pydantic_settings import BaseSettings
-from pydantic import validator
 import os
+
+from pydantic import validator
+from pydantic_settings import BaseSettings
 from sqlalchemy import create_engine
-from sqlalchemy.orm import sessionmaker, declarative_base
+from sqlalchemy.orm import declarative_base, sessionmaker
+
 
 class Settings(BaseSettings):
     # PostgreSQL settings
@@ -14,7 +16,9 @@ class Settings(BaseSettings):
     POSTGRES_PORT: int = 5432
 
     # Database URL
-    DATABASE_URL: str = f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    DATABASE_URL: str = (
+        f"postgresql://{POSTGRES_USER}:{POSTGRES_PASSWORD}@{POSTGRES_HOST}:{POSTGRES_PORT}/{POSTGRES_DB}"
+    )
 
     # JWT / App settings
     SECRET_KEY: str = "CHANGE_ME"
@@ -31,14 +35,15 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "noreply@workforceapp.com"
     SENDGRID_API_KEY: str = ""  # Set in .env (required for prod email)
 
-    @validator('SENDGRID_API_KEY', pre=True, always=True)
+    @validator("SENDGRID_API_KEY", pre=True, always=True)
     def validate_sendgrid_key(cls, v):
-        if not v and os.getenv('APP_ENV') == 'prod':
-            raise ValueError('SENDGRID_API_KEY is required in production')
+        if not v and os.getenv("APP_ENV") == "prod":
+            raise ValueError("SENDGRID_API_KEY is required in production")
         return v
 
     class Config:
         env_file = ".env"
+
 
 # Load settings from .env
 settings = Settings()

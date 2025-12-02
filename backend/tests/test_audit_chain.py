@@ -1,16 +1,24 @@
-import pytest
 import json
 from datetime import datetime, timedelta
+
+import pytest
 from sqlalchemy.orm import Session
-from app.services.audit_chain_service import AuditChainService
-from app.models.audit_chain import AuditChain
+
 from app.base_crud import create_user
+from app.models.audit_chain import AuditChain
 from app.models.user import User, UserRole
+from app.services.audit_chain_service import AuditChainService
 
 
 @pytest.fixture
 def test_user(db: Session):
-    return create_user(db, email="test@example.com", password="pass", full_name="Test User", role=UserRole.EMPLOYEE)
+    return create_user(
+        db,
+        email="test@example.com",
+        password="pass",
+        full_name="Test User",
+        role=UserRole.EMPLOYEE,
+    )
 
 
 class TestAuditChain:
@@ -37,7 +45,7 @@ class TestAuditChain:
             event_type="TEST_EVENT",
             user_id=test_user.id,
             company_id=test_user.company_id,
-            data={"test": "data1"}
+            data={"test": "data1"},
         )
 
         assert entry1.sequence_number == 0
@@ -52,7 +60,7 @@ class TestAuditChain:
             event_type="TEST_EVENT2",
             user_id=test_user.id,
             company_id=test_user.company_id,
-            data={"test": "data2"}
+            data={"test": "data2"},
         )
 
         assert entry2.sequence_number == 1
@@ -75,7 +83,7 @@ class TestAuditChain:
                 event_type=f"TEST_EVENT_{i}",
                 user_id=test_user.id,
                 company_id=test_user.company_id,
-                data={"index": i}
+                data={"index": i},
             )
 
         # Verify integrity
@@ -94,7 +102,7 @@ class TestAuditChain:
             event_type="TEST_EVENT",
             user_id=test_user.id,
             company_id=test_user.company_id,
-            data={"test": "data"}
+            data={"test": "data"},
         )
 
         # Tamper with the entry
@@ -124,13 +132,15 @@ class TestAuditChain:
                 event_type=f"EVENT_{i}",
                 user_id=test_user.id,
                 company_id=test_user.company_id,
-                data={"index": i, "value": f"test_{i}"}
+                data={"index": i, "value": f"test_{i}"},
             )
-            entries_data.append({
-                "sequence_number": entry.sequence_number,
-                "event_type": entry.event_type,
-                "data": {"index": i, "value": f"test_{i}"}
-            })
+            entries_data.append(
+                {
+                    "sequence_number": entry.sequence_number,
+                    "event_type": entry.event_type,
+                    "data": {"index": i, "value": f"test_{i}"},
+                }
+            )
 
         # Replay entire chain
         replay = AuditChainService.replay_chain(db, chain_id)
@@ -141,7 +151,9 @@ class TestAuditChain:
             assert entry["data"]["index"] == i
 
         # Replay partial chain
-        partial_replay = AuditChainService.replay_chain(db, chain_id, start_sequence=2, end_sequence=3)
+        partial_replay = AuditChainService.replay_chain(
+            db, chain_id, start_sequence=2, end_sequence=3
+        )
         assert len(partial_replay) == 2
         assert partial_replay[0]["sequence_number"] == 2
         assert partial_replay[1]["sequence_number"] == 3
@@ -164,7 +176,7 @@ class TestAuditChain:
                 event_type="TEST_EVENT",
                 user_id=test_user.id,
                 company_id=test_user.company_id,
-                data={"test": "data"}
+                data={"test": "data"},
             )
 
         stats = AuditChainService.get_chain_stats(db, chain_id)
@@ -184,7 +196,7 @@ class TestAuditChain:
             event_type="EVENT1",
             user_id=test_user.id,
             company_id=test_user.company_id,
-            data={"test": "data1"}
+            data={"test": "data1"},
         )
 
         entry2 = AuditChainService.append_to_chain(
@@ -193,7 +205,7 @@ class TestAuditChain:
             event_type="EVENT2",
             user_id=test_user.id,
             company_id=test_user.company_id,
-            data={"test": "data2"}
+            data={"test": "data2"},
         )
 
         # Tamper with entry1
@@ -220,8 +232,8 @@ class TestAuditChain:
                 "capability": "READ_TEAM_DATA",
                 "decision": "allowed",
                 "scope_valid": True,
-                "severity": "low"
-            }
+                "severity": "low",
+            },
         )
 
         # Verify entry was created
@@ -242,7 +254,7 @@ class TestAuditChain:
             company_id=test_user.company_id,
             decision="allowed",
             policy_version="1.0",
-            data={"capability": "READ_COMPANY_DATA"}
+            data={"capability": "READ_COMPANY_DATA"},
         )
 
         head = AuditChainService.get_chain_head(db, chain_id)
@@ -261,7 +273,7 @@ class TestAuditChain:
             company_id=test_user.company_id,
             old_score=100,
             new_score=85,
-            reason="Policy violation"
+            reason="Policy violation",
         )
 
         head = AuditChainService.get_chain_head(db, chain_id)
@@ -283,7 +295,7 @@ class TestAuditChain:
             event_type="TEST_EVENT",
             user_id=test_user.id,
             company_id=test_user.company_id,
-            data={"test": "data"}
+            data={"test": "data"},
         )
 
         # Try to create another entry with same data (should have different sequence/hash)
@@ -293,7 +305,7 @@ class TestAuditChain:
             event_type="TEST_EVENT",
             user_id=test_user.id,
             company_id=test_user.company_id,
-            data={"test": "data"}
+            data={"test": "data"},
         )
 
         # Hashes should be different due to sequence number
@@ -303,7 +315,13 @@ class TestAuditChain:
     def test_chain_isolation_by_company(self, db: Session, test_user):
         """Test chains are isolated by company"""
         # Create user from different company
-        other_user = create_user(db, email="other@test.com", password="pass", full_name="Other User", role=UserRole.EMPLOYEE)
+        other_user = create_user(
+            db,
+            email="other@test.com",
+            password="pass",
+            full_name="Other User",
+            role=UserRole.EMPLOYEE,
+        )
         other_user.company_id = 999
         db.commit()
 
@@ -319,7 +337,7 @@ class TestAuditChain:
             event_type="TEST",
             user_id=test_user.id,
             company_id=test_user.company_id,
-            data={"test": "data"}
+            data={"test": "data"},
         )
 
         # Second chain should still be empty

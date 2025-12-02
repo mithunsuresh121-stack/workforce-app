@@ -1,9 +1,13 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey, Text
+import enum
+
+from sqlalchemy import (Column, DateTime, Enum, ForeignKey, Integer, String,
+                        Text)
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db import Base
 from app.models.attachment import Attachment
-import enum
+
 
 class TaskStatus(str, enum.Enum):
     PENDING = "PENDING"
@@ -11,10 +15,12 @@ class TaskStatus(str, enum.Enum):
     COMPLETED = "COMPLETED"
     OVERDUE = "OVERDUE"
 
+
 class TaskPriority(str, enum.Enum):
     LOW = "LOW"
     MEDIUM = "MEDIUM"
     HIGH = "HIGH"
+
 
 class Task(Base):
     __tablename__ = "tasks"
@@ -46,7 +52,9 @@ class Task(Base):
     company = relationship("Company")
     assignee = relationship("User", foreign_keys=[assignee_id])
     assigner = relationship("User", foreign_keys=[assigned_by])
-    attachments = relationship("Attachment", back_populates="task", cascade="all, delete-orphan")
+    attachments = relationship(
+        "Attachment", back_populates="task", cascade="all, delete-orphan"
+    )
 
     def __repr__(self):
         return (

@@ -1,32 +1,36 @@
-from fastapi import APIRouter, Depends, Query, HTTPException
+from datetime import datetime
+from typing import List, Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
+from pydantic import BaseModel
 from sqlalchemy.orm import Session
+
+from app.core.rbac import (RBACService, require_company_access,
+                           require_superadmin)
 from app.db import get_db
-from app.core.rbac import require_superadmin, require_company_access
-from app.services.analytics_service import AnalyticsService
-from app.services.audit_service import AuditService
-from app.services.security_service import SecurityService
-from app.schemas.ai import (
-    AIPolicyUpdate, AIApprovalRequest, TrustScoreUpdate,
-    RiskHeatMapData, ComplianceExportRequest, WebhookAlertConfig
-)
-from app.services.trust_service import TrustService
-from app.services.threat_monitor_service import ThreatMonitorService
-from app.services.compliance_export_service import ComplianceExportService
-from app.services.audit_chain_service import AuditChainService
 from app.deps import get_current_user
 from app.models.user import User, UserRole
-from app.core.rbac import RBACService
-from pydantic import BaseModel
-from typing import Optional, List
-from datetime import datetime
+from app.schemas.ai import (AIApprovalRequest, AIPolicyUpdate,
+                            ComplianceExportRequest, RiskHeatMapData,
+                            TrustScoreUpdate, WebhookAlertConfig)
+from app.services.analytics_service import AnalyticsService
+from app.services.audit_chain_service import AuditChainService
+from app.services.audit_service import AuditService
+from app.services.compliance_export_service import ComplianceExportService
+from app.services.security_service import SecurityService
+from app.services.threat_monitor_service import ThreatMonitorService
+from app.services.trust_service import TrustService
 
 router = APIRouter()
+
 
 @router.get("/stats/users")
 def get_user_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    company_id: Optional[int] = Query(None, description="Company ID for scoping (required for COMPANY_ADMIN)")
+    company_id: Optional[int] = Query(
+        None, description="Company ID for scoping (required for COMPANY_ADMIN)"
+    ),
 ):
     """Get user statistics - SUPERADMIN: all companies, COMPANY_ADMIN: scoped to company"""
     if current_user.role.name == "SUPERADMIN":
@@ -36,7 +40,9 @@ def get_user_stats(
         if not company_id:
             company_id = current_user.company_id
         elif company_id != current_user.company_id:
-            raise HTTPException(status_code=403, detail="Access denied to other companies")
+            raise HTTPException(
+                status_code=403, detail="Access denied to other companies"
+            )
     else:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
@@ -48,16 +54,19 @@ def get_user_stats(
         action="VIEW_USER_STATS",
         user_id=current_user.id,
         company_id=company_id,
-        details={"stats_type": "users"}
+        details={"stats_type": "users"},
     )
 
     return stats
+
 
 @router.get("/stats/channels")
 def get_channel_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    company_id: Optional[int] = Query(None, description="Company ID for scoping (required for COMPANY_ADMIN)")
+    company_id: Optional[int] = Query(
+        None, description="Company ID for scoping (required for COMPANY_ADMIN)"
+    ),
 ):
     """Get channel statistics - SUPERADMIN: all companies, COMPANY_ADMIN: scoped to company"""
     if current_user.role.name == "SUPERADMIN":
@@ -66,7 +75,9 @@ def get_channel_stats(
         if not company_id:
             company_id = current_user.company_id
         elif company_id != current_user.company_id:
-            raise HTTPException(status_code=403, detail="Access denied to other companies")
+            raise HTTPException(
+                status_code=403, detail="Access denied to other companies"
+            )
     else:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
@@ -77,16 +88,19 @@ def get_channel_stats(
         action="VIEW_CHANNEL_STATS",
         user_id=current_user.id,
         company_id=company_id,
-        details={"stats_type": "channels"}
+        details={"stats_type": "channels"},
     )
 
     return stats
+
 
 @router.get("/stats/meetings")
 def get_meeting_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    company_id: Optional[int] = Query(None, description="Company ID for scoping (required for COMPANY_ADMIN)")
+    company_id: Optional[int] = Query(
+        None, description="Company ID for scoping (required for COMPANY_ADMIN)"
+    ),
 ):
     """Get meeting statistics - SUPERADMIN: all companies, COMPANY_ADMIN: scoped to company"""
     if current_user.role.name == "SUPERADMIN":
@@ -95,7 +109,9 @@ def get_meeting_stats(
         if not company_id:
             company_id = current_user.company_id
         elif company_id != current_user.company_id:
-            raise HTTPException(status_code=403, detail="Access denied to other companies")
+            raise HTTPException(
+                status_code=403, detail="Access denied to other companies"
+            )
     else:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
@@ -106,16 +122,19 @@ def get_meeting_stats(
         action="VIEW_MEETING_STATS",
         user_id=current_user.id,
         company_id=company_id,
-        details={"stats_type": "meetings"}
+        details={"stats_type": "meetings"},
     )
 
     return stats
+
 
 @router.get("/stats/audit")
 def get_audit_stats(
     db: Session = Depends(get_db),
     current_user: User = Depends(get_current_user),
-    company_id: Optional[int] = Query(None, description="Company ID for scoping (required for COMPANY_ADMIN)")
+    company_id: Optional[int] = Query(
+        None, description="Company ID for scoping (required for COMPANY_ADMIN)"
+    ),
 ):
     """Get audit statistics - SUPERADMIN: all companies, COMPANY_ADMIN: scoped to company"""
     if current_user.role.name == "SUPERADMIN":
@@ -124,7 +143,9 @@ def get_audit_stats(
         if not company_id:
             company_id = current_user.company_id
         elif company_id != current_user.company_id:
-            raise HTTPException(status_code=403, detail="Access denied to other companies")
+            raise HTTPException(
+                status_code=403, detail="Access denied to other companies"
+            )
     else:
         raise HTTPException(status_code=403, detail="Insufficient permissions")
 
@@ -135,7 +156,7 @@ def get_audit_stats(
         action="VIEW_AUDIT_STATS",
         user_id=current_user.id,
         company_id=company_id,
-        details={"stats_type": "audit"}
+        details={"stats_type": "audit"},
     )
 
     return stats
@@ -147,7 +168,7 @@ def get_audit_logs(
     current_user: User = Depends(require_superadmin),
     company_id: Optional[int] = Query(None),
     limit: int = Query(50, ge=1, le=1000),
-    offset: int = Query(0, ge=0)
+    offset: int = Query(0, ge=0),
 ):
     """Get audit logs - Superadmin only"""
     query = db.query(AuditLog).order_by(AuditLog.created_at.desc())
@@ -164,7 +185,7 @@ def get_audit_logs(
         action="VIEW_AUDIT_LOGS",
         user_id=current_user.id,
         company_id=company_id,
-        details={"limit": limit, "offset": offset}
+        details={"limit": limit, "offset": offset},
     )
 
     return {
@@ -178,13 +199,13 @@ def get_audit_logs(
                 "resource_id": log.resource_id,
                 "details": log.details,
                 "ip_address": log.ip_address,
-                "created_at": log.created_at.isoformat()
+                "created_at": log.created_at.isoformat(),
             }
             for log in logs
         ],
         "total": total,
         "limit": limit,
-        "offset": offset
+        "offset": offset,
     }
 
 
@@ -203,7 +224,7 @@ class AuditSearchRequest(BaseModel):
 def search_audit_logs(
     search_request: AuditSearchRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Search audit logs - Superadmin only"""
     query = db.query(AuditLog).order_by(AuditLog.created_at.desc())
@@ -230,7 +251,7 @@ def search_audit_logs(
         action="SEARCH_AUDIT_LOGS",
         user_id=current_user.id,
         company_id=search_request.company_id,
-        details=search_request.dict(exclude={"limit", "offset"})
+        details=search_request.dict(exclude={"limit", "offset"}),
     )
 
     return {
@@ -244,13 +265,13 @@ def search_audit_logs(
                 "resource_id": log.resource_id,
                 "details": log.details,
                 "ip_address": log.ip_address,
-                "created_at": log.created_at.isoformat()
+                "created_at": log.created_at.isoformat(),
             }
             for log in logs
         ],
         "total": total,
         "limit": search_request.limit,
-        "offset": search_request.offset
+        "offset": search_request.offset,
     }
 
 
@@ -259,7 +280,7 @@ def get_security_alerts(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_superadmin),
     company_id: Optional[int] = Query(None),
-    limit: int = Query(50, ge=1, le=1000)
+    limit: int = Query(50, ge=1, le=1000),
 ):
     """Get security alerts - Superadmin only"""
     alerts = SecurityService.get_security_alerts(db, company_id, limit)
@@ -270,7 +291,7 @@ def get_security_alerts(
         action="VIEW_SECURITY_ALERTS",
         user_id=current_user.id,
         company_id=company_id,
-        details={"limit": limit}
+        details={"limit": limit},
     )
 
     return alerts
@@ -280,7 +301,7 @@ def get_security_alerts(
 def unlock_user_account(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Unlock user account - Superadmin only"""
     target_user = db.query(User).filter(User.id == user_id).first()
@@ -299,7 +320,7 @@ def unlock_user_account(
         action="UNLOCK_USER_ACCOUNT",
         user_id=current_user.id,
         company_id=target_user.company_id,
-        details={"unlocked_user_id": user_id}
+        details={"unlocked_user_id": user_id},
     )
 
     return {"message": f"User {user_id} account unlocked successfully"}
@@ -317,7 +338,7 @@ def update_user_role(
     user_id: int,
     role_update: UserRoleUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Update user role with protections (Superadmin only)"""
     target_user = db.query(User).filter(User.id == user_id).first()
@@ -326,16 +347,22 @@ def update_user_role(
 
     # Cross-org prevention
     if not RBACService.can_manage_users(current_user, target_user):
-        raise HTTPException(status_code=403, detail="Cannot manage users across organizations")
+        raise HTTPException(
+            status_code=403, detail="Cannot manage users across organizations"
+        )
 
     # Last superadmin protection
-    if target_user.role == UserRole.SUPERADMIN and role_update.role != UserRole.SUPERADMIN:
+    if (
+        target_user.role == UserRole.SUPERADMIN
+        and role_update.role != UserRole.SUPERADMIN
+    ):
         # Check if this is the last superadmin
-        superadmin_count = db.query(User).filter(User.role == UserRole.SUPERADMIN).count()
+        superadmin_count = (
+            db.query(User).filter(User.role == UserRole.SUPERADMIN).count()
+        )
         if superadmin_count <= 1:
             raise HTTPException(
-                status_code=403,
-                detail="Cannot demote the last superadmin"
+                status_code=403, detail="Cannot demote the last superadmin"
             )
 
     # Update role and org assignments
@@ -357,11 +384,13 @@ def update_user_role(
         company_id=current_user.company_id,
         role=role_update.role.value,
         details={
-            "previous_role": target_user.role.value if hasattr(target_user, 'role') else None,
+            "previous_role": (
+                target_user.role.value if hasattr(target_user, "role") else None
+            ),
             "new_company_id": role_update.company_id,
             "new_department_id": role_update.department_id,
-            "new_team_id": role_update.team_id
-        }
+            "new_team_id": role_update.team_id,
+        },
     )
 
     return {"message": "User role updated successfully"}
@@ -371,7 +400,7 @@ def update_user_role(
 def update_ai_policy(
     policy_update: AIPolicyUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Update AI policy - Superadmin only"""
     # For now, just log the policy update (policies are hardcoded in RBAC)
@@ -381,7 +410,7 @@ def update_ai_policy(
         action="UPDATE_AI_POLICY",
         user_id=current_user.id,
         company_id=None,
-        details=policy_update.dict()
+        details=policy_update.dict(),
     )
 
     return {"message": "AI policy updated successfully"}
@@ -393,10 +422,14 @@ def get_ai_logs(
     current_user: User = Depends(require_superadmin),
     company_id: Optional[int] = Query(None),
     limit: int = Query(50, ge=1, le=1000),
-    offset: int = Query(0, ge=0)
+    offset: int = Query(0, ge=0),
 ):
     """Get AI audit logs - Superadmin only"""
-    query = db.query(AuditLog).filter(AuditLog.event_type == "AI_REQUEST").order_by(AuditLog.created_at.desc())
+    query = (
+        db.query(AuditLog)
+        .filter(AuditLog.event_type == "AI_REQUEST")
+        .order_by(AuditLog.created_at.desc())
+    )
 
     if company_id:
         query = query.filter(AuditLog.company_id == company_id)
@@ -410,7 +443,7 @@ def get_ai_logs(
         action="VIEW_AI_LOGS",
         user_id=current_user.id,
         company_id=company_id,
-        details={"limit": limit, "offset": offset}
+        details={"limit": limit, "offset": offset},
     )
 
     return {
@@ -426,13 +459,13 @@ def get_ai_logs(
                 "ai_required_role": log.ai_required_role,
                 "ai_user_role": log.ai_user_role,
                 "ai_severity": log.ai_severity,
-                "created_at": log.created_at.isoformat()
+                "created_at": log.created_at.isoformat(),
             }
             for log in logs
         ],
         "total": total,
         "limit": limit,
-        "offset": offset
+        "offset": offset,
     }
 
 
@@ -440,7 +473,7 @@ def get_ai_logs(
 def approve_ai_request(
     approval: AIApprovalRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Approve pending AI request - Superadmin only"""
     # For now, just log the approval (no actual approval workflow implemented)
@@ -449,7 +482,7 @@ def approve_ai_request(
         action="APPROVE_AI_REQUEST",
         user_id=current_user.id,
         company_id=None,
-        details=approval.dict()
+        details=approval.dict(),
     )
 
     return {"message": "AI request approved successfully"}
@@ -460,7 +493,7 @@ def get_trust_scores(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_superadmin),
     company_id: Optional[int] = Query(None),
-    limit: int = Query(100, ge=1, le=1000)
+    limit: int = Query(100, ge=1, le=1000),
 ):
     """Get trust scores for users - Superadmin only"""
     query = db.query(User).order_by(User.trust_score.desc())
@@ -480,7 +513,7 @@ def get_trust_scores(
                 "trust_tier": TrustService.get_trust_tier(user.trust_score),
                 "access_limits": TrustService.get_access_limits(user.trust_score),
                 "company_id": user.company_id,
-                "role": user.role.value
+                "role": user.role.value,
             }
             for user in users
         ]
@@ -492,7 +525,7 @@ def update_trust_score(
     user_id: int,
     trust_update: TrustScoreUpdate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Manually update user trust score - Superadmin only"""
     target_user = db.query(User).filter(User.id == user_id).first()
@@ -513,15 +546,15 @@ def update_trust_score(
             "target_user_id": user_id,
             "old_score": old_score,
             "new_score": trust_update.new_score,
-            "reason": trust_update.reason
-        }
+            "reason": trust_update.reason,
+        },
     )
 
     return {
         "message": "Trust score updated successfully",
         "old_score": old_score,
         "new_score": trust_update.new_score,
-        "new_tier": TrustService.get_trust_tier(trust_update.new_score)
+        "new_tier": TrustService.get_trust_tier(trust_update.new_score),
     }
 
 
@@ -529,10 +562,12 @@ def update_trust_score(
 def reset_user_trust(
     user_id: int,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Reset user trust score to maximum - Superadmin only"""
-    success = TrustService.reset_trust_score(db, user_id, current_user.id, "Admin reset")
+    success = TrustService.reset_trust_score(
+        db, user_id, current_user.id, "Admin reset"
+    )
 
     if not success:
         raise HTTPException(status_code=404, detail="User not found")
@@ -545,16 +580,12 @@ def get_user_trust_history(
     user_id: int,
     days: int = Query(30, ge=1, le=365),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Get trust score history for a user - Superadmin only"""
     history = TrustService.get_trust_history(db, user_id, days)
 
-    return {
-        "user_id": user_id,
-        "history": history.get(user_id, []),
-        "days": days
-    }
+    return {"user_id": user_id, "history": history.get(user_id, []), "days": days}
 
 
 @router.get("/ai/threat-monitor")
@@ -562,16 +593,12 @@ def get_live_violations(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_superadmin),
     company_id: Optional[int] = Query(None),
-    limit: int = Query(50, ge=1, le=500)
+    limit: int = Query(50, ge=1, le=500),
 ):
     """Get live AI violation feed - Superadmin only"""
     violations = ThreatMonitorService.get_live_violations(db, company_id, limit)
 
-    return {
-        "violations": violations,
-        "total": len(violations),
-        "limit": limit
-    }
+    return {"violations": violations, "total": len(violations), "limit": limit}
 
 
 @router.get("/ai/risk-heatmap")
@@ -579,15 +606,13 @@ def get_risk_heatmap(
     db: Session = Depends(get_db),
     current_user: User = Depends(require_superadmin),
     company_id: Optional[int] = Query(None),
-    time_range_hours: int = Query(24, ge=1, le=168)  # Max 1 week
+    time_range_hours: int = Query(24, ge=1, le=168),  # Max 1 week
 ):
     """Get AI risk heat map data - Superadmin only"""
     heatmap = ThreatMonitorService.get_risk_heatmap(db, company_id, time_range_hours)
 
     return RiskHeatMapData(
-        company_id=company_id,
-        time_range_hours=time_range_hours,
-        risk_levels=heatmap
+        company_id=company_id, time_range_hours=time_range_hours, risk_levels=heatmap
     )
 
 
@@ -595,7 +620,7 @@ def get_risk_heatmap(
 def export_compliance_report(
     export_request: ComplianceExportRequest,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Export compliance report - Superadmin only"""
     try:
@@ -611,24 +636,30 @@ def export_compliance_report(
                 "format": export_request.format,
                 "date_range": f"{export_request.start_date} to {export_request.end_date}",
                 "include_logs": export_request.include_logs,
-                "include_trust_history": export_request.include_trust_history
-            }
+                "include_trust_history": export_request.include_trust_history,
+            },
         )
 
         if export_request.format.lower() == "pdf":
-            from fastapi.responses import StreamingResponse
             import io
+
+            from fastapi.responses import StreamingResponse
 
             return StreamingResponse(
                 io.BytesIO(result["data"]),
                 media_type="application/pdf",
-                headers={"Content-Disposition": f"attachment; filename={result['filename']}"}
+                headers={
+                    "Content-Disposition": f"attachment; filename={result['filename']}"
+                },
             )
         else:
             from fastapi.responses import JSONResponse
+
             return JSONResponse(
                 content=json.loads(result["data"]),
-                headers={"Content-Disposition": f"attachment; filename={result['filename']}"}
+                headers={
+                    "Content-Disposition": f"attachment; filename={result['filename']}"
+                },
             )
 
     except Exception as e:
@@ -639,7 +670,7 @@ def export_compliance_report(
 def configure_alert_webhook(
     webhook_config: WebhookAlertConfig,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Configure webhook for AI alerts - Superadmin only"""
     # For now, store in memory (in production, store in database)
@@ -653,8 +684,8 @@ def configure_alert_webhook(
         details={
             "url": webhook_config.url,
             "enabled": webhook_config.enabled,
-            "alert_types": webhook_config.alert_types
-        }
+            "alert_types": webhook_config.alert_types,
+        },
     )
 
     return {"message": "AI alert webhook configured successfully"}
@@ -662,11 +693,12 @@ def configure_alert_webhook(
 
 # Audit Chain Verification Endpoints
 
+
 @router.get("/audit-chain/verify/{chain_id}")
 def verify_audit_chain(
     chain_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Verify integrity of an audit chain - Superadmin only"""
     is_valid, issues = AuditChainService.verify_chain_integrity(db, chain_id)
@@ -680,15 +712,15 @@ def verify_audit_chain(
         details={
             "chain_id": chain_id,
             "is_valid": is_valid,
-            "issues_count": len(issues)
-        }
+            "issues_count": len(issues),
+        },
     )
 
     return {
         "chain_id": chain_id,
         "is_valid": is_valid,
         "issues": issues,
-        "verified_at": datetime.utcnow().isoformat()
+        "verified_at": datetime.utcnow().isoformat(),
     }
 
 
@@ -696,7 +728,7 @@ def verify_audit_chain(
 def get_audit_chain_stats(
     chain_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Get statistics for an audit chain - Superadmin only"""
     stats = AuditChainService.get_chain_stats(db, chain_id)
@@ -707,7 +739,7 @@ def get_audit_chain_stats(
         action="VIEW_AUDIT_CHAIN_STATS",
         user_id=current_user.id,
         company_id=None,
-        details={"chain_id": chain_id}
+        details={"chain_id": chain_id},
     )
 
     return stats
@@ -719,10 +751,12 @@ def replay_audit_chain(
     start_sequence: int = Query(0, ge=0),
     end_sequence: Optional[int] = Query(None, ge=0),
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Replay audit chain entries - Superadmin only"""
-    replay_data = AuditChainService.replay_chain(db, chain_id, start_sequence, end_sequence)
+    replay_data = AuditChainService.replay_chain(
+        db, chain_id, start_sequence, end_sequence
+    )
 
     # Log admin action
     AuditService.log_admin_action(
@@ -734,15 +768,15 @@ def replay_audit_chain(
             "chain_id": chain_id,
             "start_sequence": start_sequence,
             "end_sequence": end_sequence,
-            "entries_returned": len(replay_data)
-        }
+            "entries_returned": len(replay_data),
+        },
     )
 
     return {
         "chain_id": chain_id,
         "start_sequence": start_sequence,
         "end_sequence": end_sequence,
-        "entries": replay_data
+        "entries": replay_data,
     }
 
 
@@ -750,7 +784,7 @@ def replay_audit_chain(
 def detect_chain_tampering(
     chain_id: str,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    current_user: User = Depends(require_superadmin),
 ):
     """Detect tampering incidents in an audit chain - Superadmin only"""
     incidents = AuditChainService.detect_tampering(db, chain_id)
@@ -761,23 +795,19 @@ def detect_chain_tampering(
         action="DETECT_CHAIN_TAMPERING",
         user_id=current_user.id,
         company_id=None,
-        details={
-            "chain_id": chain_id,
-            "incidents_found": len(incidents)
-        }
+        details={"chain_id": chain_id, "incidents_found": len(incidents)},
     )
 
     return {
         "chain_id": chain_id,
         "tampering_incidents": incidents,
-        "detected_at": datetime.utcnow().isoformat()
+        "detected_at": datetime.utcnow().isoformat(),
     }
 
 
 @router.get("/audit-chain/all-chains")
 def list_all_chains(
-    db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin)
+    db: Session = Depends(get_db), current_user: User = Depends(require_superadmin)
 ):
     """List all audit chains with their stats - Superadmin only"""
     from sqlalchemy import distinct
@@ -796,10 +826,7 @@ def list_all_chains(
         action="LIST_AUDIT_CHAINS",
         user_id=current_user.id,
         company_id=None,
-        details={"chains_count": len(chains)}
+        details={"chains_count": len(chains)},
     )
 
-    return {
-        "chains": chains,
-        "total_chains": len(chains)
-    }
+    return {"chains": chains, "total_chains": len(chains)}

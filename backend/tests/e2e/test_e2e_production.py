@@ -1,23 +1,26 @@
-import pytest
-import httpx
 import asyncio
-import websockets
 import json
+
+import httpx
+import pytest
+import websockets
 from fastapi.testclient import TestClient
-from app.main import app
-from app.db import get_db, SessionLocal
+from passlib.context import CryptContext
+from sqlalchemy.orm import Session
+
+from app.db import SessionLocal, get_db
 from app.deps import get_current_user
-from app.models.user import User
+from app.main import app
 from app.models.company import Company
-from app.models.vendor import Vendor
 from app.models.inventory_item import InventoryItem
 from app.models.purchase_order import PurchaseOrder
-from sqlalchemy.orm import Session
-from passlib.context import CryptContext
+from app.models.user import User
+from app.models.vendor import Vendor
 
 client = TestClient(app)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
 
 def override_get_db():
     db = SessionLocal()
@@ -26,9 +29,11 @@ def override_get_db():
     finally:
         db.close()
 
+
 def override_get_current_user():
     # Mock a user for testing
     from datetime import datetime
+
     user = User(
         id=1,
         email="demo@company.com",
@@ -37,12 +42,14 @@ def override_get_current_user():
         company_id=1,
         is_active=True,
         created_at=datetime.utcnow(),
-        updated_at=datetime.utcnow()
+        updated_at=datetime.utcnow(),
     )
     return user
 
+
 app.dependency_overrides[get_db] = override_get_db
 app.dependency_overrides[get_current_user] = override_get_current_user
+
 
 @pytest.fixture(scope="module", autouse=True)
 def setup_test_data():
@@ -66,19 +73,23 @@ def setup_test_data():
                 hashed_password=hashed_password,
                 full_name="Demo User",
                 role="EMPLOYEE",
-                company_id=company.id
+                company_id=company.id,
             )
             db.add(user)
             db.commit()
             db.refresh(user)
 
         # Create test vendor if not exists
-        vendor = db.query(Vendor).filter_by(name="Test Vendor", company_id=company.id).first()
+        vendor = (
+            db.query(Vendor)
+            .filter_by(name="Test Vendor", company_id=company.id)
+            .first()
+        )
         if not vendor:
             vendor = Vendor(
                 name="Test Vendor",
                 contact_email="vendor@test.com",
-                company_id=company.id
+                company_id=company.id,
             )
             db.add(vendor)
             db.commit()
@@ -88,16 +99,17 @@ def setup_test_data():
     finally:
         db.close()
 
+
 class TestE2EProductionFlows:
     """Production-like E2E tests for auth, procurement, notifications, WebSocket"""
 
     def test_auth_flow_production(self):
         """Test authentication flow in production-like environment"""
         # Login
-        response = client.post("/api/auth/login", json={
-            "email": "demo@company.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "demo@company.com", "password": "password123"},
+        )
         assert response.status_code == 200
         data = response.json()
         assert "access_token" in data
@@ -113,7 +125,9 @@ class TestE2EProductionFlows:
 
         # Test token refresh
         refresh_token = data["refresh_token"]
-        response = client.post("/api/auth/refresh", json={"refresh_token": refresh_token})
+        response = client.post(
+            "/api/auth/refresh", json={"refresh_token": refresh_token}
+        )
         assert response.status_code == 200
         new_data = response.json()
         assert "access_token" in new_data
@@ -121,10 +135,10 @@ class TestE2EProductionFlows:
     def test_procurement_flow_production(self):
         """Test procurement flows in production-like environment"""
         # Login first
-        response = client.post("/api/auth/login", json={
-            "email": "demo@company.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "demo@company.com", "password": "password123"},
+        )
         access_token = response.json()["access_token"]
         headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -138,21 +152,26 @@ class TestE2EProductionFlows:
             db.close()
 
         # Create vendor
-        response = client.post("/api/procurement/vendors/", json={
-            "name": "Production Vendor",
-            "contact_email": "vendor@prod.com"
-        }, headers=headers)
+        response = client.post(
+            "/api/procurement/vendors/",
+            json={"name": "Production Vendor", "contact_email": "vendor@prod.com"},
+            headers=headers,
+        )
         assert response.status_code == 201
         vendor_data = response.json()
         vendor_id = vendor_data["id"]
 
         # Create purchase order
-        response = client.post("/api/procurement/purchase-orders/", json={
-            "vendor_id": vendor_id,
-            "item_name": "Production Item",
-            "quantity": 50,
-            "amount": 500.0
-        }, headers=headers)
+        response = client.post(
+            "/api/procurement/purchase-orders/",
+            json={
+                "vendor_id": vendor_id,
+                "item_name": "Production Item",
+                "quantity": 50,
+                "amount": 500.0,
+            },
+            headers=headers,
+        )
         assert response.status_code == 201
         po_data = response.json()
         po_id = po_data["id"]
@@ -170,10 +189,10 @@ class TestE2EProductionFlows:
     def test_notifications_flow_production(self):
         """Test notifications API in production-like environment"""
         # Login first
-        response = client.post("/api/auth/login", json={
-            "email": "demo@company.com",
-            "password": "password123"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "demo@company.com", "password": "password123"},
+        )
         access_token = response.json()["access_token"]
         headers = {"Authorization": f"Bearer {access_token}"}
 
@@ -186,7 +205,9 @@ class TestE2EProductionFlows:
         # If there are notifications, mark one as read
         if notifications:
             notification_id = notifications[0]["id"]
-            response = client.post(f"/api/notifications/mark-read/{notification_id}", headers=headers)
+            response = client.post(
+                f"/api/notifications/mark-read/{notification_id}", headers=headers
+            )
             assert response.status_code == 200
 
     @pytest.mark.asyncio
@@ -217,23 +238,27 @@ class TestE2EProductionFlows:
     def test_cors_production(self):
         """Test CORS configuration for production"""
         # Test preflight request
-        response = client.options("/api/auth/login",
-                                headers={
-                                    "Origin": "https://app.workforce-app.com",
-                                    "Access-Control-Request-Method": "POST",
-                                    "Access-Control-Request-Headers": "Content-Type"
-                                })
+        response = client.options(
+            "/api/auth/login",
+            headers={
+                "Origin": "https://app.workforce-app.com",
+                "Access-Control-Request-Method": "POST",
+                "Access-Control-Request-Headers": "Content-Type",
+            },
+        )
         assert response.status_code == 200
         assert "access-control-allow-origin" in response.headers
-        assert "https://app.workforce-app.com" in response.headers.get("access-control-allow-origin", "")
+        assert "https://app.workforce-app.com" in response.headers.get(
+            "access-control-allow-origin", ""
+        )
 
     def test_error_handling_production(self):
         """Test error handling in production-like environment"""
         # Test invalid login
-        response = client.post("/api/auth/login", json={
-            "email": "invalid@email.com",
-            "password": "wrongpass"
-        })
+        response = client.post(
+            "/api/auth/login",
+            json={"email": "invalid@email.com", "password": "wrongpass"},
+        )
         assert response.status_code == 401
 
         # Test unauthorized access (without auth header) - this returns 200 due to mock override

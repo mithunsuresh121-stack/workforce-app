@@ -8,10 +8,11 @@ tasks = {
     5: "Write Playwright tests for web payroll screens",
     6: "Create mobile PayrollManagementScreen with providers",
     7: "Write Flutter widget/integration tests for payroll",
-    8: "Summarize test results and confirm production readiness"
+    8: "Summarize test results and confirm production readiness",
 }
 
 progress = {key: False for key in tasks}
+
 
 def mark_done(task_name: str):
     found = False
@@ -23,6 +24,7 @@ def mark_done(task_name: str):
             break
     if not found:
         print(f"Task not found: {task_name}")
+
 
 def print_progress():
     total = len(tasks)

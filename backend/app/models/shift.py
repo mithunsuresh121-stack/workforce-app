@@ -1,14 +1,18 @@
-from sqlalchemy import Column, Integer, String, DateTime, Enum, ForeignKey
+import enum
+
+from sqlalchemy import Column, DateTime, Enum, ForeignKey, Integer, String
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
+
 from app.db import Base
-import enum
+
 
 class ShiftStatus(str, enum.Enum):
     SCHEDULED = "SCHEDULED"
     COMPLETED = "COMPLETED"
     CANCELLED = "CANCELLED"
     ON_LEAVE = "ON_LEAVE"
+
 
 class Shift(Base):
     __tablename__ = "shifts"

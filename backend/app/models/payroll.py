@@ -1,7 +1,10 @@
-from sqlalchemy import Column, Integer, String, DateTime, Float, ForeignKey, Text
-from sqlalchemy.sql import func
+from sqlalchemy import (Column, DateTime, Float, ForeignKey, Integer, String,
+                        Text)
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
 from app.db import Base
+
 
 class Employee(Base):
     __tablename__ = "employees"
@@ -17,6 +20,7 @@ class Employee(Base):
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
+
 class Salary(Base):
     __tablename__ = "salaries"
     id = Column(Integer, primary_key=True)
@@ -29,6 +33,7 @@ class Salary(Base):
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
 
     employee = relationship("Employee")
+
 
 class Allowance(Base):
     __tablename__ = "allowances"
@@ -46,6 +51,7 @@ class Allowance(Base):
 
     employee = relationship("Employee")
 
+
 class Deduction(Base):
     __tablename__ = "deductions"
     id = Column(Integer, primary_key=True)
@@ -62,6 +68,7 @@ class Deduction(Base):
 
     employee = relationship("Employee")
 
+
 class Bonus(Base):
     __tablename__ = "bonuses"
     id = Column(Integer, primary_key=True)
@@ -77,6 +84,7 @@ class Bonus(Base):
 
     employee = relationship("Employee")
 
+
 class PayrollRun(Base):
     __tablename__ = "payroll_runs"
     id = Column(Integer, primary_key=True)
@@ -91,6 +99,7 @@ class PayrollRun(Base):
     processed_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=func.now())
     updated_at = Column(DateTime, default=func.now(), onupdate=func.now())
+
 
 class PayrollEntry(Base):
     __tablename__ = "payroll_entries"

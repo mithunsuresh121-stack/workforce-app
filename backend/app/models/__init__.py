@@ -1,43 +1,36 @@
 # Import all models to ensure they are registered with SQLAlchemy
-from .company import Company
-from .company_settings import CompanySettings
-from .audit_log import AuditLog
-from .audit_chain import AuditChain
+from .announcement import Announcement
 from .approval_queue import ApprovalQueue, ApprovalQueueItem
+from .attachment import Attachment
+from .attendance import Attendance, Break
+from .audit_chain import AuditChain
+from .audit_log import AuditLog
+from .channels import Channel, ChannelMember
+from .chat import ChatMessage
+from .company import Company
 from .company_department import CompanyDepartment
+from .company_settings import CompanySettings
 from .company_team import CompanyTeam
-from .user import User
-from .task import Task
+from .document import Document
+from .employee_profile import EmployeeProfile
+from .inventory_item import InventoryItem
 from .leave import Leave
+from .meeting_participants import MeetingParticipant
+from .meetings import Meeting
+from .message_reactions import MessageReaction
+from .notification import Notification
+from .notification_digest import NotificationDigest
+from .notification_preferences import NotificationPreferences
+from .payroll import (Allowance, Bonus, Deduction, Employee, PayrollEntry,
+                      PayrollRun, Salary)
+from .profile_update_request import ProfileUpdateRequest
+from .purchase_order import PurchaseOrder
+from .refresh_token import RefreshToken
 from .shift import Shift
 from .swap_request import SwapRequest
-from .employee_profile import EmployeeProfile
-from .profile_update_request import ProfileUpdateRequest
-from .attendance import Attendance, Break
-from .notification import Notification
-from .notification_preferences import NotificationPreferences
-from .notification_digest import NotificationDigest
-from .payroll import (
-    Employee,
-    Salary,
-    Allowance,
-    Deduction,
-    Bonus,
-    PayrollRun,
-    PayrollEntry
-)
-from .refresh_token import RefreshToken
-from .chat import ChatMessage
-from .announcement import Announcement
-from .document import Document
-from .attachment import Attachment
-from .channels import Channel, ChannelMember
-from .message_reactions import MessageReaction
-from .meetings import Meeting
-from .meeting_participants import MeetingParticipant
+from .task import Task
+from .user import User
 from .vendor import Vendor
-from .purchase_order import PurchaseOrder
-from .inventory_item import InventoryItem
 
 __all__ = [
     "Company",
@@ -77,5 +70,5 @@ __all__ = [
     "MeetingParticipant",
     "Vendor",
     "PurchaseOrder",
-    "InventoryItem"
+    "InventoryItem",
 ]

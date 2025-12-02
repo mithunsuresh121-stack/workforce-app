@@ -1,12 +1,11 @@
 import pytest
-from sqlalchemy.orm import sessionmaker
 from sqlalchemy import create_engine
-from app.db import Base
-from app.models import (
-    Company, User, Channel, ChannelMember, ChatMessage,
-    MessageReaction, Meeting, MeetingParticipant
-)
+from sqlalchemy.orm import sessionmaker
+
 from app.config import settings
+from app.db import Base
+from app.models import (Channel, ChannelMember, ChatMessage, Company, Meeting,
+                        MeetingParticipant, MessageReaction, User)
 
 
 @pytest.fixture(scope="module")
@@ -37,11 +36,18 @@ def test_company_cascade_delete(db_session):
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test@example.com", hashed_password="testpass", full_name="Test User", company=company)
+    user = User(
+        email="test@example.com",
+        hashed_password="testpass",
+        full_name="Test User",
+        company=company,
+    )
     db_session.add(user)
     db_session.commit()
 
-    channel = Channel(name="Test Channel", type="GROUP", company=company, created_by=user.id)
+    channel = Channel(
+        name="Test Channel", type="GROUP", company=company, created_by=user.id
+    )
     db_session.add(channel)
     db_session.commit()
 
@@ -50,10 +56,7 @@ def test_company_cascade_delete(db_session):
     db_session.commit()
 
     message = ChatMessage(
-        company=company,
-        sender=user,
-        message="Test message",
-        channel=channel
+        company=company, sender=user, message="Test message", channel=channel
     )
     db_session.add(message)
     db_session.commit()
@@ -68,7 +71,7 @@ def test_company_cascade_delete(db_session):
         company=company,
         start_time="2025-01-01T10:00:00",
         end_time="2025-01-01T11:00:00",
-        status="SCHEDULED"
+        status="SCHEDULED",
     )
     db_session.add(meeting)
     db_session.commit()
@@ -81,11 +84,23 @@ def test_company_cascade_delete(db_session):
     assert db_session.query(Company).filter_by(id=company.id).first() is not None
     assert db_session.query(User).filter_by(id=user.id).first() is not None
     assert db_session.query(Channel).filter_by(id=channel.id).first() is not None
-    assert db_session.query(ChannelMember).filter_by(channel_id=channel.id, user_id=user.id).first() is not None
+    assert (
+        db_session.query(ChannelMember)
+        .filter_by(channel_id=channel.id, user_id=user.id)
+        .first()
+        is not None
+    )
     assert db_session.query(ChatMessage).filter_by(id=message.id).first() is not None
-    assert db_session.query(MessageReaction).filter_by(id=reaction.id).first() is not None
+    assert (
+        db_session.query(MessageReaction).filter_by(id=reaction.id).first() is not None
+    )
     assert db_session.query(Meeting).filter_by(id=meeting.id).first() is not None
-    assert db_session.query(MeetingParticipant).filter_by(meeting_id=meeting.id, user_id=user.id).first() is not None
+    assert (
+        db_session.query(MeetingParticipant)
+        .filter_by(meeting_id=meeting.id, user_id=user.id)
+        .first()
+        is not None
+    )
 
     # Delete company
     db_session.delete(company)
@@ -95,11 +110,21 @@ def test_company_cascade_delete(db_session):
     assert db_session.query(Company).filter_by(id=company.id).first() is None
     assert db_session.query(User).filter_by(id=user.id).first() is None
     assert db_session.query(Channel).filter_by(id=channel.id).first() is None
-    assert db_session.query(ChannelMember).filter_by(channel_id=channel.id, user_id=user.id).first() is None
+    assert (
+        db_session.query(ChannelMember)
+        .filter_by(channel_id=channel.id, user_id=user.id)
+        .first()
+        is None
+    )
     assert db_session.query(ChatMessage).filter_by(id=message.id).first() is None
     assert db_session.query(MessageReaction).filter_by(id=reaction.id).first() is None
     assert db_session.query(Meeting).filter_by(id=meeting.id).first() is None
-    assert db_session.query(MeetingParticipant).filter_by(meeting_id=meeting.id, user_id=user.id).first() is None
+    assert (
+        db_session.query(MeetingParticipant)
+        .filter_by(meeting_id=meeting.id, user_id=user.id)
+        .first()
+        is None
+    )
 
 
 def test_user_cascade_delete(db_session):
@@ -109,11 +134,18 @@ def test_user_cascade_delete(db_session):
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test@example.com", hashed_password="testpass", full_name="Test User", company=company)
+    user = User(
+        email="test@example.com",
+        hashed_password="testpass",
+        full_name="Test User",
+        company=company,
+    )
     db_session.add(user)
     db_session.commit()
 
-    channel = Channel(name="Test Channel", type="GROUP", company=company, created_by=user.id)
+    channel = Channel(
+        name="Test Channel", type="GROUP", company=company, created_by=user.id
+    )
     db_session.add(channel)
     db_session.commit()
 
@@ -122,10 +154,7 @@ def test_user_cascade_delete(db_session):
     db_session.commit()
 
     message = ChatMessage(
-        company=company,
-        sender=user,
-        message="Test message",
-        channel=channel
+        company=company, sender=user, message="Test message", channel=channel
     )
     db_session.add(message)
     db_session.commit()
@@ -140,7 +169,7 @@ def test_user_cascade_delete(db_session):
         company=company,
         start_time="2025-01-01T10:00:00",
         end_time="2025-01-01T11:00:00",
-        status="SCHEDULED"
+        status="SCHEDULED",
     )
     db_session.add(meeting)
     db_session.commit()
@@ -155,12 +184,30 @@ def test_user_cascade_delete(db_session):
 
     # Verify user-related entities were deleted
     assert db_session.query(User).filter_by(id=user.id).first() is None
-    assert db_session.query(Channel).filter_by(id=channel.id).first() is None  # Created by user
-    assert db_session.query(ChannelMember).filter_by(channel_id=channel.id, user_id=user.id).first() is None
-    assert db_session.query(ChatMessage).filter_by(id=message.id).first() is None  # Sent by user
-    assert db_session.query(MessageReaction).filter_by(id=reaction.id).first() is None  # Created by user
-    assert db_session.query(Meeting).filter_by(id=meeting.id).first() is None  # Organized by user
-    assert db_session.query(MeetingParticipant).filter_by(meeting_id=meeting.id, user_id=user.id).first() is None
+    assert (
+        db_session.query(Channel).filter_by(id=channel.id).first() is None
+    )  # Created by user
+    assert (
+        db_session.query(ChannelMember)
+        .filter_by(channel_id=channel.id, user_id=user.id)
+        .first()
+        is None
+    )
+    assert (
+        db_session.query(ChatMessage).filter_by(id=message.id).first() is None
+    )  # Sent by user
+    assert (
+        db_session.query(MessageReaction).filter_by(id=reaction.id).first() is None
+    )  # Created by user
+    assert (
+        db_session.query(Meeting).filter_by(id=meeting.id).first() is None
+    )  # Organized by user
+    assert (
+        db_session.query(MeetingParticipant)
+        .filter_by(meeting_id=meeting.id, user_id=user.id)
+        .first()
+        is None
+    )
 
     # Company should still exist
     assert db_session.query(Company).filter_by(id=company.id).first() is not None
@@ -173,11 +220,18 @@ def test_channel_cascade_delete(db_session):
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test@example.com", hashed_password="testpass", full_name="Test User", company=company)
+    user = User(
+        email="test@example.com",
+        hashed_password="testpass",
+        full_name="Test User",
+        company=company,
+    )
     db_session.add(user)
     db_session.commit()
 
-    channel = Channel(name="Test Channel", type="GROUP", company=company, created_by=user.id)
+    channel = Channel(
+        name="Test Channel", type="GROUP", company=company, created_by=user.id
+    )
     db_session.add(channel)
     db_session.commit()
 
@@ -186,10 +240,7 @@ def test_channel_cascade_delete(db_session):
     db_session.commit()
 
     message = ChatMessage(
-        company=company,
-        sender=user,
-        message="Test message",
-        channel=channel
+        company=company, sender=user, message="Test message", channel=channel
     )
     db_session.add(message)
     db_session.commit()
@@ -204,7 +255,12 @@ def test_channel_cascade_delete(db_session):
 
     # Verify channel-related entities were deleted
     assert db_session.query(Channel).filter_by(id=channel.id).first() is None
-    assert db_session.query(ChannelMember).filter_by(channel_id=channel.id, user_id=user.id).first() is None
+    assert (
+        db_session.query(ChannelMember)
+        .filter_by(channel_id=channel.id, user_id=user.id)
+        .first()
+        is None
+    )
     assert db_session.query(ChatMessage).filter_by(id=message.id).first() is None
     assert db_session.query(MessageReaction).filter_by(id=reaction.id).first() is None
 
@@ -220,19 +276,23 @@ def test_message_cascade_delete(db_session):
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test3@example.com", hashed_password="testpass", full_name="Test User 3", company=company)
+    user = User(
+        email="test3@example.com",
+        hashed_password="testpass",
+        full_name="Test User 3",
+        company=company,
+    )
     db_session.add(user)
     db_session.commit()
 
-    channel = Channel(name="Test Channel", type="GROUP", company=company, created_by=user.id)
+    channel = Channel(
+        name="Test Channel", type="GROUP", company=company, created_by=user.id
+    )
     db_session.add(channel)
     db_session.commit()
 
     message = ChatMessage(
-        company=company,
-        sender=user,
-        message="Test message",
-        channel=channel
+        company=company, sender=user, message="Test message", channel=channel
     )
     db_session.add(message)
     db_session.commit()
@@ -262,7 +322,12 @@ def test_meeting_cascade_delete(db_session):
     db_session.add(company)
     db_session.commit()
 
-    user = User(email="test4@example.com", hashed_password="testpass", full_name="Test User 4", company=company)
+    user = User(
+        email="test4@example.com",
+        hashed_password="testpass",
+        full_name="Test User 4",
+        company=company,
+    )
     db_session.add(user)
     db_session.commit()
 
@@ -272,7 +337,7 @@ def test_meeting_cascade_delete(db_session):
         company=company,
         start_time="2025-01-01T10:00:00",
         end_time="2025-01-01T11:00:00",
-        status="SCHEDULED"
+        status="SCHEDULED",
     )
     db_session.add(meeting)
     db_session.commit()
@@ -287,7 +352,12 @@ def test_meeting_cascade_delete(db_session):
 
     # Verify meeting and participants were deleted
     assert db_session.query(Meeting).filter_by(id=meeting.id).first() is None
-    assert db_session.query(MeetingParticipant).filter_by(meeting_id=meeting.id, user_id=user.id).first() is None
+    assert (
+        db_session.query(MeetingParticipant)
+        .filter_by(meeting_id=meeting.id, user_id=user.id)
+        .first()
+        is None
+    )
 
     # User and company should still exist
     assert db_session.query(User).filter_by(id=user.id).first() is not None
