@@ -30,6 +30,13 @@ class WorkforceApp extends ConsumerWidget {
 
     return MaterialApp(
       debugShowCheckedModeBanner: false,
+      localizationsDelegates: const [
+        // Add localization delegates if needed
+      ],
+      supportedLocales: const [
+        Locale('en', ''), // English
+        // Add other locales if needed
+      ],
       title: 'Workforce Management',
       theme: themeState.themeData,
       home: authState.isAuthenticated ? const AppShell() : LoginScreen(onLoggedIn: onLoggedIn),
