@@ -21,11 +21,21 @@ router = APIRouter(prefix="/companies", tags=["Companies"])
 def create_new_company(
     company_data: CompanyCreate,
     db: Session = Depends(get_db),
-    current_user: User = Depends(require_superadmin),
+    current_user: User = Depends(get_current_user),
 ):
     """
-    Create a new company with full bootstrap (only SuperAdmin can create companies)
+    Create a new company. If user has no company, they become SUPERADMIN of the new company.
+    If user already has a company, they must be SUPERADMIN to create another.
     """
+
+    # Check if user already has a company
+    if current_user.company_id is not None:
+        # If they have a company, check if they are SUPERADMIN
+        if current_user.role != "SUPERADMIN":
+            raise HTTPException(
+                status_code=status.HTTP_403_FORBIDDEN,
+                detail="Only SUPERADMIN can create additional companies",
+            )
 
     # Check if company with same name already exists
     existing_company = get_company_by_name(db, company_data.name)
@@ -36,19 +46,43 @@ def create_new_company(
         )
 
     try:
+        # Create the company
+        new_company = create_company(db, company_data.name)
+
+        # Assign the creator as SUPERADMIN of the new company
+        from app.crud import update_user
+        updated_user = update_user(
+            db,
+            current_user.id,
+            current_user.email,
+            None,  # password not changing
+            current_user.full_name,
+            "SUPERADMIN",
+            new_company.id
+        )
+
         # Bootstrap the company with all required components
         result = CompanyService.bootstrap_company(
-            db=db, company_name=company_data.name, superadmin_user=current_user
+            db=db, company=new_company, superadmin_user=updated_user
+        )
+
+        # Generate new access token with updated role and company_id
+        from app.auth import create_access_token
+        new_access_token = create_access_token(
+            sub=updated_user.email,
+            company_id=new_company.id,
+            role="SUPERADMIN"
         )
 
         return {
             "company": CompanyOut.from_orm(result["company"]),
-            "first_admin_user": {
-                "id": result["first_admin_user"].id,
-                "email": result["first_admin_user"].email,
-                "full_name": result["first_admin_user"].full_name,
-                "role": result["first_admin_user"].role,
+            "superadmin_user": {
+                "id": updated_user.id,
+                "email": updated_user.email,
+                "full_name": updated_user.full_name,
+                "role": "SUPERADMIN",
             },
+            "new_access_token": new_access_token,
             "bootstrap_status": result["bootstrap_status"],
             "temporary_access_link": result["temporary_access_link"],
             "token_expiry": result["token_expiry"],
@@ -99,6 +133,72 @@ def get_company(
         )
 
     return company
+
+
+@router.post("/{company_id}/assign-user", response_model=Dict[str, Any])
+def assign_user_to_company(
+    company_id: int,
+    payload: Dict[str, Any],
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    user_id = payload.get("user_id")
+    role = payload.get("role")
+    """
+    Assign a user to the company with a specific role. Only SUPERADMIN of the company can assign users.
+    """
+    # Check if current user is SUPERADMIN of this company
+    if current_user.company_id != company_id or current_user.role != "SUPERADMIN":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Only SUPERADMIN of the company can assign users",
+        )
+
+    # Get the user to assign
+    from app.crud import get_user_by_id
+    user_to_assign = get_user_by_id(db, user_id)
+    if not user_to_assign:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND, detail="User not found"
+        )
+
+    # Check if user is already assigned to another company
+    if user_to_assign.company_id is not None and user_to_assign.company_id != company_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="User is already assigned to another company",
+        )
+
+    # Validate role
+    from app.schemas import Role
+    if role not in [r.value for r in Role]:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Invalid role. Must be one of: {', '.join([r.value for r in Role])}",
+        )
+
+    # Update user
+    from app.crud import update_user
+    updated_user = update_user(
+        db,
+        user_id,
+        user_to_assign.email,
+        None,  # password not changing
+        user_to_assign.full_name,
+        role,
+        company_id
+    )
+
+    return {
+        "message": "User assigned to company successfully",
+        "user": {
+            "id": updated_user.id,
+            "email": updated_user.email,
+            "full_name": updated_user.full_name,
+            "role": updated_user.role,
+            "company_id": updated_user.company_id,
+        }
+    }
 
 
 @router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)

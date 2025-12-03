@@ -28,7 +28,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 class CompanyService:
     @staticmethod
     def bootstrap_company(
-        db: Session, company_name: str, superadmin_user: User
+        db: Session, company: Company, superadmin_user: User
     ) -> Dict[str, Any]:
         """
         Bootstrap a new company with all required components.
@@ -39,10 +39,7 @@ class CompanyService:
 
         # Start transaction
         try:
-            # 1. Create company
-            company = Company(name=company_name)
-            db.add(company)
-            db.flush()  # Get company ID
+            # Company already created, use it
 
             # 2. Create first CompanyAdmin user
             admin_email = f"admin@{company_name.lower().replace(' ', '')}.com"
@@ -158,6 +155,7 @@ class CompanyService:
             logger.info(
                 "Company bootstrapped successfully",
                 company_id=company.id,
+                company_name=company.name,
                 admin_user_id=admin_user.id,
                 superadmin_id=superadmin_user.id,
             )

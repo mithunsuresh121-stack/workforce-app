@@ -25,20 +25,8 @@ logger = structlog.get_logger(__name__)
 
 
 def determine_company_and_role(email_domain: str, payload: UserCreate, db: Session) -> tuple[Optional[int], str]:
-    """Determine company_id and role based on email domain."""
-    generic_domains = {
-        "gmail.com", "yahoo.com", "hotmail.com", "outlook.com", "aol.com", "icloud.com"
-    }
-    if email_domain in generic_domains:
-        return None, "EMPLOYEE"
-
-    company_name = email_domain.replace(".", " ").title()
-    existing_company = get_company_by_name(db, company_name)
-    if existing_company:
-        return existing_company.id, "EMPLOYEE"
-
-    new_company = create_company(db, company_name)
-    return new_company.id, "COMPANY_ADMIN"
+    """No longer determine company_id and role based on email domain. Always return None for company_id and EMPLOYEE for role."""
+    return None, "EMPLOYEE"
 
 
 router = APIRouter(prefix="/auth", tags=["Auth"])
