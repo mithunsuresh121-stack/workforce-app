@@ -137,37 +137,7 @@ def get_current_user_profile(current_user: UserOut = Depends(get_current_user)):
     return current_user
 
 
-@router.get("/notifications", response_model=List[Notification])
-def get_notifications(current_user: UserOut = Depends(get_current_user)):
-    """Get user notifications"""
-    # Mock notifications for now - will be replaced with real data later
-    notifications = [
-        {
-            "id": 1,
-            "title": "Welcome to Workforce App",
-            "message": "Your account has been successfully created",
-            "type": "info",
-            "read": True,
-            "created_at": datetime.now(),
-        },
-        {
-            "id": 2,
-            "title": "New Task Assigned",
-            "message": "You have been assigned a new task: 'Review quarterly reports'",
-            "type": "task",
-            "read": False,
-            "created_at": datetime.now(),
-        },
-        {
-            "id": 3,
-            "title": "System Update",
-            "message": "Scheduled maintenance will occur tomorrow at 2:00 AM",
-            "type": "system",
-            "read": False,
-            "created_at": datetime.now(),
-        },
-    ]
-    return notifications
+# Removed dead/mock get_notifications endpoint and Notification class
 
 
 @router.put("/users/{user_id}", response_model=UserOut)

@@ -1,31 +1,37 @@
-# Cleanup and Refactor TODO List
+# Project Reorganization Plan
 
-## Step 1: Deletions (Approved)
-- [ ] Delete log/output files: backend_server.log, backend/backend.log, backend/pytest*.log, test_output*.json/log, migration.log, backend/logs/ contents
-- [ ] Delete sensitive temp files: cookies*.txt, token*.txt, fresh_token.txt
-- [ ] Delete temp DBs: backend/test.db, backend/test_timestamp.db, backend/test_cascade.db
-- [ ] Delete build/coverage outputs: mobile/build/, backend/.coverage, test-results/
-- [ ] Delete backups/archives/junk: frontend-web/src_backup_20250914170130/, workforce-app-complete/, 极ntend/, frontend-web/src极速赛车* paths
-- [ ] Delete duplicate mains/seeds: backend/app/main_final.py, backend/app/main_fixed.py, backend/seed_demo_user_final.py, backend/seed_demo_user_fixed.py
-- [ ] Check and delete one-off scripts (add_*.py, create_*.py, check_*.py, reset_*.py, seed_*.py) if not referenced (confirm seed_demo_user.py is used in main.py startup)
-- [ ] Move legacy test scripts (test_all_endpoints.py, etc.) to backend/archive_tests/ folder
+## Monorepo-Level Reorganization
+- [ ] Create `infra/` directory
+- [ ] Move infrastructure files to `infra/`: docker-compose.yml, docker-compose-grafana.yml, grafana/, prometheus.yml, k8s-redis-cluster.yaml, redis.conf
+- [ ] Create `scripts/` directory
+- [ ] Move utility scripts to `scripts/`: blackbox-*.sh, check_and_download.sh, cleanup_actions.sh, download_apk.sh, push_script.sh, run_*.sh, websocket_simulation.py
+- [ ] Create `archives/` directory
+- [ ] Move legacy content to `archives/`: all TODO_*.md files, reports/, ATTENDANCE_SYSTEM_STATUS_REPORT.md, backend_readiness_report.md, IMPLEMENTATION_STATUS_REPORT_PHASE_8.md, integration_readiness_report.md, LEAVE_SHIFT_MANAGEMENT_SUMMARY.md, real_time_readiness_report.md, STAGING_DEPLOYMENT_VALIDATION_CHECKLIST.md
+- [ ] Move `playstore-assets/` under `mobile/`
 
-## Step 2: Refactors (Proposed)
-- [ ] Refactor backend/app/main.py: Remove unused imports (duplicate structlog processors, unused get_db), split log_requests into helpers (extract_user_id, log_admin_action), consistent style (quotes, line lengths), remove redundant processors
-- [ ] Check backend/app/routers/ and schemas/ for naming consistency, unused imports/variables, commented code
-- [ ] Apply consistent code style across backend (PEP8: imports, naming, formatting)
-- [ ] Remove unused imports/variables in core files (e.g., main.py, routers/auth.py, schemas/schemas.py)
-- [ ] Split long functions if any (e.g., in routers or services)
-- [ ] Verify no dynamic imports or runtime refs before deletions
+## Backend Reorganization
+- [ ] Move `backend/tests/` to `backend/app/tests/`
+- [ ] Move `backend/archive_tests/` to `backend/app/archives/legacy_tests/`
+- [ ] Update test imports and pytest configuration
+- [ ] Review and refactor routers/services/crud for clean layering and grouping (attendance, payroll, etc.)
 
-## Step 3: Verification
-- [ ] Run backend build/test: cd backend && python -m pytest (or equivalent)
-- [ ] Run mobile build: cd mobile && flutter build apk
-- [ ] Run web build: cd frontend-web/web-app && npm run build
-- [ ] Check for broken refs after deletions
-- [ ] Archive important reports/TODOs if needed
+## Frontend-Web Reorganization
+- [ ] Inspect `frontend-web/web/` and `frontend-web/web-app/` to determine active app
+- [ ] Move active app to `frontend-web/src/` with structure: components/, pages/, services/, types/, config/, assets/
+- [ ] Archive unused app to `archives/frontend-legacy/`
+- [ ] Update imports and build configs
 
-## Notes
-- Prioritize safety: No business logic changes.
-- If risky, ask for confirmation.
-- Update this TODO after each step.
+## Mobile Reorganization
+- [ ] Move junk folders like `src极速赛车开奖直播历史记录+开奖结果` to `archives/mobile-junk/`
+- [ ] Organize `mobile/lib/src/` into: screens/, widgets/, services/, models/, config/
+- [ ] Move `mobile/assets/` to `mobile/lib/assets/` if needed
+- [ ] Update pubspec.yaml and imports
+
+## General Updates
+- [ ] Update all import statements across the project
+- [ ] Update CI/docker-compose references to new paths
+- [ ] Create `docs/PROJECT_STRUCTURE.md` with structure and conventions
+- [ ] Run backend tests (pytest)
+- [ ] Run Flutter analyze and build
+- [ ] Run React lint, test, and build
+- [ ] Verify no broken imports or builds

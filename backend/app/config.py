@@ -27,6 +27,14 @@ class Settings(BaseSettings):
     JWT_ALG: str = "HS256"
     APP_ENV: str = "dev"
 
+    # CORS settings
+    ALLOWED_ORIGINS: list[str] = [
+        "http://localhost:3000",  # Development frontend
+        "https://app.workforce.com",  # Production frontend
+        "https://workforce-app.com",  # Alternative production domain
+        "https://app.workforce-app.com",  # Specified production frontend
+    ]
+
     # Email settings
     SMTP_SERVER: str = "smtp.sendgrid.net"
     SMTP_PORT: int = 587

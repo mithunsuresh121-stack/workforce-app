@@ -152,6 +152,8 @@ app.include_router(approvals.router, prefix="/api/approvals")
 app.include_router(procurement.router, prefix="/api")
 app.include_router(websocket_manager.router, prefix="/api/ws")
 
+from prometheus_fastapi_instrumentator import Instrumentator
+
 # Initialize Prometheus instrumentation
 instrumentator = Instrumentator().instrument(app)
 
