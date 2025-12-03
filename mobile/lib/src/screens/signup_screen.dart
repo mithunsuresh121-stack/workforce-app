@@ -1,127 +1,51 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workforce_app/src/providers/auth_provider.dart';
-import 'package:firebase_core/firebase_core.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
-import 'package:workforce_app/src/services/api_service.dart';
-import 'package:workforce_app/src/screens/signup_screen.dart';
+import 'package:workforce_app/src/screens/login_screen.dart';
 
-Future<void> _firebaseMessagingBackgroundHandler(RemoteMessage message) async {
-  await Firebase.initializeApp();
-  print('Handling a background message ${message.messageId}');
-}
-
-class LoginScreen extends ConsumerStatefulWidget {
-  final VoidCallback onLoggedIn;
-  const LoginScreen({super.key, required this.onLoggedIn});
+class SignupScreen extends ConsumerStatefulWidget {
+  const SignupScreen({super.key});
 
   @override
-  ConsumerState<LoginScreen> createState() => _LoginScreenState();
+  ConsumerState<SignupScreen> createState() => _SignupScreenState();
 }
 
-class _LoginScreenState extends ConsumerState<LoginScreen> {
+class _SignupScreenState extends ConsumerState<SignupScreen> {
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _fullNameController = TextEditingController();
   bool _showPassword = false;
   bool _isLoading = false;
-  bool _isInitializing = true;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeApp();
-  }
 
   @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _fullNameController.dispose();
     super.dispose();
   }
 
-  Future<void> _initializeApp() async {
-    try {
-      // Initialize Firebase
-      await Firebase.initializeApp();
-
-      // Initialize Firebase Messaging
-      FirebaseMessaging messaging = FirebaseMessaging.instance;
-
-      // Request permission for iOS
-      NotificationSettings settings = await messaging.requestPermission(
-        alert: true,
-        announcement: false,
-        badge: true,
-        carPlay: false,
-        criticalAlert: false,
-        provisional: false,
-        sound: true,
-      );
-
-      // Get FCM token
-      String? token = await messaging.getToken();
-
-      // Send FCM token to backend if user is logged in
-      if (token != null) {
-        try {
-          final apiService = ApiService();
-          final authToken = await apiService.getToken();
-          if (authToken != null) {
-            await apiService.updateFCMToken(token);
-          }
-        } catch (e) {
-          // Error sending FCM token
-        }
-      }
-
-      // Handle foreground messages
-      FirebaseMessaging.onMessage.listen((RemoteMessage message) {
-        // Handle foreground message
-      });
-
-      // Handle token refresh
-      FirebaseMessaging.instance.onTokenRefresh.listen((String token) async {
-        try {
-          final apiService = ApiService();
-          final authToken = await apiService.getToken();
-          if (authToken != null) {
-            await apiService.updateFCMToken(token);
-          }
-        } catch (e) {
-          // Error sending refreshed FCM token
-        }
-      });
-
-      // Handle background messages
-      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
-
-      // Check auth status
-      final authNotifier = ref.read(authProvider.notifier);
-      await authNotifier.checkAuthStatus();
-    } catch (e) {
-      // Initialization error
-    }
-
-    if (mounted) {
-      setState(() => _isInitializing = false);
-    }
-  }
-
-  Future<void> _handleLogin() async {
+  Future<void> _handleSignup() async {
     if (_formKey.currentState!.validate()) {
       setState(() => _isLoading = true);
 
       final email = _emailController.text.trim();
       final password = _passwordController.text;
+      final fullName = _fullNameController.text.trim();
 
       final authNotifier = ref.read(authProvider.notifier);
-      await authNotifier.login(email, password);
+      await authNotifier.signup(email, password, fullName);
 
-      final authState = ref.read(authProvider); // Read the state after login
+      final authState = ref.read(authProvider);
 
-      if (authState.isAuthenticated) {
-        widget.onLoggedIn();
+      if (authState.error == null) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Account created successfully! Please log in.')),
+          );
+          Navigator.pop(context);
+        }
       } else if (authState.error != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text(authState.error!)),
@@ -173,19 +97,32 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 16),
                       Text(
-                        'Workforce Management',
+                        'Create Account',
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        'Multi-Company Login',
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Colors.grey[600],
-                        ),
-                      ),
                       const SizedBox(height: 24),
+
+                      // Full Name Field
+                      TextFormField(
+                        controller: _fullNameController,
+                        decoration: const InputDecoration(
+                          labelText: 'Full Name',
+                          prefixIcon: Icon(Icons.person),
+                          border: OutlineInputBorder(),
+                        ),
+                        validator: (value) {
+                          if (value == null || value.isEmpty) {
+                            return 'Please enter your full name';
+                          }
+                          if (value.length < 2) {
+                            return 'Full name must be at least 2 characters';
+                          }
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
 
                       // Email Field
                       TextFormField(
@@ -233,46 +170,37 @@ class _LoginScreenState extends ConsumerState<LoginScreen> {
                       ),
                       const SizedBox(height: 24),
 
-                      // Login Button
+                      // Sign Up Button
                       SizedBox(
                         width: double.infinity,
                         child: FilledButton(
-                          onPressed: _isLoading ? null : _handleLogin,
+                          onPressed: _isLoading ? null : _handleSignup,
                           child: _isLoading
                               ? const SizedBox(
                                   width: 20,
                                   height: 20,
                                   child: CircularProgressIndicator(strokeWidth: 2),
                                 )
-                              : const Text('Login'),
+                              : const Text('Sign Up'),
                         ),
                       ),
 
                       const SizedBox(height: 16),
 
-                      // Sign Up Button
+                      // Login Button
                       SizedBox(
                         width: double.infinity,
                         child: OutlinedButton(
                           onPressed: () {
                             Navigator.push(
                               context,
-                              MaterialPageRoute(builder: (context) => const SignupScreen()),
+                              MaterialPageRoute(
+                                builder: (context) => LoginScreen(onLoggedIn: () {}),
+                              ),
                             );
                           },
-                          child: const Text('Sign Up'),
+                          child: const Text('Already have an account? Login'),
                         ),
-                      ),
-
-                      // Demo credentials hint
-                      const SizedBox(height: 16),
-                      Text(
-                        'Demo: Email: admin@techcorp.com',
-                        style: Theme.of(context).textTheme.bodySmall?.copyWith(
-                          color: Colors.grey[600],
-                          fontStyle: FontStyle.italic,
-                        ),
-                        textAlign: TextAlign.center,
                       ),
                     ],
                   ),

@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:workforce_app/src/providers/auth_provider.dart';
 import 'package:workforce_app/src/providers/theme_provider.dart';
 import 'screens/login_screen.dart';
+import 'screens/signup_screen.dart';
 import 'screens/dashboard_screen.dart';
 import 'screens/tasks_screen.dart';
 import 'screens/calendar_screen.dart';

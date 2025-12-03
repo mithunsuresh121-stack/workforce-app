@@ -108,11 +108,10 @@ class ApiService {
   }
 
   // Auth specific methods
-  Future<Map<String, dynamic>> login(String email, String password, int companyId) async {
+  Future<Map<String, dynamic>> login(String email, String password) async {
     final response = await post('/auth/login', {
       'email': email,
       'password': password,
-      'company_id': companyId,
     });
 
     if (response.statusCode == 200) {
@@ -156,13 +155,11 @@ class ApiService {
     }
   }
 
-  Future<http.Response> signup(String email, String password, String fullName, String role, int companyId) async {
+  Future<http.Response> signup(String email, String password, String fullName) async {
     return await post('/auth/signup', {
       'email': email,
       'password': password,
       'full_name': fullName,
-      'role': role,
-      'company_id': companyId,
     });
   }
 

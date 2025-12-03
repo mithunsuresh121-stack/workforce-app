@@ -47,21 +47,42 @@ class AuthNotifier extends StateNotifier<AuthState> {
 
   AuthNotifier(this._apiService) : super(AuthState());
 
-  Future<void> login(String email, String password, int companyId) async {
+  Future<void> login(String email, String password) async {
     state = state.copyWith(isLoading: true, error: null);
-    
+
     try {
-      final data = await _apiService.login(email, password, companyId);
+      final data = await _apiService.login(email, password);
       final token = data['access_token'];
-      
+
       state = state.copyWith(
         isAuthenticated: true,
         token: token,
         email: email,
-        companyId: companyId,
         isLoading: false,
         error: null,
       );
+    } catch (e) {
+      state = state.copyWith(
+        isLoading: false,
+        error: e.toString(),
+      );
+    }
+  }
+
+  Future<void> signup(String email, String password, String fullName) async {
+    state = state.copyWith(isLoading: true, error: null);
+
+    try {
+      final response = await _apiService.signup(email, password, fullName);
+      if (response.statusCode == 201) {
+        state = state.copyWith(
+          isLoading: false,
+          error: null,
+        );
+      } else {
+        final errorData = json.decode(response.body);
+        throw Exception(errorData['detail'] ?? 'Signup failed');
+      }
     } catch (e) {
       state = state.copyWith(
         isLoading: false,

@@ -1,19 +1,17 @@
-# TODO: Authentication and Role Management Modifications
+# TODO: Add Sign Up and Remove Company ID from Login
 
-## Current Status
-- [x] Updated signup logic to not require or assign company_id automatically. All new users sign up as EMPLOYEE with company_id=None.
-- [ ] Implement company creation endpoint for logged-in users without a company.
-- [ ] Add endpoint for assigning users to a company (update company_id and role).
-- [ ] Update role assignment: Company creator becomes SUPERADMIN for that company.
-- [ ] Frontend (Mobile/Flutter): Create screen for company creation.
-- [ ] Frontend (Mobile/Flutter): Create screen for assigning users to company.
-- [ ] Verify login works without company_id.
-- [ ] Test role assignments and hierarchy.
-- [ ] Ensure no breakage for existing users.
+## Backend Changes
+- [x] Update LoginPayload in schemas.py to make company_id optional
+- [x] Modify login endpoint in auth.py to use user's company_id if not provided in payload
 
-## Next Steps
-1. Modify backend/routers/companies.py to allow company creation for users without company_id, assigning them SUPERADMIN role.
-2. Add new endpoint in backend/routers/companies.py or auth.py for assigning users to company.
-3. Update mobile/lib/src to add CompanyCreationScreen.
-4. Update mobile/lib/src to add UserAssignmentScreen.
-5. Test all changes.
+## Frontend Changes
+- [x] Remove company ID field from login_screen.dart
+- [x] Add "Sign Up" button to login_screen.dart
+- [x] Create signup_screen.dart with form (email, password, full_name)
+- [x] Update auth_provider.dart to add signup method
+- [x] Update app.dart to import signup_screen.dart
+
+## Testing
+- [ ] Test login without company ID
+- [ ] Test sign up flow
+- [ ] Verify backend handles optional company_id correctly

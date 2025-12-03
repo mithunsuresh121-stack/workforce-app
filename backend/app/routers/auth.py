@@ -76,9 +76,12 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=401, detail="User account is inactive")
 
+    # Use company_id from payload if provided, otherwise from user record
+    company_id = payload.company_id if payload.company_id is not None else user.company_id
+
     access_token = create_access_token(
         sub=user.email,
-        company_id=user.company_id,  # May be None for Super Admin
+        company_id=company_id,
         role=user.role,
     )
 
