@@ -14,7 +14,7 @@ from app.crud import (authenticate_user, authenticate_user_by_email,
                       get_refresh_token_by_token, get_user_by_email,
                       get_user_by_email_only, get_users_by_email,
                       list_users_by_company, revoke_all_user_refresh_tokens,
-                      revoke_refresh_token)
+                      revoke_refresh_token, create_invite)
 from app.deps import get_current_user, get_db
 from app.schemas import (LoginPayload, RefreshTokenRequest, Token, UserCreate,
                          UserOut, UserUpdate)
@@ -39,10 +39,27 @@ def signup(payload: UserCreate, db: Session = Depends(get_db)):
     if existing_user:
         raise HTTPException(status_code=409, detail="Email already registered")
 
-    # Extract domain from email
-    email_domain = payload.email.split("@")[-1].lower()
+    # Handle invite-based signup
+    if payload.invite_token:
+        from app.crud import validate_invite_token, mark_invite_used, create_company
 
-    company_id, role = determine_company_and_role(email_domain, payload, db)
+        invite = validate_invite_token(db, payload.invite_token)
+        if not invite:
+            raise HTTPException(status_code=400, detail="Invalid or expired invite token")
+
+        # Use invite's company and set role to EMPLOYEE
+        company_id = invite.company_id
+        role = "EMPLOYEE"
+
+        # Mark invite as used
+        mark_invite_used(db, payload.invite_token)
+    else:
+        # Direct signup - create new company and set role to SUPERADMIN
+        from app.base_crud import create_company
+
+        company = create_company(db, payload.email.split("@")[-1])
+        company_id = company.id
+        role = "SUPERADMIN"
 
     user = create_user(
         db, payload.email, payload.password, payload.full_name or "", role, company_id
@@ -76,12 +93,9 @@ def login(payload: LoginPayload, db: Session = Depends(get_db)):
     if not user.is_active:
         raise HTTPException(status_code=401, detail="User account is inactive")
 
-    # Use company_id from payload if provided, otherwise from user record
-    company_id = payload.company_id if payload.company_id is not None else user.company_id
-
     access_token = create_access_token(
         sub=user.email,
-        company_id=company_id,
+        company_id=user.company_id,
         role=user.role,
     )
 
@@ -333,3 +347,102 @@ def reset_password(payload: PasswordResetConfirm, db: Session = Depends(get_db))
                 "Password reset failed", error=str(e), user_id=reset_token.user_id
             )
             raise HTTPException(status_code=500, detail="Failed to reset password")
+
+
+class InviteCreate(BaseModel):
+    email: str
+
+
+class InviteResponse(BaseModel):
+    token: str
+    expires_at: datetime
+    invite_link: str
+
+
+@router.post("/invite", response_model=InviteResponse, status_code=201)
+def create_invite(
+    payload: InviteCreate,
+    db: Session = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    """Create an invite for a new user to join the company"""
+    # Only SUPERADMIN can create invites
+    if current_user.role != "SUPERADMIN":
+        raise HTTPException(status_code=403, detail="Only SUPERADMIN can create invites")
+
+    # Check if user already exists
+    existing_user = get_user_by_email_only(db, payload.email)
+    if existing_user:
+        raise HTTPException(status_code=409, detail="User already exists")
+
+    # Create invite
+    invite = create_invite(db, current_user.id, current_user.company_id, payload.email)
+
+    # Generate invite link (frontend URL)
+    invite_link = f"https://app.workforce-app.com/signup?invite_token={invite.token}"
+
+    return {
+        "token": invite.token,
+        "expires_at": invite.expires_at,
+        "invite_link": invite_link,
+    }
+
+
+class UpdateRoleRequest(BaseModel):
+    user_id: int
+    role: str
+
+
+@router.put("/update-role", response_model=UserOut)
+def update_user_role(
+    payload: UpdateRoleRequest,
+    db: Session = Depends(get_db),
+    current_user: UserOut = Depends(get_current_user),
+):
+    """Update user role (only SUPERADMIN can do this)"""
+    # Only SUPERADMIN can update roles
+    if current_user.role != "SUPERADMIN":
+        raise HTTPException(status_code=403, detail="Only SUPERADMIN can update roles")
+
+    # Check if target user exists
+    target_user = get_user_by_id(db, payload.user_id)
+    if not target_user:
+        raise HTTPException(status_code=404, detail="User not found")
+
+    # Must be in same company
+    if target_user.company_id != current_user.company_id:
+        raise HTTPException(status_code=403, detail="Cannot update users from other companies")
+
+    # Validate role
+    valid_roles = ["SUPERADMIN", "COMPANY_ADMIN", "DEPARTMENT_ADMIN", "TEAM_LEAD", "EMPLOYEE"]
+    if payload.role not in valid_roles:
+        raise HTTPException(status_code=400, detail=f"Invalid role. Must be one of: {', '.join(valid_roles)}")
+
+    # Enforce max 2 SUPERADMINs per company
+    if payload.role == "SUPERADMIN":
+        from app.crud import list_users_by_company
+        company_users = list_users_by_company(db, current_user.company_id)
+        superadmin_count = sum(1 for user in company_users if user.role == "SUPERADMIN")
+        if superadmin_count >= 2:
+            raise HTTPException(status_code=400, detail="Maximum 2 SUPERADMINs allowed per company")
+
+    # Update role
+    from app.crud import update_user
+    updated_user = update_user(
+        db,
+        payload.user_id,
+        target_user.email,
+        None,  # password
+        target_user.full_name,
+        payload.role,
+        target_user.company_id,
+    )
+
+    logger.info(
+        "User role updated",
+        user_id=payload.user_id,
+        new_role=payload.role,
+        updated_by=current_user.id,
+    )
+
+    return updated_user

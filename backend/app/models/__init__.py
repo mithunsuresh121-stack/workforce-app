@@ -14,6 +14,7 @@ from .company_team import CompanyTeam
 from .document import Document
 from .employee_profile import EmployeeProfile
 from .inventory_item import InventoryItem
+from .invite import Invite
 from .leave import Leave
 from .meeting_participants import MeetingParticipant
 from .meetings import Meeting
@@ -71,4 +72,5 @@ __all__ = [
     "Vendor",
     "PurchaseOrder",
     "InventoryItem",
+    "Invite",
 ]

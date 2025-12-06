@@ -160,30 +160,8 @@ instrumentator = Instrumentator().instrument(app)
 
 @app.on_event("startup")
 async def startup_event():
-    # Initialize Redis with health check
-    try:
-        await redis_service.initialize()
-        healthy = await redis_service.health_check()
-        if not healthy:
-            logger.warning(
-                "Redis health check failed, proceeding without Redis features"
-            )
-        else:
-            logger.info("Redis initialized and healthy on startup")
-    except Exception as e:
-        logger.error(
-            "Failed to initialize Redis on startup, proceeding without Redis features",
-            error=str(e),
-            exc_info=True,
-        )
-        # Do not raise to allow FastAPI to start; Redis-dependent features will be disabled
-
-    # Initialize metrics counters from Redis
-    try:
-        await initialize_counters_from_redis()
-        logger.info("Metrics counters initialized from Redis")
-    except Exception as e:
-        logger.warning("Failed to initialize metrics counters from Redis", error=str(e))
+    # Skip Redis initialization for now - not needed for invite system testing
+    logger.info("Skipping Redis initialization for invite system testing")
 
     # Seed demo user conditionally
     if settings.APP_ENV == "development":
@@ -192,8 +170,8 @@ async def startup_event():
         db = next(get_db())
         seed_demo_user(db)
 
-    # Start Redis subscriber for chat channels
-    asyncio.create_task(redis_subscriber())
+    # Skip Redis subscriber for now
+    logger.info("Skipping Redis subscriber for invite system testing")
 
 
 async def redis_subscriber():

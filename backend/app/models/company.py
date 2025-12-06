@@ -51,3 +51,6 @@ class Company(Base):
     inventory_items = relationship(
         "InventoryItem", back_populates="company", cascade="all, delete-orphan"
     )
+    invites = relationship(
+        "Invite", back_populates="company", cascade="all, delete-orphan"
+    )

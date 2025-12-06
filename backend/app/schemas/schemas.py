@@ -62,7 +62,7 @@ class UserCreate(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=6)
     full_name: Optional[str] = Field(None, max_length=100)
-    role: Role = Role.EMPLOYEE
+    invite_token: Optional[str] = None  # For invite-based signup
 
 
 class UserUpdate(BaseModel):

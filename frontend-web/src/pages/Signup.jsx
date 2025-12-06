@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { theme } from '../theme';
 import Footer from '../components/Footer';
@@ -9,25 +9,15 @@ const Signup = () => {
   const [email, setEmail] = useState('');
   const [fullName, setFullName] = useState('');
   const [password, setPassword] = useState('');
-  const [inviteToken, setInviteToken] = useState(null);
   const [error, setError] = useState(null);
   const [showPassword, setShowPassword] = useState(false);
-
-  useEffect(() => {
-    // Check for invite token in URL parameters
-    const urlParams = new URLSearchParams(window.location.search);
-    const token = urlParams.get('invite_token');
-    if (token) {
-      setInviteToken(token);
-    }
-  }, []);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError(null);
     setValidationErrors([]);
     try {
-      const result = await signup(email, password, fullName, inviteToken);
+      const result = await signup(email, password, fullName);
       if (!result.success) {
         setError(result.error);
       }
@@ -51,18 +41,24 @@ const Signup = () => {
             </h2>
             <p className="text-neutral-600">Get started with your new account</p>
           </div>
-          {Object.keys(validationErrors).length > 0 && (
+
+          {validationErrors.length > 0 && (
             <div className="mb-6 bg-red-50 border border-red-200 rounded-linear p-4">
               <p className="text-red-700 text-center font-medium">Please fix the following errors:</p>
               <ul className="mt-2 text-red-700">
-                {Object.entries(validationErrors).map(([field, messages]) => (
-                  messages.map((msg, i) => (
-                    <li key={`${field}-${i}`} className="text-sm">• {msg}</li>
-                  ))
+                {validationErrors.map((msg, i) => (
+                  <li key={i} className="text-sm">• {msg}</li>
                 ))}
               </ul>
             </div>
           )}
+
+          {error && (
+            <div className="mb-6 bg-red-50 border border-red-200 rounded-linear p-4">
+              <p className="text-red-700 text-center font-medium">{error}</p>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label htmlFor="fullName" className="block text-sm font-medium text-neutral-700 mb-2">

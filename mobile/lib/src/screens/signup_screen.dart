@@ -42,9 +42,11 @@ class _SignupScreenState extends ConsumerState<SignupScreen> {
       if (authState.error == null) {
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(content: Text('Account created successfully! Please log in.')),
+            const SnackBar(content: Text('Account created successfully!')),
           );
-          Navigator.pop(context);
+          Navigator.of(context).pushReplacement(
+            MaterialPageRoute(builder: (context) => const OnboardingFlow()),
+          );
         }
       } else if (authState.error != null && mounted) {
         ScaffoldMessenger.of(context).showSnackBar(

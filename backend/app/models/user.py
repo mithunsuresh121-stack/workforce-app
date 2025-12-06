@@ -119,5 +119,10 @@ class User(Base):
         "ApprovalQueueItem", back_populates="assigned_to", cascade="all, delete-orphan"
     )
 
+    # Invite relationships
+    sent_invites = relationship(
+        "Invite", back_populates="inviter", cascade="all, delete-orphan"
+    )
+
     def __repr__(self):
         return f"<User {self.email}>"

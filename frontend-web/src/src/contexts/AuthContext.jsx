@@ -2,7 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from "react";
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "http://localhost:8000/api",
+  baseURL: "http://localhost:8001/api",
   withCredentials: true,
 });
 
@@ -19,6 +19,7 @@ const AuthContext = createContext(null);
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [validationErrors, setValidationErrors] = useState([]);
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -69,23 +70,34 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
-  const signup = async (email, password, fullName, role = "Employee", companyId = null) => {
+  const signup = async (email, password, fullName, inviteToken = null) => {
     try {
       await api.post("/auth/signup", {
         email,
         password,
         full_name: fullName,
-        role,
-        company_id: companyId
+        invite_token: inviteToken
       });
       // After successful signup, automatically log the user in
       const loginResult = await login(email, password);
       return loginResult;
     } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.detail || "Signup failed",
-      };
+      let validationErrors = {};
+      if (error.response && error.response.status === 422 && error.response.data.detail && Array.isArray(error.response.data.detail)) {
+        error.response.data.detail.forEach(e => {
+          const field = e.loc[e.loc.length - 1]; // Get the field name from loc
+          if (!validationErrors[field]) validationErrors[field] = [];
+          validationErrors[field].push(e.msg);
+        });
+        if (Object.keys(validationErrors).length === 0) {
+          validationErrors = { general: ["Validation failed"] };
+        }
+      } else {
+        const errorMsg = error.response?.data?.detail || "Signup failed";
+        validationErrors = { general: [errorMsg] };
+      }
+      setValidationErrors(validationErrors);
+      return { success: false };
     }
   };
 
@@ -95,7 +107,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, login, signup, logout, loading }}>
+    <AuthContext.Provider value={{ user, login, signup, logout, loading, validationErrors, setValidationErrors }}>
       {children}
     </AuthContext.Provider>
   );

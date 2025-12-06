@@ -8,6 +8,7 @@ from sqlalchemy.sql import func
 
 from app.models.company import Company
 from app.models.employee_profile import EmployeeProfile
+from app.models.invite import Invite
 from app.models.leave import Leave
 from app.models.profile_update_request import (ProfileUpdateRequest,
                                                RequestStatus)
@@ -1245,3 +1246,57 @@ def get_overtime_trend(
         )
 
     return result
+
+
+# Invite CRUD functions
+def create_invite(db: Session, inviter_id: int, company_id: int, email: Optional[str] = None):
+    import secrets
+    from datetime import datetime, timedelta
+
+    token = secrets.token_urlsafe(32)
+    expires_at = datetime.utcnow() + timedelta(days=7)  # 7 days expiry
+
+    invite = Invite(
+        token=token,
+        inviter_id=inviter_id,
+        company_id=company_id,
+        email=email,
+        expires_at=expires_at,
+    )
+    db.add(invite)
+    db.commit()
+    db.refresh(invite)
+    return invite
+
+
+def get_invite_by_token(db: Session, token: str) -> Optional[Invite]:
+    return db.query(Invite).filter(Invite.token == token).first()
+
+
+def validate_invite_token(db: Session, token: str) -> Optional[Invite]:
+    from datetime import datetime
+
+    invite = get_invite_by_token(db, token)
+    if not invite:
+        return None
+    if invite.used_at or invite.expires_at < datetime.utcnow():
+        return None
+    return invite
+
+
+def mark_invite_used(db: Session, token: str):
+    from datetime import datetime
+
+    invite = get_invite_by_token(db, token)
+    if invite:
+        invite.used_at = datetime.utcnow()
+        db.commit()
+
+
+def count_superadmins_in_company(db: Session, company_id: int) -> int:
+    from app.models.user import UserRole
+
+    return db.query(User).filter(
+        User.company_id == company_id,
+        User.role == UserRole.SUPERADMIN
+    ).count()

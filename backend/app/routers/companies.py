@@ -201,6 +201,25 @@ def assign_user_to_company(
     }
 
 
+@router.get("/user", response_model=List[CompanyOut])
+def get_user_companies(
+    db: Session = Depends(get_db),
+    current_user: User = Depends(get_current_user),
+):
+    """
+    Get companies accessible by the current user.
+    - If user is SUPERADMIN: return all companies
+    - Otherwise: return the user's assigned company if exists
+    """
+    if current_user.role == "SUPERADMIN":
+        return list_companies(db)
+    else:
+        if current_user.company_id:
+            company = get_company_by_id(db, current_user.company_id)
+            return [company] if company else []
+        return []
+
+
 @router.delete("/{company_id}", status_code=status.HTTP_204_NO_CONTENT)
 def delete_company_endpoint(
     company_id: int,
